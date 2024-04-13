@@ -14,5 +14,26 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define( 'NHRROB_OPTIONS_TABLE_MANAGER_VERSION', '1.0.0' );
-define( 'NHRROB_OPTIONS_TABLE_MANAGER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define('NHRROB_OPTIONS_TABLE_MANAGER_VERSION', '1.0.0');
+define('NHRROB_OPTIONS_TABLE_MANAGER_PLUGIN_DIR', plugin_dir_path( __FILE__ ));
+define('NHRROB_OPTIONS_TABLE_MANAGER_FILE', __FILE__);
+define('NHRROB_OPTIONS_TABLE_MANAGER_PATH', __DIR__);
+define('NHRROB_OPTIONS_TABLE_MANAGER_URL', plugins_url('', NHRROB_OPTIONS_TABLE_MANAGER_FILE));
+define('NHRROB_OPTIONS_TABLE_MANAGER_ASSETS', NHRROB_OPTIONS_TABLE_MANAGER_URL . '/assets');
+
+function nhrrob_options_table_manager_init(){
+    wp_register_style( 'nhrrob-options-table-manager-datatable-style','//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css', array(), '2.0.3' );
+    wp_register_style( 'nhrrob-options-table-manager-style', NHRROB_OPTIONS_TABLE_MANAGER_ASSETS . '/css/style.css', array(), filemtime( NHRROB_OPTIONS_TABLE_MANAGER_PATH . '/assets/css/style.css' ) );
+    
+    wp_register_script( 'nhrrob-options-table-manager-datatable-script','//cdn.datatables.net/2.0.3/js/dataTables.min.js', array('jquery'), '2.0.3' );
+    wp_register_script( 'nhrrob-options-table-manager-script', NHRROB_OPTIONS_TABLE_MANAGER_ASSETS . '/js/script.js', array(), filemtime( NHRROB_OPTIONS_TABLE_MANAGER_PATH . '/assets/js/script.js' ) );
+    
+    wp_enqueue_style('nhrrob-options-table-manager-datatable-style');
+    wp_enqueue_style('nhrrob-options-table-manager-style');
+    
+    wp_enqueue_script('jquery');
+    wp_enqueue_script('nhrrob-options-table-manager-datatable-script');
+    wp_enqueue_script('nhrrob-options-table-manager-script');
+}
+
+add_action('admin_enqueue_scripts', 'nhrrob_options_table_manager_init');
