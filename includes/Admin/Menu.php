@@ -29,11 +29,11 @@ class Menu
         $parent_slug = 'nhrrob-options-table-manager';
         $capability = apply_filters('nhrrob-options-table-manager/menu/capability', 'manage_options');
 
-        $hook = add_menu_page(__('Options Table Manager', 'nhrrob-options-table-manager'), __('Options Table Manager', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
-        // add_submenu_page( $parent_slug, __( 'Resource Book', 'nhrrob-options-table-manager' ), __( 'Resource Book', 'nhrrob-options-table-manager' ), $capability, $parent_slug, [ $this, 'plugin_page' ] );
+        // $hook = add_menu_page(__('Options Table', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
         // add_submenu_page( $parent_slug, __( 'Settings', 'nhrrob-options-table-manager' ), __( 'Settings', 'nhrrob-options-table-manager' ), $capability, 'nhrrob-options-table-manager-settings', [ $this, 'settings_page' ] );
+        add_submenu_page( 'tools.php', __( 'Options Table', 'nhrrob-options-table-manager' ), __( 'Options Table', 'nhrrob-options-table-manager' ), $capability, $parent_slug, [ $this, 'settings_page' ] );
 
-        add_action('admin_head-' . $hook, [$this, 'enqueue_assets']);
+        // add_action('admin_head-' . $hook, [$this, 'enqueue_assets']);
     }
 
     /**
@@ -43,14 +43,13 @@ class Menu
      */
     public function settings_page()
     {
-        echo "Hello World!";
-        // $settings_page = new SettingsPage();
+        $settings_page = new SettingsPage();
         
-        // ob_start();
-        // $settings_page->view();
-        // $content = ob_get_clean();
+        ob_start();
+        $settings_page->view();
+        $content = ob_get_clean();
         
-        // echo wp_kses( $content, $this->allowed_html() );
+        echo wp_kses( $content, $this->allowed_html() );
     }
 
     /**
