@@ -1,0 +1,19 @@
+{
+    "name": "nhrrob/nhrrob-options-table-manager",
+    "description": "Clean DataTable view of wp-options table to make decisions and boost your site performance!",
+    "type": "wordpress-plugin",
+    "license": "GPLv2",
+    "authors": [
+        {
+            "name": "Nhrrob",
+            "email": "admin@admin.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Nhrrob\\NhrrobOptionsTableManager\\": "includes/"
+        }
+    }
+}
