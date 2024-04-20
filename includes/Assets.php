@@ -23,14 +23,14 @@ class Assets {
     public function get_scripts() {
         return [
             'nhrrob-options-table-manager-admin-script' => [
-                'src'     => NHRROB_POPULAR_RANKING_ASSETS . '/js/admin.js',
-                'version' => filemtime( NHRROB_POPULAR_RANKING_PATH . '/assets/js/admin.js' ),
-                'deps'    => [ 'jquery', 'wp-util' ]
+                'src'     => NHRROB_OPTIONS_TABLE_MANAGER_ASSETS . '/js/admin.js',
+                'version' => filemtime( NHRROB_OPTIONS_TABLE_MANAGER_PATH . '/assets/js/admin.js' ),
+                'deps'    => [ 'jquery' ]
             ],
             'nhrrob-options-table-manager-datatable-script' => [
                 'src'     => '//cdn.datatables.net/2.0.3/js/dataTables.min.js',
                 'version' => '2.0.3',
-                'deps'    => [ 'jquery', 'wp-util' ]
+                'deps'    => [ 'jquery' ]
             ],
         ];
     }
@@ -43,8 +43,8 @@ class Assets {
     public function get_styles() {
         return [
             'nhrrob-options-table-manager-admin-style' => [
-                'src'     => NHRROB_POPULAR_RANKING_ASSETS . '/css/admin.out.css',
-                'version' => filemtime( NHRROB_POPULAR_RANKING_PATH . '/assets/css/admin.out.css' )
+                'src'     => NHRROB_OPTIONS_TABLE_MANAGER_ASSETS . '/css/admin.out.css',
+                'version' => filemtime( NHRROB_OPTIONS_TABLE_MANAGER_PATH . '/assets/css/admin.out.css' )
             ],
             'nhrrob-options-table-manager-datatable-style' => [
                 'src'     => '//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css',

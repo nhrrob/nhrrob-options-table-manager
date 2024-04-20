@@ -26,6 +26,9 @@ class SettingsPage extends Page
      */
     public function view()
     {
+        global $wpdb;
+        $options = $wpdb->get_results( "SELECT * FROM $wpdb->options ORDER BY option_name" );
+        
         ob_start();
 		include NHRROB_OPTIONS_TABLE_MANAGER_VIEWS_PATH . '/admin/settings/index.php';
         $content = ob_get_clean();
