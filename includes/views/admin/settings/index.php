@@ -1,15 +1,15 @@
 <div class="wrap nhrrob-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h2 class="text-2xl font-bold mb-4"><?php echo esc_html(get_admin_page_title()); ?></h2>
+    <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
-    <table class="form-table table-auto w-full px-4">
-        <thead>
+    <table class="form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
+        <thead class="bg-gray-50">
             <tr>
-                <th class="px-4 py-2">Name</th>
-                <th class="px-4 py-2">Value</th>
-                <th class="px-4 py-2">Autoload</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Value', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="bg-white divide-y divide-gray-200">
         <?php
         foreach ((array) $options as $option) :
             $disabled = false;
@@ -38,18 +38,26 @@
             $name = esc_attr($option->option_name);
         ?>
             <tr>
-                <td class="border px-4 py-2"><label for="<?php echo $name; ?>"><?php echo esc_html($option->option_name); ?></label></td>
-                <td class="border px-4 py-2">
+                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"><label for="<?php echo $name; ?>"><?php echo esc_html($option->option_name); ?></label></td>
+                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500">
                     <?php if (str_contains($value, "\n")) : ?>
                         <p class="<?php echo $class; ?>" id="<?php echo $name; ?>"><?php echo esc_textarea($value); ?></p>
                     <?php else : ?>
                         <p class="regular-text <?php echo $class; ?>" id="<?php echo $name; ?>"> <?php echo esc_attr($value); ?> </p>
                     <?php endif; ?>
                 </td>
-                <td class="border px-4 py-2"> <?php echo esc_html($option->autoload); ?> </td>
+                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"> <?php echo esc_html($option->autoload); ?> </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
+
+        <tfoot>
+            <tr>
+                <th class="px-4 py-2"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-4 py-2"><?php esc_html_e('Value', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-4 py-2"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+            </tr>
+        </tfoot>
     </table>
 
     <?php
@@ -68,7 +76,9 @@
     arsort($prefix_counts);
 
     // Display results
-    echo '<h3>Most Used Prefixes</h3>';
+    ?>
+    <h3 class="text-2xl mb-4"><?php esc_html_e( 'Prefix Count', 'nhrrob-options-table-manager'); ?></h3> 
+    <?php
     echo '<ul>';
     foreach ($prefix_counts as $prefix => $count) {
         if( $count > 5 ){
