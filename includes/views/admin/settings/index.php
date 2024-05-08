@@ -11,18 +11,17 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
         <?php
-        foreach ((array) $options as $option) :
+        foreach ((array) $options as $option_name => $option_value) :
             $disabled = false;
-
-            if ('' === $option->option_name) {
+            if ('' === $option_name) {
                 continue;
             }
 
-            if (is_serialized($option->option_value)) {
-                if (is_serialized_string($option->option_value)) {
+            if (is_serialized($option_value)) {
+                if (is_serialized_string($option_value)) {
                     // This is a serialized string, so we should display it.
-                    $value               = maybe_unserialize($option->option_value);
-                    $options_to_update[] = $option->option_name;
+                    $value               = maybe_unserialize($option_value);
+                    $options_to_update[] = $option_name;
                     $class               = 'all-options';
                 } else {
                     $value    = 'SERIALIZED DATA';
@@ -30,15 +29,15 @@
                     $class    = 'all-options disabled';
                 }
             } else {
-                $value               = $option->option_value;
-                $options_to_update[] = $option->option_name;
+                $value               = $option_value;
+                $options_to_update[] = $option_name;
                 $class               = 'all-options';
             }
 
-            $name = esc_attr($option->option_name);
+            $name = esc_attr($option_name);
         ?>
             <tr>
-                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option->option_name); ?></label></td>
+                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
                 <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500">
                     <?php if (str_contains($value, "\n")) : ?>
                         <p class="<?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"><?php echo esc_textarea($value); ?></p>
@@ -46,7 +45,7 @@
                         <p class="regular-text <?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"> <?php echo esc_attr($value); ?> </p>
                     <?php endif; ?>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"> <?php echo esc_html($option->autoload); ?> </td>
+                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -63,8 +62,8 @@
     <?php
     // Count occurrences of each prefix
     $prefix_counts = array();
-    foreach ($options as $option) {
-        $prefix = strtok($option->option_name, '_');
+    foreach ($options as $option_name => $option_value) {
+        $prefix = strtok($option_name, '_');
         if (!isset($prefix_counts[$prefix])) {
             $prefix_counts[$prefix] = 1;
         } else {
@@ -82,7 +81,7 @@
     echo '<ul>';
     foreach ($prefix_counts as $prefix => $count) {
         if( $count > 5 ){
-            echo '<li>' . $prefix . ': ' . $count . '</li>';
+            echo '<li>' . esc_html( $prefix ) . ': ' . esc_html( $count ) . '</li>';
         }
     }
     echo '</ul>';
