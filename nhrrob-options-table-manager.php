@@ -34,8 +34,6 @@ final class Nhrrob_Options_Table_Manager {
     private function __construct() {
         $this->define_constants();
 
-        register_activation_hook( __FILE__, [ $this, 'activate' ] );
-
         add_action( 'plugins_loaded', [ $this, 'init_plugin' ] );
     }
 
