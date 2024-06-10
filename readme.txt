@@ -4,7 +4,7 @@ Tags: options table, options manager, options table analytics, wp options, wp op
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,10 @@ No. But it helps you to make decisions on how to reduce the db size and make you
 
 
 == Changelog ==
+
+= 1.0.1 - 10/06/2024 =
+- Prefix updated
+- Few minor bug fixing & improvements
 
 = 1.0.0 - 12/04/2024 =
 - Initial beta release. Cheers!
