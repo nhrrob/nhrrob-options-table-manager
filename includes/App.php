@@ -1,6 +1,6 @@
 <?php
 
-namespace Nhrrob\NhrrobOptionsTableManager;
+namespace Nhrotm\OptionsTableManager;
 
 /**
  * Controller Class
@@ -11,6 +11,6 @@ class App {
     
     public function __construct()
     {
-        $this->page_slug = 'nhrrob-options-table-manager';
+        $this->page_slug = 'nhrotm-options-table-manager';
     }
 }

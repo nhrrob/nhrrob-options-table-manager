@@ -1,6 +1,6 @@
 <?php
 
-namespace Nhrrob\NhrrobOptionsTableManager;
+namespace Nhrotm\OptionsTableManager;
 
 /**
  * Assets handler class
@@ -22,13 +22,13 @@ class Assets {
      */
     public function get_scripts() {
         return [
-            'nhrrob-options-table-manager-admin-script' => [
-                'src'     => NHRROB_OPTIONS_TABLE_MANAGER_ASSETS . '/js/admin.js',
-                'version' => filemtime( NHRROB_OPTIONS_TABLE_MANAGER_PATH . '/assets/js/admin.js' ),
+            'nhrotm-options-table-manager-admin-script' => [
+                'src'     => NHROTM_ASSETS . '/js/admin.js',
+                'version' => filemtime( NHROTM_PATH . '/assets/js/admin.js' ),
                 'deps'    => [ 'jquery' ]
             ],
-            'nhrrob-options-table-manager-datatable-script' => [
-                'src'     => '//cdn.datatables.net/2.0.3/js/dataTables.min.js',
+            'nhrotm-options-table-manager-datatable-script' => [
+                'src'     => NHROTM_ASSETS . '/js/dataTables.min.js',
                 'version' => '2.0.3',
                 'deps'    => [ 'jquery' ]
             ],
@@ -42,12 +42,12 @@ class Assets {
      */
     public function get_styles() {
         return [
-            'nhrrob-options-table-manager-admin-style' => [
-                'src'     => NHRROB_OPTIONS_TABLE_MANAGER_ASSETS . '/css/admin.out.css',
-                'version' => filemtime( NHRROB_OPTIONS_TABLE_MANAGER_PATH . '/assets/css/admin.out.css' )
+            'nhrotm-options-table-manager-admin-style' => [
+                'src'     => NHROTM_ASSETS . '/css/admin.out.css',
+                'version' => filemtime( NHROTM_PATH . '/assets/css/admin.out.css' )
             ],
-            'nhrrob-options-table-manager-datatable-style' => [
-                'src'     => '//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css',
+            'nhrotm-options-table-manager-datatable-style' => [
+                'src'     => NHROTM_ASSETS . '/css/dataTables.dataTables.min.css',
                 'version' => '2.0.3'
             ],
         ];
@@ -74,10 +74,10 @@ class Assets {
             wp_register_style( $handle, $style['src'], $deps, $style['version'] );
         }
 
-        wp_localize_script( 'nhrrob-options-table-manager-admin-script', 'nhrrobOptionsTableManager', [
-            'nonce' => wp_create_nonce( 'nhrrob-options-table-manager-admin-nonce' ),
-            'confirm' => __( 'Are you sure?', 'nhrrob-options-table-manager' ),
-            'error' => __( 'Something went wrong', 'nhrrob-options-table-manager' ),
+        wp_localize_script( 'nhrotm-options-table-manager-admin-script', 'nhrotmOptionsTableManager', [
+            'nonce' => wp_create_nonce( 'nhrotm-options-table-manager-admin-nonce' ),
+            'confirm' => __( 'Are you sure?', 'nhrotm-options-table-manager' ),
+            'error' => __( 'Something went wrong', 'nhrotm-options-table-manager' ),
         ] );
     }
 }

@@ -1,12 +1,12 @@
-<div class="wrap nhrrob-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="wrap nhrotm-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
     <table class="form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Value', 'nhrrob-options-table-manager'); ?></th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Name', 'nhrotm-options-table-manager'); ?></th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Value', 'nhrotm-options-table-manager'); ?></th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Autoload', 'nhrotm-options-table-manager'); ?></th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -52,9 +52,9 @@
 
         <tfoot>
             <tr>
-                <th class="px-4 py-2"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
-                <th class="px-4 py-2"><?php esc_html_e('Value', 'nhrrob-options-table-manager'); ?></th>
-                <th class="px-4 py-2"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-4 py-2"><?php esc_html_e('Name', 'nhrotm-options-table-manager'); ?></th>
+                <th class="px-4 py-2"><?php esc_html_e('Value', 'nhrotm-options-table-manager'); ?></th>
+                <th class="px-4 py-2"><?php esc_html_e('Autoload', 'nhrotm-options-table-manager'); ?></th>
             </tr>
         </tfoot>
     </table>
@@ -76,7 +76,7 @@
 
     // Display results
     ?>
-    <h3 class="text-2xl mb-4"><?php esc_html_e( 'Prefix Count', 'nhrrob-options-table-manager'); ?></h3> 
+    <h3 class="text-2xl mb-4"><?php esc_html_e( 'Prefix Count', 'nhrotm-options-table-manager'); ?></h3> 
     <?php
     echo '<ul>';
     foreach ($prefix_counts as $prefix => $count) {

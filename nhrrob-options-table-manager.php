@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name: NHR Options Table Manager
- * Plugin URI: http://wordpress.org/plugins/nhrrob-options-table-manager/
+ * Plugin URI: http://wordpress.org/plugins/nhrotm-options-table-manager/
  * Description: Clean DataTable view of wp-options table to make decisions and boost your site performance!
  * Author: Nazmul Hasan Robin
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Text Domain: nhrrob-options-table-manager
+ * Text Domain: nhrotm-options-table-manager
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
@@ -19,14 +19,14 @@ require_once __DIR__ . '/vendor/autoload.php';
 /**
  * The main plugin class
  */
-final class Nhrrob_Options_Table_Manager {
+final class Nhrotm_Options_Table_Manager {
 
     /**
      * Plugin version
      *
      * @var string
      */
-    const version = '1.0.0';
+    const nhrotm_version = '1.0.0';
 
     /**
      * Class construcotr
@@ -40,7 +40,7 @@ final class Nhrrob_Options_Table_Manager {
     /**
      * Initialize a singleton instance
      *
-     * @return \Nhrrob_Options_Table_Manager
+     * @return \Nhrotm_Options_Table_Manager
      */
     public static function init() {
         static $instance = false;
@@ -58,14 +58,14 @@ final class Nhrrob_Options_Table_Manager {
      * @return void
      */
     public function define_constants() {
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_VERSION', self::version );
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_FILE', __FILE__ );
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_PATH', __DIR__ );
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_PLUGIN_DIR', plugin_dir_path( NHRROB_OPTIONS_TABLE_MANAGER_FILE ) );
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_URL', plugins_url('', NHRROB_OPTIONS_TABLE_MANAGER_FILE) );
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_ASSETS', NHRROB_OPTIONS_TABLE_MANAGER_URL . '/assets' );
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_INCLUDES_PATH', NHRROB_OPTIONS_TABLE_MANAGER_PATH . '/includes' );
-        define( 'NHRROB_OPTIONS_TABLE_MANAGER_VIEWS_PATH', NHRROB_OPTIONS_TABLE_MANAGER_INCLUDES_PATH . '/views' );
+        define( 'NHROTM_VERSION', self::nhrotm_version );
+        define( 'NHROTM_FILE', __FILE__ );
+        define( 'NHROTM_PATH', __DIR__ );
+        define( 'NHROTM_PLUGIN_DIR', plugin_dir_path( NHROTM_FILE ) );
+        define( 'NHROTM_URL', plugins_url('', NHROTM_FILE) );
+        define( 'NHROTM_ASSETS', NHROTM_URL . '/assets' );
+        define( 'NHROTM_INCLUDES_PATH', NHROTM_PATH . '/includes' );
+        define( 'NHROTM_VIEWS_PATH', NHROTM_INCLUDES_PATH . '/views' );
     }
 
     /**
@@ -75,14 +75,14 @@ final class Nhrrob_Options_Table_Manager {
      */
     public function init_plugin() {
 
-        new Nhrrob\NhrrobOptionsTableManager\Assets();
+        new Nhrotm\OptionsTableManager\Assets();
 
         if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-            new Nhrrob\NhrrobOptionsTableManager\Ajax();
+            new Nhrotm\OptionsTableManager\Ajax();
         }
 
         if ( is_admin() ) {
-            new Nhrrob\NhrrobOptionsTableManager\Admin();
+            new Nhrotm\OptionsTableManager\Admin();
         }
     }
 }
@@ -90,11 +90,11 @@ final class Nhrrob_Options_Table_Manager {
 /**
  * Initializes the main plugin
  *
- * @return \Nhrrob_Options_Table_Manager
+ * @return \Nhrotm_Options_Table_Manager
  */
-function nhrrob_options_table_manager() {
-    return Nhrrob_Options_Table_Manager::init();
+function nhrotm_options_table_manager() {
+    return Nhrotm_Options_Table_Manager::init();
 }
 
 //Call the plugin
-nhrrob_options_table_manager();
+nhrotm_options_table_manager();

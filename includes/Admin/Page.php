@@ -1,8 +1,8 @@
 <?php
 
-namespace Nhrrob\NhrrobOptionsTableManager\Admin;
+namespace Nhrotm\OptionsTableManager\Admin;
 
-use Nhrrob\NhrrobOptionsTableManager\App;
+use Nhrotm\OptionsTableManager\App;
 
 /**
  * Page Class

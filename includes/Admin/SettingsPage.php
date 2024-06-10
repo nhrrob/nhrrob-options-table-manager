@@ -1,8 +1,8 @@
 <?php
 
-namespace Nhrrob\NhrrobOptionsTableManager\Admin;
+namespace Nhrotm\OptionsTableManager\Admin;
 
-use Nhrrob\NhrrobOptionsTableManager\Traits\GlobalTrait;
+use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 /**
  * The Menu handler class
@@ -31,7 +31,7 @@ class SettingsPage extends Page
         $options = wp_load_alloptions();
         
         ob_start();
-		include NHRROB_OPTIONS_TABLE_MANAGER_VIEWS_PATH . '/admin/settings/index.php';
+		include NHROTM_VIEWS_PATH . '/admin/settings/index.php';
         $content = ob_get_clean();
         echo wp_kses( $content, $this->allowed_html() );
     }

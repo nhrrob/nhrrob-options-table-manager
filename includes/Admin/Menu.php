@@ -1,8 +1,8 @@
 <?php
 
-namespace Nhrrob\NhrrobOptionsTableManager\Admin;
+namespace Nhrotm\OptionsTableManager\Admin;
 
-use Nhrrob\NhrrobOptionsTableManager\Traits\GlobalTrait;
+use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 /**
  * The Menu handler class
@@ -26,12 +26,12 @@ class Menu
      */
     public function admin_menu()
     {
-        $parent_slug = 'nhrrob-options-table-manager';
-        $capability = apply_filters('nhrrob-options-table-manager/menu/capability', 'manage_options');
+        $parent_slug = 'nhrotm-options-table-manager';
+        $capability = apply_filters('nhrotm-options-table-manager/menu/capability', 'manage_options');
 
-        // $hook = add_menu_page(__('Options Table', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
-        // add_submenu_page( $parent_slug, __( 'Settings', 'nhrrob-options-table-manager' ), __( 'Settings', 'nhrrob-options-table-manager' ), $capability, 'nhrrob-options-table-manager-settings', [ $this, 'settings_page' ] );
-        $hook = add_submenu_page( 'tools.php', __( 'Options Table', 'nhrrob-options-table-manager' ), __( 'Options Table', 'nhrrob-options-table-manager' ), $capability, $parent_slug, [ $this, 'settings_page' ] );
+        // $hook = add_menu_page(__('Options Table', 'nhrotm-options-table-manager'), __('Options Table', 'nhrotm-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
+        // add_submenu_page( $parent_slug, __( 'Settings', 'nhrotm-options-table-manager' ), __( 'Settings', 'nhrotm-options-table-manager' ), $capability, 'nhrotm-options-table-manager-settings', [ $this, 'settings_page' ] );
+        $hook = add_submenu_page( 'tools.php', __( 'Options Table', 'nhrotm-options-table-manager' ), __( 'Options Table', 'nhrotm-options-table-manager' ), $capability, $parent_slug, [ $this, 'settings_page' ] );
 
         add_action('admin_head-' . $hook, [$this, 'enqueue_assets']);
     }
@@ -59,11 +59,11 @@ class Menu
      */
     public function enqueue_assets()
     {
-        wp_enqueue_style('nhrrob-options-table-manager-datatable-style');
-        wp_enqueue_style('nhrrob-options-table-manager-admin-style');
+        wp_enqueue_style('nhrotm-options-table-manager-datatable-style');
+        wp_enqueue_style('nhrotm-options-table-manager-admin-style');
 
         wp_enqueue_script('jquery');
-        wp_enqueue_script('nhrrob-options-table-manager-datatable-script');
-        wp_enqueue_script('nhrrob-options-table-manager-admin-script');
+        wp_enqueue_script('nhrotm-options-table-manager-datatable-script');
+        wp_enqueue_script('nhrotm-options-table-manager-admin-script');
     }
 }

@@ -6,5 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Nhrrob\\NhrrobOptionsTableManager\\' => array($baseDir . '/includes'),
+    'Nhrotm\\OptionsTableManager\\' => array($baseDir . '/includes'),
 );

@@ -9,12 +9,12 @@ class ComposerStaticInit9da0bb700250b4b33b32a0a2bf7ec409
     public static $prefixLengthsPsr4 = array (
         'N' => 
         array (
-            'Nhrrob\\NhrrobOptionsTableManager\\' => 33,
+            'Nhrotm\\OptionsTableManager\\' => 33,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Nhrrob\\NhrrobOptionsTableManager\\' => 
+        'Nhrotm\\OptionsTableManager\\' => 
         array (
             0 => __DIR__ . '/../..' . '/includes',
         ),

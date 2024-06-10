@@ -1,6 +1,6 @@
 <?php
 
-namespace Nhrrob\NhrrobOptionsTableManager\Traits;
+namespace Nhrotm\OptionsTableManager\Traits;
 
 trait GlobalTrait
 {

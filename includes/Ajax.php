@@ -1,6 +1,6 @@
 <?php
 
-namespace Nhrrob\NhrrobOptionsTableManager;
+namespace Nhrotm\OptionsTableManager;
 
 /**
  * Ajax handler class
