@@ -76,8 +76,8 @@ class Assets {
 
         wp_localize_script( 'nhrotm-options-table-manager-admin-script', 'nhrotmOptionsTableManager', [
             'nonce' => wp_create_nonce( 'nhrotm-options-table-manager-admin-nonce' ),
-            'confirm' => __( 'Are you sure?', 'nhrotm-options-table-manager' ),
-            'error' => __( 'Something went wrong', 'nhrotm-options-table-manager' ),
+            'confirm' => __( 'Are you sure?', 'nhrrob-options-table-manager' ),
+            'error' => __( 'Something went wrong', 'nhrrob-options-table-manager' ),
         ] );
     }
 }

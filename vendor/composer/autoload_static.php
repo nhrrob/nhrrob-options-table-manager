@@ -9,7 +9,7 @@ class ComposerStaticInit9da0bb700250b4b33b32a0a2bf7ec409
     public static $prefixLengthsPsr4 = array (
         'N' => 
         array (
-            'Nhrotm\\OptionsTableManager\\' => 33,
+            'Nhrotm\\OptionsTableManager\\' => 27,
         ),
     );
 

@@ -1,5 +1,5 @@
 {
-    "name": "nhrrob/nhrotm-options-table-manager",
+    "name": "nhrotm/options-table-manager",
     "description": "Clean DataTable view of wp-options table to make decisions and boost your site performance!",
     "type": "wordpress-plugin",
     "license": "GPLv2",

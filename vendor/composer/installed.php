@@ -5,18 +5,18 @@
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'a8e88206d761ac1e3e1e9b78d756acad3f929fbd',
-        'name' => 'nhrrob/nhrotm-options-table-manager',
+        'reference' => '64826cdd2e3b0820c07d4cb39c0c0b9b28c78e07',
+        'name' => 'nhrotm/options-table-manager',
         'dev' => true,
     ),
     'versions' => array(
-        'nhrrob/nhrotm-options-table-manager' => array(
+        'nhrotm/options-table-manager' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'a8e88206d761ac1e3e1e9b78d756acad3f929fbd',
+            'reference' => '64826cdd2e3b0820c07d4cb39c0c0b9b28c78e07',
             'dev_requirement' => false,
         ),
     ),
