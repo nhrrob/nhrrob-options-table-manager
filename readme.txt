@@ -60,7 +60,7 @@ No. But it helps you to make decisions on how to reduce the db size and make you
 
 == Changelog ==
 
-= 1.0.1 - 10/06/2024 =
+= 1.0.1 - 26/06/2024 =
 - Prefix updated
 - Few minor bug fixing & improvements
 
