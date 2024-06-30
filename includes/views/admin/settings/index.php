@@ -39,15 +39,15 @@
             $name = esc_attr($option_name);
         ?>
             <tr>
-                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
-                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 break-words text-sm text-gray-500"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
+                <td class="px-6 py-4 break-words text-sm text-gray-500">
                     <?php if (str_contains($value, "\n")) : ?>
                         <p class="<?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"><?php echo esc_textarea($value); ?></p>
                     <?php else : ?>
                         <p class="regular-text <?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"> <?php echo esc_attr($value); ?> </p>
                     <?php endif; ?>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap nowrap text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
+                <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
