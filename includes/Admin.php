@@ -39,7 +39,7 @@ class Admin extends App {
         $nhrotm_plugin = plugin_basename(NHROTM_FILE);
 
         if ($file == $nhrotm_plugin && current_user_can('manage_options')) {
-            $links[] = sprintf('<a href="%s">%s</a>', admin_url("admin.php?page={$this->page_slug}"), __('Option Table', 'nhrrob-options-table-manager'));
+            $links[] = sprintf('<a href="%s">%s</a>', admin_url("tools.php?page={$this->page_slug}"), __('Option Table', 'nhrrob-options-table-manager'));
         }
 
         return $links;

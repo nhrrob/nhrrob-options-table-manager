@@ -1,10 +1,10 @@
 === NHR Options Table Manager ===
 Contributors: nhrrob
-Tags: options table, options manager, options table analytics, wp options, wp optimization
+Tags: wp options, options table manager, wp optimization, database management, data cleanup, site performance
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,11 @@ No. But it helps you to make decisions on how to reduce the db size and make you
 
 
 == Changelog ==
+
+= 1.0.3 - 08/07/2024 =
+- Added: Author URI updated using org profile. Props @jakariaistauk
+- Fixed: Settings page not shown as active after clicking from plugins page
+- Few minor bug fixing & improvements
 
 = 1.0.2 - 30/06/2024 =
 - Added: Settings page link on plugins page. Props @himadree12
