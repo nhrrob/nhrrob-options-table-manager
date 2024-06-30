@@ -4,7 +4,7 @@
  * Plugin URI: http://wordpress.org/plugins/nhrrob-options-table-manager/
  * Description: Clean DataTable view of wp-options table to make decisions and boost your site performance!
  * Author: Nazmul Hasan Robin
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-options-table-manager
@@ -26,7 +26,7 @@ final class Nhrotm_Options_Table_Manager {
      *
      * @var string
      */
-    const nhrotm_version = '1.0.1';
+    const nhrotm_version = '1.0.2';
 
     /**
      * Class construcotr
