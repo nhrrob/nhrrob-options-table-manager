@@ -3,7 +3,7 @@
 <div class="wrap nhrotm-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
-    <table id="options-table" class="notm-form-table form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
+    <table class="notm-form-table form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
         <thead class="bg-gray-50">
             <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
@@ -12,7 +12,8 @@
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-        <?php foreach ((array) $options as $option_name => $option_value) :
+        <?php
+        foreach ((array) $options as $option_name => $option_value) :
             $disabled = false;
             if ('' === $option_name) {
                 continue;
@@ -37,20 +38,20 @@
 
             $name = esc_attr($option_name);
 
-            // Add class for vertical scrolling if content is too long
-            $max_length = 200; // Adjust as needed
+            // Truncate value if it's too long
+            $max_length = 200; // Adjust the max length as needed
             $class .= (strlen($value) > $max_length) ? ' nhrotm-scroll-y' : '';
         ?>
             <tr>
-                <td class="px-6 py-4 break-words text-sm text-gray-500 border border-gray-200"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
-                <td class="px-6 py-4 break-words text-sm text-gray-500 border border-gray-200">
+                <td class="px-6 py-4 break-words text-sm text-gray-500"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
+                <td class="px-6 py-4 break-words text-sm text-gray-500">
                     <?php if (str_contains($value, "\n")) : ?>
                         <p class="<?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"><?php echo esc_textarea($value); ?></p>
                     <?php else : ?>
                         <p class="regular-text <?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"> <?php echo esc_attr($value); ?> </p>
                     <?php endif; ?>
                 </td>
-                <td class="px-6 py-4 break-words text-sm text-gray-500 border border-gray-200"> Yes <?php //echo esc_html($option->autoload); ?> </td>
+                <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -81,14 +82,14 @@
 
     // Display results
     ?>
-    <div class="mt-8">
+    <div class="prefix-count-container">
         <h3 class="text-2xl mb-4"><?php esc_html_e( 'Prefix Count', 'nhrrob-options-table-manager'); ?></h3> 
-        <ul class="divide-y divide-gray-200">
+        <ul class="prefix-count-list">
             <?php foreach ($prefix_counts as $prefix => $count) : ?>
                 <?php if ($count > 5) : ?>
-                    <li class="py-2">
-                        <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-xs font-semibold text-gray-700 mr-2"><?php echo esc_html( $prefix ); ?></span>
-                        <span><?php echo esc_html( $count ); ?></span>
+                    <li class="prefix-count-item">
+                        <span class="prefix"><?php echo esc_html($prefix); ?></span>
+                        <span class="count"><?php echo esc_html($count); ?></span>
                     </li>
                 <?php endif; ?>
             <?php endforeach; ?>
