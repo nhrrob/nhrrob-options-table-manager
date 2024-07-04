@@ -29,6 +29,18 @@
                     $value    = 'SERIALIZED DATA';
                     $disabled = true;
                     $class    = 'all-options disabled';
+
+                    // Attempt to unserialize the data
+                    // $unserialized_value = maybe_unserialize($option_value);
+
+                    // // Check if unserialization was successful
+                    // if ($unserialized_value !== false) {
+                    //     // If successful, use the unserialized data
+                    //     $value = print_r($unserialized_value, true); // You can use print_r for debugging purposes
+                    // } else {
+                    //     // If unsuccessful, fallback to showing it's serialized
+                    //     $value = 'Serialized Data: ' . esc_html($option_value);
+                    // }
                 }
             } else {
                 $value               = $option_value;
