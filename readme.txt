@@ -11,6 +11,8 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Manage wp-options table and get analytics of the options usage.
 
 == Description ==
+- 🚀 [GitHub Repository](https://github.com/nhrrob/nhrrob-options-table-manager): Found a bug or have a feature request? Let us know!
+- 💬 [Slack Community](https://join.slack.com/t/nhrrob/shared_invite/zt-2m3nyrl1f-eKv7wwJzsiALcg0nY6~e0Q): Got questions or just want to chat? Come hang out with us on Slack!
 
 Are you fed up with the size of wp otions table? You are not alone! 
 Install this plugin and get a fine view of the table and analytics.
