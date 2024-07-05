@@ -3,7 +3,7 @@
 <div class="wrap nhrotm-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
-    <table class="form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
+    <table class="nhrotm-form-table form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
         <thead class="bg-gray-50">
             <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
@@ -29,6 +29,18 @@
                     $value    = 'SERIALIZED DATA';
                     $disabled = true;
                     $class    = 'all-options disabled';
+
+                    // Attempt to unserialize the data
+                    // $unserialized_value = maybe_unserialize($option_value);
+
+                    // // Check if unserialization was successful
+                    // if ($unserialized_value !== false) {
+                    //     // If successful, use the unserialized data
+                    //     $value = print_r($unserialized_value, true); // You can use print_r for debugging purposes
+                    // } else {
+                    //     // If unsuccessful, fallback to showing it's serialized
+                    //     $value = 'Serialized Data: ' . esc_html($option_value);
+                    // }
                 }
             } else {
                 $value               = $option_value;
@@ -37,6 +49,10 @@
             }
 
             $name = esc_attr($option_name);
+
+            // Truncate value if it's too long
+            $max_length = 200; // Adjust the max length as needed
+            $class .= (strlen($value) > $max_length) ? ' nhrotm-scroll-y' : '';
         ?>
             <tr>
                 <td class="px-6 py-4 break-words text-sm text-gray-500"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
@@ -78,15 +94,17 @@
 
     // Display results
     ?>
-    <h3 class="text-2xl mb-4"><?php esc_html_e( 'Prefix Count', 'nhrrob-options-table-manager'); ?></h3> 
-    <?php
-    echo '<ul>';
-    foreach ($prefix_counts as $prefix => $count) {
-        if( $count > 5 ){
-            echo '<li>' . esc_html( $prefix ) . ': ' . esc_html( $count ) . '</li>';
-        }
-    }
-    echo '</ul>';
-    
-    ?>
+    <div class="prefix-count-container">
+        <h3 class="text-2xl mb-4"><?php esc_html_e( 'Prefix Count', 'nhrrob-options-table-manager'); ?></h3> 
+        <ul class="prefix-count-list">
+            <?php foreach ($prefix_counts as $prefix => $count) : ?>
+                <?php if ($count > 5) : ?>
+                    <li class="prefix-count-item">
+                        <span class="prefix"><?php echo esc_html($prefix); ?></span>
+                        <span class="count"><?php echo esc_html($count); ?></span>
+                    </li>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </ul>
+    </div>
 </div>

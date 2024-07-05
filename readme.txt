@@ -1,16 +1,18 @@
 === NHR Options Table Manager ===
 Contributors: nhrrob
-Tags: options table, options manager, options table analytics, wp options, wp optimization
+Tags: wp options, wp options table manager, wp optimization, wp options table, wp options table viewer
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Manage wp-options table and get analytics of the options usage.
 
 == Description ==
+- 🚀 [GitHub Repository](https://github.com/nhrrob/nhrrob-options-table-manager): Found a bug or have a feature request? Let us know!
+- 💬 [Slack Community](https://join.slack.com/t/nhrrob/shared_invite/zt-2m3nyrl1f-eKv7wwJzsiALcg0nY6~e0Q): Got questions or just want to chat? Come hang out with us on Slack!
 
 Are you fed up with the size of wp otions table? You are not alone! 
 Install this plugin and get a fine view of the table and analytics.
@@ -59,6 +61,16 @@ No. But it helps you to make decisions on how to reduce the db size and make you
 
 
 == Changelog ==
+
+= 1.0.3 - 05/07/2024 =
+- Added: Author URI updated using org profile. Props @jakariaistauk
+- Added: GitHub and Slack community links in readme.
+- Improved: Scroll bar added for very long contents in the table. Props @jakariaistauk 
+- Improved: Table UI fully revamped. Now prefix count is shown using a table too.
+- Fixed: Settings page not shown as active after clicking from plugins page
+- Fixed: Menu design breaks for some plugins due to conflict with tailwind css. Props Md Toufiqul Islam (scriptertoufiq)
+- Fixed: Pagination select box spacing issue. Props Md Toufiqul Islam (scriptertoufiq)
+- Few minor bug fixing & improvements
 
 = 1.0.2 - 30/06/2024 =
 - Added: Settings page link on plugins page. Props @himadree12
