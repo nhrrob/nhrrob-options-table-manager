@@ -1,6 +1,6 @@
 === NHR Options Table Manager ===
 Contributors: nhrrob
-Tags: wp options, options table manager, wp optimization, database management, data cleanup, site performance
+Tags: wp options, wp options table manager, wp optimization, wp options table, wp options table viewer
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
