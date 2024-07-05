@@ -62,9 +62,14 @@ No. But it helps you to make decisions on how to reduce the db size and make you
 
 == Changelog ==
 
-= 1.0.3 - 08/07/2024 =
+= 1.0.3 - 05/07/2024 =
 - Added: Author URI updated using org profile. Props @jakariaistauk
+- Added: GitHub and Slack community links in readme.
+- Improved: Scroll bar added for very long contents in the table. Props @jakariaistauk 
+- Improved: Table UI fully revamped. Now prefix count is shown using a table too.
 - Fixed: Settings page not shown as active after clicking from plugins page
+- Fixed: Menu design breaks for some plugins due to conflict with tailwind css. Props Md Toufiqul Islam (scriptertoufiq)
+- Fixed: Pagination select box spacing issue. Props Md Toufiqul Islam (scriptertoufiq)
 - Few minor bug fixing & improvements
 
 = 1.0.2 - 30/06/2024 =
