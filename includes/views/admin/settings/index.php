@@ -89,23 +89,6 @@
         </tfoot>
     </table>
 
-    <!-- Add new option form -->
-    <!-- <div class="prefix-count-container">
-        <form id="nhrotm-add-option-form" class="my-4 p-4 border border-gray-300 rounded nhrotm-add-option-form">
-            <h4 class="text-lg font-medium mb-2"><?php esc_html_e('Add New Option', 'nhrrob-optiopns-table-manager'); ?></h4>
-            <div class="mb-3">
-                <label class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Name:', 'nhrrob-optiopns-table-manager'); ?></label>
-                <input type="text" id="new_option_name" name="new_option_name" required class="block w-full mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm new_option_name">
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Value:', 'nhrrob-optiopns-table-manager'); ?></label>
-                <input type="text" id="new_option_value" name="new_option_value" required class="block w-full mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm new_option_value">
-            </div>
-            <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 nhrotm-add-option-button"><?php esc_html_e('Add Option', 'nhrrob-optiopns-table-manager'); ?></button>
-        </form>
-    </div> -->
-
-
     <?php
     // Count occurrences of each prefix
     $prefix_counts = array();
