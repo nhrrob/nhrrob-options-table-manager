@@ -9,6 +9,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Value', 'nhrrob-options-table-manager'); ?></th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php esc_html_e('Actions', 'nhrrob-options-table-manager'); ?></th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -55,8 +56,8 @@
             $class .= (strlen($value) > $max_length) ? ' nhrotm-scroll-y' : '';
         ?>
             <tr>
-                <td class="px-6 py-4 break-words text-sm text-gray-500"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
-                <td class="px-6 py-4 break-words text-sm text-gray-500">
+                <td class="px-6 py-4 break-words text-sm text-gray-500 nhrotm-option-name"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
+                <td class="px-6 py-4 break-words text-sm text-gray-500 nhrotm-option-value">
                     <?php if (str_contains($value, "\n")) : ?>
                         <p class="<?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"><?php echo esc_textarea($value); ?></p>
                     <?php else : ?>
@@ -64,6 +65,10 @@
                     <?php endif; ?>
                 </td>
                 <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                    <button class="nhrotm-edit-option-button bg-blue-500 text-white px-4 py-2 rounded"><?php esc_html_e('Edit', 'nhrrob-options-table-manager'); ?></button>
+                    <button class="nhrotm-delete-option-button bg-red-500 text-white px-4 py-2 rounded"><?php esc_html_e('Delete', 'nhrrob-options-table-manager'); ?></button>
+                </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -73,6 +78,7 @@
                 <th class="px-4 py-2"><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
                 <th class="px-4 py-2"><?php esc_html_e('Value', 'nhrrob-options-table-manager'); ?></th>
                 <th class="px-4 py-2"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                <th class="px-4 py-2"><?php esc_html_e('Actions', 'nhrrob-options-table-manager'); ?></th>
             </tr>
         </tfoot>
     </table>
