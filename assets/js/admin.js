@@ -83,40 +83,38 @@
         });
 
         // Add option
-        $('#nhrotm-add-option-form').on('submit', function(e) {
-            e.preventDefault();
+        // $('.nhrotm-add-option-button').on('click', function() {
+        //     let newOptionName = $('#new_option_name').val();
+        //     let newOptionValue = $('#new_option_value').val();
+            
+        //     console.log(newOptionName);
+        //     console.log(newOptionValue);
+        //     if (newOptionName === '' || newOptionValue === '') {
+        //         alert('Please fill in both option name and value.');
+        //         return;
+        //     }
     
-            let newOptionName = $('#new-option-name').val().trim();
-            let newOptionValue = $('#new-option-value').val().trim();
-    
-            if (newOptionName === '' || newOptionValue === '') {
-                alert('Please fill in both option name and value.');
-                return;
-            }
-    
-            $.ajax({
-                type: 'POST',
-                url: nhrotmOptionsTableManager.ajaxUrl,
-                data: {
-                    action: 'nhrotm_add_option',
-                    nonce: nhrotmOptionsTableManager.nonce,
-                    new_option_name: newOptionName,
-                    new_option_value: newOptionValue
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Optionally update UI or notify user
-                        alert('Option added successfully!');
-                        // Example: Reload the page to reflect changes
-                        location.reload();
-                    } else {
-                        alert('Error: ' + response.data);
-                    }
-                },
-                error: function(response) {
-                    alert('Error: ' + response.responseText);
-                }
-            });
-        });
+        //     $.ajax({
+        //         type: 'POST',
+        //         url: nhrotmOptionsTableManager.ajaxUrl,
+        //         data: {
+        //             action: 'nhrotm_add_option',
+        //             nonce: nhrotmOptionsTableManager.nonce,
+        //             new_option_name: newOptionName,
+        //             new_option_value: newOptionValue
+        //         },
+        //         success: function(response) {
+        //             if (response.success) {
+        //                 alert('Option added successfully!');
+        //                 location.reload(); // Example: Reload the page to reflect changes
+        //             } else {
+        //                 alert('Error: ' + response.data);
+        //             }
+        //         },
+        //         error: function(response) {
+        //             alert('Error: ' + response.responseText);
+        //         }
+        //     });
+        // });
     }); 
 })(jQuery);

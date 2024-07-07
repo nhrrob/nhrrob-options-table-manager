@@ -14,7 +14,7 @@ class Ajax extends App{
         //
         add_action('wp_ajax_nhrotm_edit_option', [ $this, 'edit_option' ]);
         add_action('wp_ajax_nhrotm_delete_option', [ $this, 'delete_option' ]);
-        add_action('wp_ajax_nhrotm_add_option', [ $this, 'add_new_option' ]);
+        // add_action('wp_ajax_nhrotm_add_option', [ $this, 'add_new_option' ]);
     }
     
     public function edit_option() {
@@ -90,38 +90,38 @@ class Ajax extends App{
         wp_die();
     }
     
-    public function add_new_option(){
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
-            wp_send_json_error('Invalid nonce');
-            wp_die();
-        }
+    // public function add_new_option(){
+    //     if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+    //         wp_send_json_error('Invalid nonce');
+    //         wp_die();
+    //     }
     
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Insufficient permissions');
-            wp_die();
-        }
+    //     if (!current_user_can('manage_options')) {
+    //         wp_send_json_error('Insufficient permissions');
+    //         wp_die();
+    //     }
     
-        $new_option_name = isset($_POST['new_option_name']) ? sanitize_text_field($_POST['new_option_name']) : '';
-        $new_option_value = isset($_POST['new_option_value']) ? sanitize_text_field($_POST['new_option_value']) : '';
+    //     $new_option_name = isset($_POST['new_option_name']) ? sanitize_text_field($_POST['new_option_name']) : '';
+    //     $new_option_value = isset($_POST['new_option_value']) ? sanitize_text_field($_POST['new_option_value']) : '';
     
-        if (empty($new_option_name) || empty($new_option_value)) {
-            wp_send_json_error('Option name and value are required');
-            wp_die();
-        }
+    //     if (empty($new_option_name) || empty($new_option_value)) {
+    //         wp_send_json_error('Option name and value are required');
+    //         wp_die();
+    //     }
     
-        // Check if option already exists
-        if (get_option($new_option_name) !== false) {
-            wp_send_json_error('Option already exists');
-            wp_die();
-        }
+    //     // Check if option already exists
+    //     if (get_option($new_option_name) !== false) {
+    //         wp_send_json_error('Option already exists');
+    //         wp_die();
+    //     }
     
-        // Add the new option
-        if (add_option($new_option_name, $new_option_value)) {
-            wp_send_json_success('Option added successfully');
-        } else {
-            wp_send_json_error('Failed to add option');
-        }
+    //     // Add the new option
+    //     if (add_option($new_option_name, $new_option_value)) {
+    //         wp_send_json_success('Option added successfully');
+    //     } else {
+    //         wp_send_json_error('Failed to add option');
+    //     }
     
-        wp_die();
-    }
+    //     wp_die();
+    // }
 }
