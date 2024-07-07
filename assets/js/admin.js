@@ -16,14 +16,14 @@
         // Edit Options
         $('.nhrotm-options-table-manager .nhrotm-edit-option-button').on('click', function() {
             let row = $(this).closest('tr');
-            let optionName = $.trim(row.find('.nhrotm-option-name').text());
+            let optionName = row.find('.nhrotm-option-name').text().trim();
 
             if (isProtected(optionName)) {
                 alert('This option is protected and cannot be edited.');
                 return;
             }
 
-            let newValue = prompt('Enter new value for ' + optionName + ':', $.trim(row.find('.nhrotm-option-value').text()));
+            let newValue = prompt('Enter new value for ' + optionName + ':', row.find('.nhrotm-option-value').text().trim());
 
             if (newValue !== null) {
                 $.ajax({
@@ -52,7 +52,7 @@
         // Delete Options
         $('.nhrotm-options-table-manager .nhrotm-delete-option-button').on('click', function() {
             let row = $(this).closest('tr');
-            let optionName = $.trim(row.find('.nhrotm-option-name').text());
+            let optionName = row.find('.nhrotm-option-name').text().trim();
 
             if (isProtected(optionName)) {
                 alert('This option is protected and cannot be deleted.');
@@ -80,6 +80,43 @@
                     }
                 });
             }
+        });
+
+        // Add option
+        $('#nhrotm-add-option-form').on('submit', function(e) {
+            e.preventDefault();
+    
+            let newOptionName = $('#new-option-name').val().trim();
+            let newOptionValue = $('#new-option-value').val().trim();
+    
+            if (newOptionName === '' || newOptionValue === '') {
+                alert('Please fill in both option name and value.');
+                return;
+            }
+    
+            $.ajax({
+                type: 'POST',
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                data: {
+                    action: 'nhrotm_add_option',
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    new_option_name: newOptionName,
+                    new_option_value: newOptionValue
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Optionally update UI or notify user
+                        alert('Option added successfully!');
+                        // Example: Reload the page to reflect changes
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.data);
+                    }
+                },
+                error: function(response) {
+                    alert('Error: ' + response.responseText);
+                }
+            });
         });
     }); 
 })(jQuery);

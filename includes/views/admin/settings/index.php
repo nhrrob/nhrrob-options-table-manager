@@ -1,4 +1,5 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
+<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly 
+?>
 
 <div class="wrap nhrotm-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
@@ -13,68 +14,69 @@
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-        <?php
-        foreach ((array) $options as $option_name => $option_value) :
-            $disabled = false;
-            if ('' === $option_name) {
-                continue;
-            }
+            <?php
+            foreach ((array) $options as $option_name => $option_value) :
+                $disabled = false;
+                if ('' === $option_name) {
+                    continue;
+                }
 
-            $is_protected = in_array( $option_name, $protected_options );
-            
-            if (is_serialized($option_value)) {
-                if (is_serialized_string($option_value)) {
-                    // This is a serialized string, so we should display it.
-                    $value               = maybe_unserialize($option_value);
+                $is_protected = in_array($option_name, $protected_options);
+
+                if (is_serialized($option_value)) {
+                    if (is_serialized_string($option_value)) {
+                        // This is a serialized string, so we should display it.
+                        $value               = maybe_unserialize($option_value);
+                        $options_to_update[] = $option_name;
+                        $class               = 'all-options';
+                    } else {
+                        $value    = 'SERIALIZED DATA';
+                        $disabled = true;
+                        $class    = 'all-options disabled';
+
+                        // Attempt to unserialize the data
+                        // $unserialized_value = maybe_unserialize($option_value);
+
+                        // // Check if unserialization was successful
+                        // if ($unserialized_value !== false) {
+                        //     // If successful, use the unserialized data
+                        //     $value = print_r($unserialized_value, true); // You can use print_r for debugging purposes
+                        // } else {
+                        //     // If unsuccessful, fallback to showing it's serialized
+                        //     $value = 'Serialized Data: ' . esc_html($option_value);
+                        // }
+                    }
+                } else {
+                    $value               = $option_value;
                     $options_to_update[] = $option_name;
                     $class               = 'all-options';
-                } else {
-                    $value    = 'SERIALIZED DATA';
-                    $disabled = true;
-                    $class    = 'all-options disabled';
-
-                    // Attempt to unserialize the data
-                    // $unserialized_value = maybe_unserialize($option_value);
-
-                    // // Check if unserialization was successful
-                    // if ($unserialized_value !== false) {
-                    //     // If successful, use the unserialized data
-                    //     $value = print_r($unserialized_value, true); // You can use print_r for debugging purposes
-                    // } else {
-                    //     // If unsuccessful, fallback to showing it's serialized
-                    //     $value = 'Serialized Data: ' . esc_html($option_value);
-                    // }
                 }
-            } else {
-                $value               = $option_value;
-                $options_to_update[] = $option_name;
-                $class               = 'all-options';
-            }
 
-            $name = esc_attr($option_name);
+                $name = esc_attr($option_name);
 
-            // Truncate value if it's too long
-            $max_length = 200; // Adjust the max length as needed
-            $class .= (strlen($value) > $max_length) ? ' nhrotm-scroll-y' : '';
-        ?>
-            <tr>
-                <td class="px-6 py-4 break-words text-sm text-gray-500 nhrotm-option-name"><label for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html($option_name); ?></label></td>
-                <td class="px-6 py-4 break-words text-sm text-gray-500 nhrotm-option-value">
-                    <?php if (str_contains($value, "\n")) : ?>
-                        <p class="<?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"><?php echo esc_textarea($value); ?></p>
-                    <?php else : ?>
-                        <p class="regular-text <?php echo esc_attr( $class ); ?>" id="<?php echo esc_attr( $name ); ?>"> <?php echo esc_attr($value); ?> </p>
-                    <?php endif; ?>
-                </td>
-                <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
-                <td class="px-6 py-4 text-sm text-gray-500">
-                    <?php if( ! $is_protected ) : ?>
-                        <button class="nhrotm-edit-option-button bg-blue-500 text-white px-4 py-2 rounded <?php echo $value === 'SERIALIZED DATA' ? esc_attr( 'invisible' ) : esc_attr('') ?>"><?php esc_html_e('Edit', 'nhrrob-options-table-manager'); ?></button>
-                        <button class="nhrotm-delete-option-button bg-red-500 text-white px-4 py-2 rounded"><?php esc_html_e('Delete', 'nhrrob-options-table-manager'); ?></button>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        <?php endforeach; ?>
+                // Truncate value if it's too long
+                $max_length = 200; // Adjust the max length as needed
+                $class .= (strlen($value) > $max_length) ? ' nhrotm-scroll-y' : '';
+            ?>
+                <tr>
+                    <td class="px-6 py-4 break-words text-sm text-gray-500 nhrotm-option-name"><label for="<?php echo esc_attr($name); ?>"><?php echo esc_html($option_name); ?></label></td>
+                    <td class="px-6 py-4 break-words text-sm text-gray-500 nhrotm-option-value">
+                        <?php if (str_contains($value, "\n")) : ?>
+                            <p class="<?php echo esc_attr($class); ?>" id="<?php echo esc_attr($name); ?>"><?php echo esc_textarea($value); ?></p>
+                        <?php else : ?>
+                            <p class="regular-text <?php echo esc_attr($class); ?>" id="<?php echo esc_attr($name); ?>"> <?php echo esc_attr($value); ?> </p>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); 
+                                                                                    ?> </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        <?php if (!$is_protected) : ?>
+                            <button class="nhrotm-edit-option-button bg-blue-500 text-white px-4 py-2 rounded <?php echo $value === 'SERIALIZED DATA' ? esc_attr('invisible') : esc_attr('') ?>"><?php esc_html_e('Edit', 'nhrrob-options-table-manager'); ?></button>
+                            <button class="nhrotm-delete-option-button bg-red-500 text-white px-4 py-2 rounded"><?php esc_html_e('Delete', 'nhrrob-options-table-manager'); ?></button>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
 
         <tfoot>
@@ -86,6 +88,21 @@
             </tr>
         </tfoot>
     </table>
+
+    <!-- Add new option form -->
+    <form id="nhrotm-add-option-form" class="my-4 p-4 border border-gray-300 rounded">
+        <h4 class="text-lg font-medium mb-2"><?php esc_html_e('Add New Option', 'nhrrob-optiopns-table-manager'); ?></h4>
+        <div class="mb-3">
+            <label for="new-option-name" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Name:', 'nhrrob-optiopns-table-manager'); ?></label>
+            <input type="text" id="new-option-name" name="new_option_name" required class="block w-full mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+        <div class="mb-3">
+            <label for="new-option-value" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Value:', 'nhrrob-optiopns-table-manager'); ?></label>
+            <input type="text" id="new-option-value" name="new_option_value" required class="block w-full mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"><?php esc_html_e('Add Option', 'nhrrob-optiopns-table-manager'); ?></button>
+    </form>
+
 
     <?php
     // Count occurrences of each prefix
@@ -105,7 +122,7 @@
     // Display results
     ?>
     <div class="prefix-count-container">
-        <h3 class="text-2xl mb-4"><?php esc_html_e( 'Prefix Count', 'nhrrob-options-table-manager'); ?></h3> 
+        <h3 class="text-2xl mb-4"><?php esc_html_e('Prefix Count', 'nhrrob-options-table-manager'); ?></h3>
         <ul class="prefix-count-list">
             <?php foreach ($prefix_counts as $prefix => $count) : ?>
                 <?php if ($count > 5) : ?>
