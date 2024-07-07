@@ -2,15 +2,13 @@
 
 namespace Nhrotm\OptionsTableManager\Admin;
 
-use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
+use Nhrotm\OptionsTableManager\App;
 
 /**
  * The Menu handler class
  */
-class Menu
+class Menu extends App
 {
-    use GlobalTrait;
-
     /**
      * Initialize the class
      */
@@ -59,11 +57,11 @@ class Menu
      */
     public function enqueue_assets()
     {
-        wp_enqueue_style('nhrotm-options-table-manager-datatable-style');
-        wp_enqueue_style('nhrotm-options-table-manager-admin-style');
+        wp_enqueue_style('nhrotm-datatable-style');
+        wp_enqueue_style('nhrotm-admin-style');
 
         wp_enqueue_script('jquery');
-        wp_enqueue_script('nhrotm-options-table-manager-datatable-script');
-        wp_enqueue_script('nhrotm-options-table-manager-admin-script');
+        wp_enqueue_script('nhrotm-datatable-script');
+        wp_enqueue_script('nhrotm-admin-script');
     }
 }

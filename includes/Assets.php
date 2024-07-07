@@ -5,8 +5,7 @@ namespace Nhrotm\OptionsTableManager;
 /**
  * Assets handler class
  */
-class Assets {
-
+class Assets extends App {
     /**
      * Class constructor
      */
@@ -22,12 +21,12 @@ class Assets {
      */
     public function get_scripts() {
         return [
-            'nhrotm-options-table-manager-admin-script' => [
+            'nhrotm-admin-script' => [
                 'src'     => NHROTM_ASSETS . '/js/admin.js',
                 'version' => filemtime( NHROTM_PATH . '/assets/js/admin.js' ),
                 'deps'    => [ 'jquery' ]
             ],
-            'nhrotm-options-table-manager-datatable-script' => [
+            'nhrotm-datatable-script' => [
                 'src'     => NHROTM_ASSETS . '/js/dataTables.min.js',
                 'version' => '2.0.3',
                 'deps'    => [ 'jquery' ]
@@ -42,11 +41,11 @@ class Assets {
      */
     public function get_styles() {
         return [
-            'nhrotm-options-table-manager-admin-style' => [
+            'nhrotm-admin-style' => [
                 'src'     => NHROTM_ASSETS . '/css/admin.out.css',
                 'version' => filemtime( NHROTM_PATH . '/assets/css/admin.out.css' )
             ],
-            'nhrotm-options-table-manager-datatable-style' => [
+            'nhrotm-datatable-style' => [
                 'src'     => NHROTM_ASSETS . '/css/dataTables.dataTables.min.css',
                 'version' => '2.0.3'
             ],
@@ -74,10 +73,12 @@ class Assets {
             wp_register_style( $handle, $style['src'], $deps, $style['version'] );
         }
 
-        wp_localize_script( 'nhrotm-options-table-manager-admin-script', 'nhrotmOptionsTableManager', [
-            'nonce' => wp_create_nonce( 'nhrotm-options-table-manager-admin-nonce' ),
+        wp_localize_script( 'nhrotm-admin-script', 'nhrotmOptionsTableManager', [
+            'nonce' => wp_create_nonce( 'nhrotm-admin-nonce' ),
+            'ajaxUrl' => admin_url('admin-ajax.php'),
             'confirm' => __( 'Are you sure?', 'nhrrob-options-table-manager' ),
             'error' => __( 'Something went wrong', 'nhrrob-options-table-manager' ),
+            'protected_options' => $this->get_protected_options()
         ] );
     }
 }

@@ -2,15 +2,11 @@
 
 namespace Nhrotm\OptionsTableManager\Admin;
 
-use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
-
 /**
  * The Menu handler class
  */
 class SettingsPage extends Page
 {
-    use GlobalTrait;
-
     /**
      * Initialize the class
      */
@@ -29,6 +25,7 @@ class SettingsPage extends Page
         global $wpdb;
         // $options = $wpdb->get_results( "SELECT * FROM $wpdb->options ORDER BY option_name" );
         $options = wp_load_alloptions();
+        $protected_options = $this->get_protected_options();
         
         ob_start();
 		include NHROTM_VIEWS_PATH . '/admin/settings/index.php';

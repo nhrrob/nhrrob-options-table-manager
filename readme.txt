@@ -1,14 +1,14 @@
 === NHR Options Table Manager ===
 Contributors: nhrrob
-Tags: wp options, wp options table manager, wp optimization, wp options table, wp options table viewer
+Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Manage wp-options table and get analytics of the options usage.
+Manage the wp_options table and get analytics on options usage.
 
 == Description ==
 - 🚀 [GitHub Repository](https://github.com/nhrrob/nhrrob-options-table-manager): Found a bug or have a feature request? Let us know!
@@ -19,32 +19,40 @@ Install this plugin and get a fine view of the table and analytics.
 
 `<?php echo 'Small WP Options Table, Clean Database!'; ?>`
 
-**A Simplified Solution for a Cleaner wp-options Table View**
 
-Tired of WordPress options table flooded with all the options? Say hello to NHR Options Table Manager, the lightweight and hassle-free plugin designed to help you observe wp options table.
+**A Simplified Solution for a Cleaner wp_options Table View**
+
+Tired of your WordPress options table being flooded with unnecessary options? Say hello to NHR Options Table Manager, the lightweight and hassle-free plugin designed to help you manage the wp_options table.
+
+### ✨ Major Features
+- Edit Options: Easily update existing options.
+- Delete Options: Remove unwanted options.
+- Analytics: View analytics on options usage to understand why your table is so large.
+- Enhanced UI: A revamped table UI that includes prefix count and a scroll bar for long content.
 
 ### ⚡ Instant Installation
-No complex settings or configurations needed. Install the plugin, activate it, and voila! Your will get a DataTable with all the options. Browse Tools => NHR Options Table.
+No complex settings or configurations needed. Install the plugin, activate it, and voilà! Browse to Tools => NHR Options Table for a DataTable with all the options.
 
 ### 🎯 Enhance Performance
-Review all the options and make decisions why its so big in size. Take actions accordingly. Make your site faster.
+Review all the options and understand why your table is so big. Take appropriate actions and make your site faster.
 
-### 💬 Join Thousands of Happy Users
-Join the growing community of WordPress users who trust NHR Options Table Manager to streamline their dashboard experience. Install it today and enjoy a fine view of wp-options table like never before!
+### 🌟 Join Thousands of Happy Users
+Join the growing community of WordPress users who trust NHR Options Table Manager to streamline their dashboard experience. Install it today and enjoy a fine view of wp_options table like never before!
 
 
 == Installation ==
 
-Upload the NHR Options Table Manager plugin to your blog, activate it.
+1. Upload the NHR Options Table Manager plugin to your blog.
+2. Activate it.
 
-1, 2, 3: You're done!
+That's it! You're done.
 
 
 == Frequently Asked Questions ==
 
-= Does it require any other plugin =
+= Does it require any other plugin? =
 
-No. It works as standalone plugin.
+No. It works as a standalone plugin.
 
 = Is NHR Options Table Manager compatible with all WordPress themes and plugins? =
 Yes, NHR Options Table Manager is designed to be compatible with most WordPress themes and plugins. 
@@ -56,11 +64,16 @@ No. But it helps you to make decisions on how to reduce the db size and make you
 
 == Screenshots ==
 
-1. DataTable view of the wp-options table
+1. DataTable view of the wp_options table
 2. Analytics on plugin usage by prefixes
 
 
 == Changelog ==
+
+= 1.0.4 - 07/07/2024 =
+- Added: Edit feature to update existing options. Props @arrasel403 and @obayedmamur
+- Added: Delete feature to delete existing options. Props @mehrazmorshed
+- Few minor bug fixing & improvements
 
 = 1.0.3 - 05/07/2024 =
 - Added: Author URI updated using org profile. Props @jakariaistauk
