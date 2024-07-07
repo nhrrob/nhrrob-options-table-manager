@@ -14,7 +14,7 @@
         }
 
         // Edit Options
-        $('.nhrotm-options-table-manager .nhrotm-edit-option-button').on('click', function() {
+        $(document).on('click', '.nhrotm-edit-option-button', function() {
             let row = $(this).closest('tr');
             let optionName = row.find('.nhrotm-option-name').text().trim();
 
@@ -50,7 +50,7 @@
         });
 
         // Delete Options
-        $('.nhrotm-options-table-manager .nhrotm-delete-option-button').on('click', function() {
+        $(document).on('click', '.nhrotm-delete-option-button', function() {
             let row = $(this).closest('tr');
             let optionName = row.find('.nhrotm-option-name').text().trim();
 
