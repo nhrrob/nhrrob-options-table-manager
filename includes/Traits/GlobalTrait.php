@@ -65,4 +65,17 @@ trait GlobalTrait
 
         return $allowed_tags;
     }
+
+    public function get_protected_options() {
+        return array(
+            'siteurl',
+            'home',
+            'blogname',
+            'blogdescription',
+            'admin_email',
+            'users_can_register',
+            'start_of_week',
+            // Add other core options you want to protect
+        );
+    }    
 }

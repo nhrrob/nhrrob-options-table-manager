@@ -5,7 +5,7 @@ namespace Nhrotm\OptionsTableManager;
 /**
  * Ajax handler class
  */
-class Ajax {
+class Ajax extends App{
 
     /**
      * Class constructor
@@ -37,6 +37,11 @@ class Ajax {
             wp_send_json_error('Option name is required');
             wp_die();
         }
+
+        if (in_array($option_name, $this->get_protected_options())) {
+            wp_send_json_error('This option is protected and cannot be edited');
+            wp_die();
+        }
     
         // Update the option
         if (update_option($option_name, $option_value)) {
@@ -66,6 +71,11 @@ class Ajax {
     
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
+            wp_die();
+        }
+
+        if (in_array($option_name, $this->get_protected_options())) {
+            wp_send_json_error('This option is protected and cannot be deleted');
             wp_die();
         }
     

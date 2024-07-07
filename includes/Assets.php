@@ -5,8 +5,7 @@ namespace Nhrotm\OptionsTableManager;
 /**
  * Assets handler class
  */
-class Assets {
-
+class Assets extends App {
     /**
      * Class constructor
      */
@@ -79,6 +78,7 @@ class Assets {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'confirm' => __( 'Are you sure?', 'nhrrob-options-table-manager' ),
             'error' => __( 'Something went wrong', 'nhrrob-options-table-manager' ),
+            'protected_options' => $this->get_protected_options()
         ] );
     }
 }

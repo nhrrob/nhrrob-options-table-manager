@@ -20,6 +20,8 @@
                 continue;
             }
 
+            $is_protected = in_array( $option_name, $protected_options );
+            
             if (is_serialized($option_value)) {
                 if (is_serialized_string($option_value)) {
                     // This is a serialized string, so we should display it.
@@ -66,8 +68,10 @@
                 </td>
                 <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
-                    <button class="nhrotm-edit-option-button bg-blue-500 text-white px-4 py-2 rounded"><?php esc_html_e('Edit', 'nhrrob-options-table-manager'); ?></button>
-                    <button class="nhrotm-delete-option-button bg-red-500 text-white px-4 py-2 rounded"><?php esc_html_e('Delete', 'nhrrob-options-table-manager'); ?></button>
+                    <?php if( ! $is_protected ) : ?>
+                        <button class="nhrotm-edit-option-button bg-blue-500 text-white px-4 py-2 rounded <?php echo $value === 'SERIALIZED DATA' ? esc_attr( 'invisible' ) : esc_attr('') ?>"><?php esc_html_e('Edit', 'nhrrob-options-table-manager'); ?></button>
+                        <button class="nhrotm-delete-option-button bg-red-500 text-white px-4 py-2 rounded"><?php esc_html_e('Delete', 'nhrrob-options-table-manager'); ?></button>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>

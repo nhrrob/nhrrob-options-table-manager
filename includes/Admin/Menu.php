@@ -2,15 +2,13 @@
 
 namespace Nhrotm\OptionsTableManager\Admin;
 
-use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
+use Nhrotm\OptionsTableManager\App;
 
 /**
  * The Menu handler class
  */
-class Menu
+class Menu extends App
 {
-    use GlobalTrait;
-
     /**
      * Initialize the class
      */
