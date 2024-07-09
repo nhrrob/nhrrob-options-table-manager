@@ -31,7 +31,7 @@ class Ajax extends App{
     
         // Sanitize and validate input data
         $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
-        $option_value = isset($_POST['option_value']) ? sanitize_text_field($_POST['option_value']) : '';
+        $option_value = isset($_POST['option_value']) ? stripslashes_deep(sanitize_text_field($_POST['option_value'])) : '';
     
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
