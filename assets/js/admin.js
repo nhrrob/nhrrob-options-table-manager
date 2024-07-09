@@ -82,9 +82,10 @@
             }
         });
 
+        // Add Option
         $('#nhrotm-add-option-form').on('submit', function(e) {
             e.preventDefault();
-            
+
             var data = {
                 action: 'nhrotm_add_option',
                 nonce: nhrotmOptionsTableManager.nonce,
@@ -101,6 +102,11 @@
                     alert('Failed to add option: ' + response.data);
                 }
             });
+        });
+
+        // Toggle Add Option Form Visibility
+        $('.nhrotm-add-option-form-toggle-button').on('click', function() {
+            $('.nhrotm-add-option-form-wrap').fadeToggle();
         });
 
     }); 

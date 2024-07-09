@@ -4,8 +4,13 @@
 <div class="wrap nhrotm-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
+    <!-- Button to Show/Hide Form -->
+    <button class="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4 nhrotm-add-option-form-toggle-button">
+        <?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?>
+    </button>
+
     <!-- New Option Form -->
-    <div class="mb-8 bg-white shadow-md rounded-lg p-6 max-w-lg mx-auto">
+    <div class="mb-8 bg-white shadow-md rounded-lg p-6 max-w-lg mx-auto nhrotm-add-option-form-wrap hidden">
         <h3 class="text-xl font-semibold mb-4"><?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?></h3>
         <form id="nhrotm-add-option-form" method="POST" action="#">
             <div class="mb-4">
