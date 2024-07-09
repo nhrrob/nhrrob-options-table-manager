@@ -4,6 +4,22 @@
 <div class="wrap nhrotm-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
+    <!-- New Option Form -->
+    <div class="mb-8">
+        <h3 class="text-xl mb-4"><?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?></h3>
+        <form id="nhrotm-add-option-form" method="POST" action="#">
+            <div class="mb-4">
+                <label for="new_option_name" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></label>
+                <input type="text" id="new_option_name" name="new_option_name" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+            </div>
+            <div class="mb-4">
+                <label for="new_option_value" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></label>
+                <input type="text" id="new_option_value" name="new_option_value" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+            </div>
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded"><?php esc_html_e('Add Option', 'nhrrob-options-table-manager'); ?></button>
+        </form>
+    </div>
+    
     <table class="nhrotm-form-table form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
         <thead class="bg-gray-50">
             <tr>
