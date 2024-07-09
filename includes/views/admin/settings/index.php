@@ -21,7 +21,7 @@
                 <label for="new_option_value" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></label>
                 <input type="text" id="new_option_value" name="new_option_value" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
             </div>
-            <div class="mb-4">
+            <div class="mb-4 hidden">
                 <label for="new_option_autoload" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></label>
                 <select id="new_option_autoload" name="new_option_autoload" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
                     <option value="yes"><?php esc_html_e('Yes', 'nhrrob-options-table-manager'); ?></option>
@@ -99,8 +99,7 @@
                             <p class="regular-text <?php echo esc_attr($class); ?>" id="<?php echo esc_attr($name); ?>"> <?php echo esc_attr($value); ?> </p>
                         <?php endif; ?>
                     </td>
-                    <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); 
-                                                                                    ?> </td>
+                    <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
                     <td class="px-6 py-4 text-sm text-gray-500">
                         <?php if (!$is_protected) : ?>
                             <button class="nhrotm-edit-option-button bg-blue-500 text-white px-4 py-2 rounded <?php echo $value === 'SERIALIZED DATA' ? esc_attr('invisible') : esc_attr('') ?>"><?php esc_html_e('Edit', 'nhrrob-options-table-manager'); ?></button>
