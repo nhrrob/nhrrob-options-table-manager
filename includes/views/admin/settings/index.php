@@ -5,21 +5,32 @@
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
     <!-- New Option Form -->
-    <div class="mb-8">
-        <h3 class="text-xl mb-4"><?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?></h3>
+    <div class="mb-8 bg-white shadow-md rounded-lg p-6 max-w-lg mx-auto">
+        <h3 class="text-xl font-semibold mb-4"><?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?></h3>
         <form id="nhrotm-add-option-form" method="POST" action="#">
             <div class="mb-4">
                 <label for="new_option_name" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></label>
-                <input type="text" id="new_option_name" name="new_option_name" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+                <input type="text" id="new_option_name" name="new_option_name" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
             </div>
             <div class="mb-4">
                 <label for="new_option_value" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></label>
-                <input type="text" id="new_option_value" name="new_option_value" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+                <input type="text" id="new_option_value" name="new_option_value" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
             </div>
-            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded"><?php esc_html_e('Add Option', 'nhrrob-options-table-manager'); ?></button>
+            <div class="mb-4">
+                <label for="new_option_autoload" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></label>
+                <select id="new_option_autoload" name="new_option_autoload" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                    <option value="yes"><?php esc_html_e('Yes', 'nhrrob-options-table-manager'); ?></option>
+                    <option value="no" selected><?php esc_html_e('No', 'nhrrob-options-table-manager'); ?></option>
+                </select>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <?php esc_html_e('Add Option', 'nhrrob-options-table-manager'); ?>
+                </button>
+            </div>
         </form>
     </div>
-    
+
     <table class="nhrotm-form-table form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
         <thead class="bg-gray-50">
             <tr>
