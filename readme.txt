@@ -4,7 +4,7 @@ Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,24 +51,34 @@ That's it! You're done.
 == Frequently Asked Questions ==
 
 = Does it require any other plugin? =
-
 No. It works as a standalone plugin.
-
-= Is NHR Options Table Manager compatible with all WordPress themes and plugins? =
-Yes, NHR Options Table Manager is designed to be compatible with most WordPress themes and plugins. 
-The plugin uses lightweight and non-intrusive methods to remove notices, minimizing the risk of conflicts with other plugins or themes.
 
 = Will using NHR Options Table Manager impact my website's performance? =
 No. But it helps you to make decisions on how to reduce the db size and make your site faster!
+
+= Can I edit, delete, and add options easily? =
+Absolutely! NHR Options Table Manager allows you to effortlessly edit, delete, and add options directly from your WordPress dashboard.
+
+= How about analytics on options table? =
+Yes, it shows analytics based on prefix count. This way, you can determine which prefixes are mostly used.  
+
+= Can I search without loading the page? =
+Yes, indeed! Using the datatable feature, the search functionality in NHR Options Table Manager is live, allowing you to search without any need for page reloading.
 
 
 == Screenshots ==
 
 1. DataTable view of the wp_options table
 2. Analytics on plugin usage by prefixes
+3. Plugin features at a glance
 
 
 == Changelog ==
+
+= 1.0.5 - 09/07/2024 =
+- Added: Add new option feature. Now adding option becomes much easier directly from Dashboard.
+- Improved: JSON data are being saved now correctly without adding extra slashes. Props @hrrarya
+- Few minor bug fixing & improvements
 
 = 1.0.4 - 07/07/2024 =
 - Added: Edit feature to update existing options. Props @arrasel403 and @obayedmamur

@@ -29,7 +29,7 @@ class Menu extends App
 
         // $hook = add_menu_page(__('Options Table', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
         // add_submenu_page( $parent_slug, __( 'Settings', 'nhrrob-options-table-manager' ), __( 'Settings', 'nhrrob-options-table-manager' ), $capability, 'nhrotm-options-table-manager-settings', [ $this, 'settings_page' ] );
-        $hook = add_submenu_page( 'tools.php', __( 'Options Table', 'nhrrob-options-table-manager' ), __( 'Options Table', 'nhrrob-options-table-manager' ), $capability, $parent_slug, [ $this, 'settings_page' ] );
+        $hook = add_submenu_page( 'tools.php', __( 'Manage Options', 'nhrrob-options-table-manager' ), __( 'Options Table', 'nhrrob-options-table-manager' ), $capability, $parent_slug, [ $this, 'settings_page' ] );
 
         add_action('admin_head-' . $hook, [$this, 'enqueue_assets']);
     }

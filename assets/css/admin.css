@@ -107,3 +107,7 @@ div.dt-container select.dt-input {
 .prefix-count-item .count {
     color: #555; /* Gray color for count */
 }
+
+.nhrotm-options-table-manager select {
+    max-width: unset;
+}

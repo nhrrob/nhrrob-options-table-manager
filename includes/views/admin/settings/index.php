@@ -4,6 +4,38 @@
 <div class="wrap nhrotm-options-table-manager container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h3 class="text-2xl mb-4"><?php echo esc_html(get_admin_page_title()); ?></h3>
 
+    <!-- Button to Show/Hide Form -->
+    <button class="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4 nhrotm-add-option-form-toggle-button">
+        <?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?>
+    </button>
+
+    <!-- New Option Form -->
+    <div class="mb-8 bg-white shadow-md rounded-lg p-6 max-w-lg mx-auto nhrotm-add-option-form-wrap hidden">
+        <h3 class="text-xl font-semibold mb-4"><?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?></h3>
+        <form id="nhrotm-add-option-form" method="POST" action="#">
+            <div class="mb-4">
+                <label for="new_option_name" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></label>
+                <input type="text" id="new_option_name" name="new_option_name" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+            </div>
+            <div class="mb-4">
+                <label for="new_option_value" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></label>
+                <input type="text" id="new_option_value" name="new_option_value" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+            </div>
+            <div class="mb-4 hidden">
+                <label for="new_option_autoload" class="block text-sm font-medium text-gray-700"><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></label>
+                <select id="new_option_autoload" name="new_option_autoload" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                    <option value="yes"><?php esc_html_e('Yes', 'nhrrob-options-table-manager'); ?></option>
+                    <option value="no" selected><?php esc_html_e('No', 'nhrrob-options-table-manager'); ?></option>
+                </select>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <?php esc_html_e('Add Option', 'nhrrob-options-table-manager'); ?>
+                </button>
+            </div>
+        </form>
+    </div>
+
     <table class="nhrotm-form-table form-table min-w-full divide-y divide-gray-200 overflow-x-auto">
         <thead class="bg-gray-50">
             <tr>
@@ -67,8 +99,7 @@
                             <p class="regular-text <?php echo esc_attr($class); ?>" id="<?php echo esc_attr($name); ?>"> <?php echo esc_attr($value); ?> </p>
                         <?php endif; ?>
                     </td>
-                    <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); 
-                                                                                    ?> </td>
+                    <td class="px-6 py-4 break-words text-sm text-gray-500"> Yes <?php //echo esc_html($option->autoload); ?> </td>
                     <td class="px-6 py-4 text-sm text-gray-500">
                         <?php if (!$is_protected) : ?>
                             <button class="nhrotm-edit-option-button bg-blue-500 text-white px-4 py-2 rounded <?php echo $value === 'SERIALIZED DATA' ? esc_attr('invisible') : esc_attr('') ?>"><?php esc_html_e('Edit', 'nhrrob-options-table-manager'); ?></button>

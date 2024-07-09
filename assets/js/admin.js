@@ -81,5 +81,33 @@
                 });
             }
         });
+
+        // Add Option
+        $('#nhrotm-add-option-form').on('submit', function(e) {
+            e.preventDefault();
+
+            var data = {
+                action: 'nhrotm_add_option',
+                nonce: nhrotmOptionsTableManager.nonce,
+                new_option_name: $('#new_option_name').val(),
+                new_option_value: $('#new_option_value').val(),
+                new_option_autoload: $('#new_option_autoload').val()
+            };
+    
+            $.post(ajaxurl, data, function(response) {
+                if (response.success) {
+                    alert('Option added successfully');
+                    location.reload(); // Reload the page to see the new option
+                } else {
+                    alert('Failed to add option: ' + response.data);
+                }
+            });
+        });
+
+        // Toggle Add Option Form Visibility
+        $('.nhrotm-add-option-form-toggle-button').on('click', function() {
+            $('.nhrotm-add-option-form-wrap').fadeToggle();
+        });
+
     }); 
 })(jQuery);

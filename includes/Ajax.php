@@ -14,6 +14,7 @@ class Ajax extends App{
         //
         add_action('wp_ajax_nhrotm_edit_option', [ $this, 'edit_option' ]);
         add_action('wp_ajax_nhrotm_delete_option', [ $this, 'delete_option' ]);
+        add_action('wp_ajax_nhrotm_add_option', [ $this, 'add_option' ]);
     }
     
     public function edit_option() {
@@ -31,7 +32,7 @@ class Ajax extends App{
     
         // Sanitize and validate input data
         $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
-        $option_value = isset($_POST['option_value']) ? sanitize_text_field($_POST['option_value']) : '';
+        $option_value = isset($_POST['option_value']) ? stripslashes_deep(sanitize_text_field($_POST['option_value'])) : '';
     
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
@@ -86,6 +87,49 @@ class Ajax extends App{
             wp_send_json_error('Failed to delete option');
         }
     
+        wp_die();
+    }
+
+    public function add_option() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+
+        // Ensure the user has the right capability
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+            wp_die();
+        }
+
+        // Sanitize and validate input data
+        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field($_POST['new_option_name']) : '';
+        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field($_POST['new_option_value'])) : '';
+        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field($_POST['new_option_autoload']) : 'no';
+
+        if (empty($option_name)) {
+            wp_send_json_error('Option name is required');
+            wp_die();
+        }
+
+        if (empty($option_value)) {
+            wp_send_json_error('Option value is required');
+            wp_die();
+        }
+
+        if (get_option($option_name) !== false) {
+            wp_send_json_error('Option already exists');
+            wp_die();
+        }
+
+        // Add the option
+        if (update_option($option_name, $option_value, '', $autoload)) {
+            wp_send_json_success('Option added successfully');
+        } else {
+            wp_send_json_error('Failed to add option');
+        }
+
         wp_die();
     }
 }
