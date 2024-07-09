@@ -4,7 +4,7 @@ Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -74,6 +74,11 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 
 
 == Changelog ==
+
+= 1.0.5 - 09/07/2024 =
+- Added: Add new option feature. Now adding option becomes much easier directly from Dashboard.
+- Improved: JSON data are being saved now correctly without adding extra slashes. Props @hrrarya
+- Few minor bug fixing & improvements
 
 = 1.0.4 - 07/07/2024 =
 - Added: Edit feature to update existing options. Props @arrasel403 and @obayedmamur
