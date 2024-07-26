@@ -2,9 +2,9 @@
 Contributors: nhrrob
 Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
-Tested up to: 6.5
+Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -74,6 +74,10 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 
 
 == Changelog ==
+
+= 1.0.6 - 26/07/2024 =
+- WordPress tested up to version is updated to 6.6
+- Few minor bug fixing & improvements
 
 = 1.0.5 - 09/07/2024 =
 - Added: Add new option feature. Now adding option becomes much easier directly from Dashboard.
