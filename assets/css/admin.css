@@ -16,6 +16,15 @@ div.dt-container select.dt-input {
     display: unset;
 }
 
+.tools_page_nhrotm-options-table-manager .notice 
+/* .tools_page_nhrotm-options-table-manager div.error,  */
+/* .tools_page_nhrotm-options-table-manager div.updated  */ {
+    margin: 5px 20px 15px 2px; 
+}
+
+.tools_page_nhrotm-options-table-manager .notice .e-notice__dismiss {
+    box-sizing: unset;
+}
 
 /* Example custom CSS for premium table look */
 
