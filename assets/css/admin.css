@@ -1,122 +1,56 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
 
-div.dt-container select.dt-input {
-    min-width: 50px;
+/* new datatable  */
+.scrollable-cell {
+    max-height: 100px;       /* Set a fixed height for the cell content */
+    overflow-y: auto;        /* Enables vertical scrolling within the cell */
+    white-space: normal;     /* Prevents text from stretching horizontally */
+    word-break: break-word;  /* Ensures long words wrap within the cell */
+    padding-right: 5px;      /* Adjusts for padding inside the scrollable area */
 }
 
-.nhrotm-scroll-y {
-    max-height: 300px;
-    overflow-y: auto;
-    overflow-x: auto;
+#add-modal {
+    /* display: none; */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
 }
 
-#adminmenu img {
-    display: unset;
+#add-modal label {
+    display: block;
+    margin: 10px 0;
 }
 
-.tools_page_nhrotm-options-table-manager .notice 
-/* .tools_page_nhrotm-options-table-manager div.error,  */
-/* .tools_page_nhrotm-options-table-manager div.updated  */ {
-    margin: 5px 20px 15px 2px; 
+#add-modal button {
+    margin-top: 10px;
 }
 
-.tools_page_nhrotm-options-table-manager .notice .e-notice__dismiss {
-    box-sizing: unset;
+/* edit modal  */
+#edit-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
 }
 
-/* Example custom CSS for premium table look */
-
-/* Table header style */
-.nhrotm-options-table-manager .form-table thead {
-    background-color: #f0f0f0; /* Light gray background */
-    border-bottom: 2px solid #ddd; /* Bottom border */
+#edit-modal label {
+    display: block;
+    margin: 10px 0;
 }
 
-/* Table header cell style */
-.nhrotm-options-table-manager .form-table th {
-    padding: 12px 16px; /* Adjust padding */
-    text-align: left;
-    font-weight: 600;
-    color: #333; /* Dark gray text */
-}
-
-/* Table body row alternating background colors */
-.nhrotm-options-table-manager .form-table tbody tr:nth-child(even) {
-    background-color: #f9f9f9; /* Lighter background for even rows */
-}
-
-/* Table body cell style */
-.nhrotm-options-table-manager .form-table td {
-    padding: 12px 16px; /* Adjust padding */
-}
-
-/* Pagination styling */
-.dataTables_paginate {
-    margin-top: 16px;
-}
-
-/* Search box styling */
-.dataTables_filter label {
-    font-weight: 600;
-}
-.dataTables_filter input {
-    border: 1px solid #ccc;
-    padding: 8px;
-    border-radius: 4px;
-    width: 200px;
-}
-
-/* Info text styling */
-.dataTables_info {
-    margin-top: 8px;
-    font-size: 14px;
-    color: #666;
-}
-
-
-/* Custom CSS for prefix count section */
-.prefix-count-container {
-    background-color: #f5f5f5; /* Light background color */
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
-    width: 60%;
-    margin: 70px auto 0px;
-}
-
-.prefix-count-container .text-2xl {
-    color: #333; /* Dark text color */
-    font-weight: bold;
-    text-align: center;
-}
-
-.prefix-count-list {
-    list-style-type: none; /* Remove bullet points */
-    padding: 0;
-    margin: 0;
-}
-
-.prefix-count-item {
-    margin-bottom: 8px;
-    padding: 8px;
-    background-color: #fff; /* White background */
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #ddd; /* Light border */
-}
-
-.prefix-count-item .prefix {
-    font-weight: bold;
-}
-
-.prefix-count-item .count {
-    color: #555; /* Gray color for count */
-}
-
-.nhrotm-options-table-manager select {
-    max-width: unset;
+#edit-modal button {
+    margin-top: 10px;
 }

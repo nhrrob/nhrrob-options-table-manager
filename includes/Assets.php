@@ -28,7 +28,7 @@ class Assets extends App {
             ],
             'nhrotm-datatable-script' => [
                 'src'     => NHROTM_ASSETS . '/js/dataTables.min.js',
-                'version' => '2.0.3',
+                'version' => '2.1.8',
                 'deps'    => [ 'jquery' ]
             ],
         ];
@@ -47,7 +47,7 @@ class Assets extends App {
             ],
             'nhrotm-datatable-style' => [
                 'src'     => NHROTM_ASSETS . '/css/dataTables.dataTables.min.css',
-                'version' => '2.0.3'
+                'version' => '2.1.8'
             ],
         ];
     }

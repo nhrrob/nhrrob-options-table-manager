@@ -1,113 +1,152 @@
 (function ($) {
-    $(document).ready(function() {
-        let table = $('.nhrotm-options-table-manager .form-table').DataTable({
-            "paging": true,      // Enable pagination
-            "searching": true,   // Enable search functionality
-            "ordering": true,    // Enable column ordering
-            "info": true         // Show table information (e.g., "Showing 1 to 10 of 20 entries")
+    // new datatable
+    jQuery(document).ready(function($) {
+        // Open the modal on "Add" button click
+        $('#add-button').on('click', function() {
+            $('#add-modal').show(); // Show modal
         });
-
-        let protectedOptions = nhrotmOptionsTableManager.protected_options;
-
-        function isProtected(optionName) {
-            return protectedOptions.includes(optionName);
-        }
-
-        // Edit Options
-        $(document).on('click', '.nhrotm-edit-option-button', function() {
-            let row = $(this).closest('tr');
-            let optionName = row.find('.nhrotm-option-name').text().trim();
-
-            if (isProtected(optionName)) {
-                alert('This option is protected and cannot be edited.');
-                return;
-            }
-
-            let newValue = prompt('Enter new value for ' + optionName + ':', row.find('.nhrotm-option-value').text().trim());
-
-            if (newValue !== null) {
-                $.ajax({
-                    type: 'POST',
-                    url: nhrotmOptionsTableManager.ajaxUrl,
-                    data: {
-                        action: 'nhrotm_edit_option',
-                        nonce: nhrotmOptionsTableManager.nonce,
-                        option_name: optionName,
-                        option_value: newValue
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            row.find('.nhrotm-option-value').text(newValue);
-                        } else {
-                            alert('Error: ' + response.data);
-                        }
-                    },
-                    error: function(response) {
-                        alert('Error: ' + response.responseText);
-                    }
-                });
-            }
-        });
-
-        // Delete Options
-        $(document).on('click', '.nhrotm-delete-option-button', function() {
-            let row = $(this).closest('tr');
-            let optionName = row.find('.nhrotm-option-name').text().trim();
-
-            if (isProtected(optionName)) {
-                alert('This option is protected and cannot be deleted.');
-                return;
-            }
-            
-            if (confirm('Are you sure you want to delete this option?')) {
-                $.ajax({
-                    type: 'POST',
-                    url: nhrotmOptionsTableManager.ajaxUrl,
-                    data: {
-                        action: 'nhrotm_delete_option',
-                        nonce: nhrotmOptionsTableManager.nonce,
-                        option_name: optionName
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            row.remove();
-                        } else {
-                            alert('Error: ' + response.data);
-                        }
-                    },
-                    error: function(response) {
-                        alert('Error: ' + response.responseText);
-                    }
-                });
-            }
-        });
-
-        // Add Option
-        $('#nhrotm-add-option-form').on('submit', function(e) {
-            e.preventDefault();
-
-            var data = {
-                action: 'nhrotm_add_option',
-                nonce: nhrotmOptionsTableManager.nonce,
-                new_option_name: $('#new_option_name').val(),
-                new_option_value: $('#new_option_value').val(),
-                new_option_autoload: $('#new_option_autoload').val()
-            };
     
-            $.post(ajaxurl, data, function(response) {
-                if (response.success) {
-                    alert('Option added successfully');
-                    location.reload(); // Reload the page to see the new option
-                } else {
-                    alert('Failed to add option: ' + response.data);
+        // Close modal when clicking outside of it
+        $(document).mouseup(function(e) {
+            var modal = $("#add-modal");
+            if (!modal.is(e.target) && modal.has(e.target).length === 0) {
+                modal.hide();
+            }
+        });
+    
+        // Save new option via AJAX
+        $('#save-option').on('click', function() {
+            const optionName = $('#new-option-name').val();
+            const optionValue = $('#new-option-value').val();
+            const autoload = $('#new-option-autoload').val();
+    
+            $.ajax({
+                url: ajaxurl,
+                method: "POST",
+                data: {
+                    action: "db_table_add_option",
+                    option_name: optionName,
+                    option_value: optionValue,
+                    autoload: autoload
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert("Option added successfully!");
+                        $('#add-modal').hide();
+                        $('#data-table').DataTable().ajax.reload(); // Reload table data
+                    } else {
+                        alert("Failed to add option.");
+                    }
                 }
             });
         });
-
-        // Toggle Add Option Form Visibility
-        $('.nhrotm-add-option-form-toggle-button').on('click', function() {
-            $('.nhrotm-add-option-form-wrap').fadeToggle();
+    
+        $('#data-table').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": ajaxurl + "?action=db_table_display_data",
+                "type": "GET"
+            },
+            "columns": [
+                { "data": "option_id" },
+                { "data": "option_name" },
+                { "data": "option_value" },
+                { "data": "autoload" },
+                { "data": "actions", "orderable": false } // Add actions column
+                // Add additional columns as needed
+            ],
+            "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
+            // "scrollY": "400px",     // Fixed height
+            // "scrollCollapse": true,
+            // "paging": true,
+            // "order": [[0, 'asc']], // Default order on the first column in ascending
         });
-
-    }); 
+    
+        // Edit button click handler
+        $('#data-table').on('click', '.edit-button', function() {
+            const id = $(this).data('id');
+            // Call edit function with data
+            editOption(id, this);
+        });
+    
+        // Delete button click handler
+        $('#data-table').on('click', '.delete-button', function() {
+            const id = $(this).data('id');
+            // Call delete function with data
+            deleteOption(id);
+        });
+    
+        function editOption(id, $this) {
+            // Retrieve the current row data
+            const row = $('#data-table').DataTable().row($($this).parents('tr')).data();
+            
+            // Set the current data in the edit modal fields
+            $('#edit-option-name').val(row.option_name);
+            $('#edit-option-value').val(row.option_value.replace(/<div class="scrollable-cell">|<\/div>/g, ''));
+            $('#edit-option-autoload').val(row.autoload);
+        
+            // Show the modal
+            $('#edit-modal').show();
+        
+            // Update option when the "Update" button is clicked
+            $('#update-option').off('click').on('click', function() {
+                const optionValue = $('#edit-option-value').val();
+                const autoload = $('#edit-option-autoload').val();
+        
+                $.ajax({
+                    url: ajaxurl,
+                    method: "POST",
+                    data: {
+                        action: "db_table_edit_option",
+                        option_id: id,
+                        option_value: optionValue,
+                        autoload: autoload
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert("Option updated successfully!");
+                            $('#edit-modal').hide();
+                            $('#data-table').DataTable().ajax.reload(); // Reload table data
+                        } else {
+                            alert("Failed to update option.");
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Close modal when clicking outside of it
+        $(document).mouseup(function(e) {
+            var modal = $("#edit-modal");
+            if (!modal.is(e.target) && modal.has(e.target).length === 0) {
+                modal.hide();
+            }
+        });
+        
+    
+        function deleteOption(id) {
+            if (confirm("Are you sure you want to delete this option?")) {
+                jQuery.ajax({
+                    url: ajaxurl,
+                    method: "POST",
+                    data: {
+                        action: "db_table_delete_option",
+                        option_id: id
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert("Option deleted successfully!");
+                            jQuery('#data-table').DataTable().ajax.reload(); // Reload table data
+                        } else {
+                            alert("Failed to delete option.");
+                        }
+                    }
+                });
+            }
+        }
+        
+        
+    });
+    
 })(jQuery);
