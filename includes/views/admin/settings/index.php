@@ -2,53 +2,86 @@
 ?>
 
 <div class="wrap">
-    <h1>Table Data</h1>
+    <!-- Page Title  -->
+    <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
-    <button id="add-button" class="button button-primary">Add New Option</button>
+    <button class="button button-primary nhrotm-add-option-button"><?php esc_html_e('Add New Option', 'nhrrob-options-table-manager'); ?></button>
 
-    <table id="data-table" class="wp-list-table widefat fixed striped">
+    <!-- Table  -->
+    <table id="nhrotm-data-table" class="wp-list-table widefat fixed striped">
         <thead>
             <tr>
-                <th>Option ID</th>
-                <th>Option Name</th>
-                <th>Option Value</th>
-                <th>Autoload</th>
-                <th>Action</th>
+                <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
+                <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
+                <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
+                <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
             </tr>
         </thead>
-        
+
         <tbody>
 
         </tbody>
     </table>
 </div>
 
-<div id="add-modal" style="display:none;">
-    <h2>Add New Option</h2>
+<!-- Modal  -->
+<div class="nhrotm-add-option-modal is-hidden">
+    <h2><?php esc_html_e('Add Option', 'nhrrob-options-table-manager'); ?></h2>
 
-    <label>Option Name: <input type="text" id="new-option-name"></label><br>
-    <label>Option Value: <textarea id="new-option-value"></textarea></label><br>
-    <label>Autoload:
-        <select id="new-option-autoload">
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-        </select>
-    </label><br>
+    <p>
+        <label>
+            <?php esc_html_e('Option Name:', 'nhrrob-options-table-manager'); ?>
+            <input type="text" class="nhrotm-new-option-name">
+        </label>
+    </p>
 
-    <button id="save-option" class="button button-primary">Save</button>
+    <p>
+        <label>
+            <?php esc_html_e('Option Value:', 'nhrrob-options-table-manager'); ?>
+            <textarea class="nhrotm-new-option-value"></textarea>
+        </label>
+    </p>
+
+    <p>
+        <label>
+            <?php esc_html_e('Autoload:', 'nhrrob-options-table-manager'); ?>
+            <select class="nhrotm-new-option-autoload">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </label>
+    </p>
+
+    <button class="button button-primary nhrotm-save-option">Save</button>
 </div>
 
-<div id="edit-modal" style="display:none;">
-    <h2>Edit Option</h2>
+<!-- Edit Modal  -->
+<div class="nhrotm-edit-option-modal is-hidden">
+    <h2><?php esc_html_e('Edit Option', 'nhrrob-options-table-manager'); ?></h2>
+
+    <p>
+        <label>
+            <?php esc_html_e('Option Name:', 'nhrrob-options-table-manager'); ?> 
+            <input type="text" class="nhrotm-edit-option-name" readonly>
+        </label>
+    </p>
     
-    <label>Option Name: <input type="text" id="edit-option-name" readonly></label><br>
-    <label>Option Value: <textarea id="edit-option-value"></textarea></label><br>
-    <label>Autoload:
-        <select id="edit-option-autoload">
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-        </select>
-    </label><br>
+    <p>
+        <label>
+            <?php esc_html_e('Option Value:', 'nhrrob-options-table-manager'); ?> 
+            <textarea class="nhrotm-edit-option-value"></textarea>
+        </label>
+    </p>
     
-    <button id="update-option" class="button button-primary">Update</button>
+    <p>
+        <label><?php esc_html_e('Autoload:', 'nhrrob-options-table-manager'); ?>
+            <select class="nhrotm-edit-option-autoload">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </label> 
+    </p>
+
+    <button class="button button-primary nhrotm-update-option">Update</button>
 </div>

@@ -2,17 +2,21 @@
 @tailwind components;
 @tailwind utilities; */
 
-/* new datatable  */
+/* Common Classes */
+.is-hidden {
+    display: none;
+}
+
 .scrollable-cell {
-    max-height: 100px;       /* Set a fixed height for the cell content */
-    overflow-y: auto;        /* Enables vertical scrolling within the cell */
-    white-space: normal;     /* Prevents text from stretching horizontally */
-    word-break: break-word;  /* Ensures long words wrap within the cell */
-    padding-right: 5px;      /* Adjusts for padding inside the scrollable area */
+    max-height: 100px;
+    overflow-y: auto;
+    white-space: normal;
+    word-break: break-word;
+    padding-right: 5px;
 }
 
-#add-modal {
-    /* display: none; */
+.nhrotm-add-option-modal,
+.nhrotm-edit-option-modal {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -22,35 +26,16 @@
     padding: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
+    border-radius: 5px;
 }
 
-#add-modal label {
+.nhrotm-add-option-modal label,
+.nhrotm-edit-option-modal label {
     display: block;
     margin: 10px 0;
 }
 
-#add-modal button {
-    margin-top: 10px;
-}
-
-/* edit modal  */
-#edit-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    background: #fff;
-    padding: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-}
-
-#edit-modal label {
-    display: block;
-    margin: 10px 0;
-}
-
-#edit-modal button {
+.nhrotm-add-option-modal button,
+.nhrotm-edit-option-modal button {
     margin-top: 10px;
 }

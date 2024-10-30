@@ -139,8 +139,8 @@ function db_table_display_data1() {
     // Wrap the option_value in the scrollable-cell div
     foreach ($data as &$row) {
         $row['option_value'] = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
-        $row['actions'] = '<button class="edit-button" data-id="' . esc_attr($row['option_id']) . '">Edit</button>
-                           <button class="delete-button" data-id="' . esc_attr($row['option_id']) . '">Delete</button>';
+        $row['actions'] = '<button class="nhrotm-edit-button" data-id="' . esc_attr($row['option_id']) . '">Edit</button>
+                           <button class="nhrotm-delete-button" data-id="' . esc_attr($row['option_id']) . '">Delete</button>';
     }
     
     // Prepare response for DataTables
@@ -154,7 +154,7 @@ function db_table_display_data1() {
     wp_send_json($response);
 }
 
-add_action('wp_ajax_db_table_display_data', 'db_table_display_data1');
+add_action('wp_ajax_nhrotm_table_display_data', 'db_table_display_data1');
 
 function db_table_edit_option1() {
     global $wpdb;
@@ -180,7 +180,7 @@ function db_table_edit_option1() {
     }
 }
 
-add_action('wp_ajax_db_table_edit_option', 'db_table_edit_option1');
+add_action('wp_ajax_nhrotm_edit_option', 'db_table_edit_option1');
 
 // Handle delete option request
 function db_table_delete_option1() {
@@ -197,7 +197,7 @@ function db_table_delete_option1() {
         wp_send_json_error();
     }
 }
-add_action('wp_ajax_db_table_delete_option', 'db_table_delete_option1');
+add_action('wp_ajax_nhrotm_delete_option', 'db_table_delete_option1');
 
 function db_table_add_option1() {
     global $wpdb;
@@ -225,4 +225,4 @@ function db_table_add_option1() {
         wp_send_json_error();
     }
 }
-add_action('wp_ajax_db_table_add_option', 'db_table_add_option1');
+add_action('wp_ajax_nhrotm_add_option', 'db_table_add_option1');
