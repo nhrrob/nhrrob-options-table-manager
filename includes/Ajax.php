@@ -15,6 +15,7 @@ class Ajax extends App{
         add_action('wp_ajax_nhrotm_add_option', [ $this, 'add_option' ]);
         add_action('wp_ajax_nhrotm_edit_option', [ $this, 'edit_option' ]);
         add_action('wp_ajax_nhrotm_delete_option', [ $this, 'delete_option' ]);
+        add_action('wp_ajax_nhrotm_option_usage_analytics', [ $this, 'option_usage_analytics' ]);
     }
 
     public function option_table_data() {
@@ -190,4 +191,61 @@ class Ajax extends App{
     
         wp_die();
     }
+
+    public function option_usage_analytics() {
+        // Verify nonce and permissions
+        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+            wp_die();
+        }
+    
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'options';
+    
+        // Query to get all option names
+        $results = $wpdb->get_results("SELECT option_name FROM $table_name", ARRAY_A);
+        
+        $prefix_count = [];
+    
+        foreach ($results as $row) {
+            $option_name = $row['option_name'];
+    
+            // Remove '_transient' and '_timeout' and take the next part as the prefix
+            $modified_option_name = preg_replace('/^_transient(?:_timeout)?_/', '', $option_name); // Remove _transient and _timeout
+            $parts = explode('_', $modified_option_name);
+    
+            if (count($parts) > 0) {
+                $prefix = $parts[0]; // Take the first part as the prefix
+                if (!isset($prefix_count[$prefix])) {
+                    $prefix_count[$prefix] = 0;
+                }
+                $prefix_count[$prefix]++;
+            } else {
+                // If no prefix detected, count it as 'others'
+                if (!isset($prefix_count['others'])) {
+                    $prefix_count['others'] = 0;
+                }
+                $prefix_count['others']++;
+            }
+        }
+    
+        // Prepare results for response
+        $data = [];
+        foreach ($prefix_count as $prefix => $count) {
+            $data[] = ['prefix' => $prefix, 'count' => $count];
+        }
+    
+        // Sort the data by count in descending order
+        usort($data, function($a, $b) {
+            return $b['count'] <=> $a['count'];
+        });
+        
+        wp_send_json_success($data);
+        wp_die();
+    }
+    
 }

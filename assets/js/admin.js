@@ -38,10 +38,9 @@
             $('.nhrotm-add-option-modal').show();
         });
     
-        $(document).mouseup(function(e) {
-            var modal = $(".nhrotm-add-option-modal");
-            if (!modal.is(e.target) && modal.has(e.target).length === 0) {
-                modal.hide();
+        $('.nhrotm-add-option-modal').on('click', function(event) {
+            if ($(event.target).is('.nhrotm-add-option-modal')) { // Check if the clicked target is the modal overlay
+                $('.nhrotm-add-option-modal').addClass('is-hidden').fadeOut();
             }
         });
     
@@ -79,10 +78,9 @@
         });
 
         // Close modal when clicking outside of it
-        $(document).mouseup(function(e) {
-            var modal = $(".nhrotm-edit-option-modal");
-            if (!modal.is(e.target) && modal.has(e.target).length === 0) {
-                modal.hide();
+        $('.nhrotm-edit-option-modal').on('click', function(event) {
+            if ($(event.target).is('.nhrotm-edit-option-modal')) { // Check if the clicked target is the modal overlay
+                $('.nhrotm-edit-option-modal').addClass('is-hidden').fadeOut();
             }
         });
     
@@ -165,5 +163,32 @@
             }
         }
 
+        // Analytics
+        loadAnalyticsData();
+        
+        function loadAnalyticsData() {
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: "GET",
+                data: {
+                    action: "nhrotm_option_usage_analytics",
+                    nonce: nhrotmOptionsTableManager.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        let tableContent = "<table><tr><th>Option Prefix</th><th>Option Count</th></tr>";
+                        response.data.forEach(row => {
+                            if ( row.prefix && row.count > 5 ) {
+                                tableContent += `<tr><td>${row.prefix}</td><td>${row.count}</td></tr>`;
+                            }
+                        });
+                        tableContent += "</table>";
+                        $('#nhrotm-usage-analytics-results').html(tableContent);
+                    } else {
+                        alert("Error: " + response.data);
+                    }
+                }
+            });
+        }
     });
 })(jQuery);
