@@ -62,6 +62,8 @@ trait GlobalTrait
                 'value' => 1,
                 'id' => 1,
                 'required' => 1,
+                'readonly' => 1,
+                'disabled' => 1,
             ),
             'select' => array(
                 'class' => 1,

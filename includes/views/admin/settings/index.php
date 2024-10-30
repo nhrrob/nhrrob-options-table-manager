@@ -79,6 +79,8 @@
             <select class="nhrotm-edit-option-autoload">
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
+                <option value="on">On</option>
+                <option value="off">Off</option>
             </select>
         </label> 
     </p>
