@@ -28,7 +28,7 @@ class Assets extends App {
             ],
             'nhrotm-datatable-script' => [
                 'src'     => NHROTM_ASSETS . '/js/dataTables.min.js',
-                'version' => '2.0.3',
+                'version' => '2.1.8',
                 'deps'    => [ 'jquery' ]
             ],
         ];
@@ -41,13 +41,17 @@ class Assets extends App {
      */
     public function get_styles() {
         return [
+            // 'nhrotm-admin-style' => [
+            //     'src'     => NHROTM_ASSETS . '/css/admin.out.css',
+            //     'version' => filemtime( NHROTM_PATH . '/assets/css/admin.out.css' )
+            // ],
             'nhrotm-admin-style' => [
-                'src'     => NHROTM_ASSETS . '/css/admin.out.css',
-                'version' => filemtime( NHROTM_PATH . '/assets/css/admin.out.css' )
+                'src'     => NHROTM_ASSETS . '/css/admin.css',
+                'version' => filemtime( NHROTM_PATH . '/assets/css/admin.css' )
             ],
             'nhrotm-datatable-style' => [
                 'src'     => NHROTM_ASSETS . '/css/dataTables.dataTables.min.css',
-                'version' => '2.0.3'
+                'version' => '2.1.8'
             ],
         ];
     }

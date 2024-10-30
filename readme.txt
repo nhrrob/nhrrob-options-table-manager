@@ -4,7 +4,7 @@ Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.7
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -74,6 +74,14 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 
 
 == Changelog ==
+
+= 1.1.0 - 30/10/2024 =
+- Added: Serialize data support
+- Added: Showing all options regardless their autoload status
+- Revamped: Full DataTable revamped. Props @scriptertoufiq
+- Revamped: Add/Edit option using modal
+- Revamped: Options usage analytics
+- Few minor bug fixing & improvements
 
 = 1.0.7 - 18/10/2024 =
 - WordPress tested up to version is updated to 6.7
