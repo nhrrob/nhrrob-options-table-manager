@@ -9,6 +9,11 @@
 
     <!-- Table  -->
     <div class="nhrotm-data-table-wrap">
+        <div class="tab mt-5 mb-3">
+            <button class="tablinks active"><?php esc_html_e('Options Table', 'nhrrob-options-table-manager'); ?></button>
+            <button class="tablinks"><?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?></button>
+        </div>
+
         <table id="nhrotm-data-table" class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
@@ -72,7 +77,7 @@
 <div class="nhrotm-edit-option-modal is-hidden">
     <div class="nhrotm-modal-content">
         <h2><?php esc_html_e('Edit Option', 'nhrrob-options-table-manager'); ?></h2>
-        
+
         <p>
             <label>
                 <?php esc_html_e('Option Name:', 'nhrrob-options-table-manager'); ?>

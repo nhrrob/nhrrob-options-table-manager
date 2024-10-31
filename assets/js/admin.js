@@ -190,5 +190,11 @@
                 }
             });
         }
+
+        // Toggle
+        $(document).on('click', '.nhrotm-data-table-wrap .tab .tablinks', function() {
+            $('.nhrotm-data-table-wrap .tab .tablinks').removeClass('active');
+            $(this).addClass('active');
+        });
     });
 })(jQuery);
