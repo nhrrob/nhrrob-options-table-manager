@@ -82,7 +82,8 @@ class Assets extends App {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'confirm' => __( 'Are you sure?', 'nhrrob-options-table-manager' ),
             'error' => __( 'Something went wrong', 'nhrrob-options-table-manager' ),
-            'protected_options' => $this->get_protected_options()
+            'protected_options' => $this->get_protected_options(),
+            'protected_usermetas' => $this->get_protected_usermetas()
         ] );
     }
 }

@@ -14,7 +14,7 @@
             <button class="tablinks usermeta-table"><?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?></button>
         </div>
 
-        <table id="nhrotm-data-table" class="wp-list-table widefat fixed striped">
+        <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
             <thead>
                 <tr>
                     <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
@@ -32,7 +32,7 @@
 
         <span class="logged-user-id is-hidden">Logged User ID: <?php echo esc_html( get_current_user_id() ); ?></span>
 
-        <table id="nhrotm-data-table-usermeta" class="wp-list-table widefat fixed striped">
+        <table id="nhrotm-data-table-usermeta" class="nhrotm-data-table wp-list-table widefat fixed striped">
             <thead>
                 <tr>
                     <th><?php esc_html_e('User Meta ID', 'nhrrob-options-table-manager'); ?></th>
@@ -122,5 +122,28 @@
         </p>
 
         <button class="button button-primary nhrotm-update-option">Update</button>
+    </div>
+</div>
+
+<!-- Edit Modal Usermeta -->
+<div class="nhrotm-edit-usermeta-modal is-hidden">
+    <div class="nhrotm-modal-content">
+        <h2><?php esc_html_e('Edit User Meta', 'nhrrob-options-table-manager'); ?></h2>
+
+        <p>
+            <label>
+                <?php esc_html_e('Meta Key:', 'nhrrob-options-table-manager'); ?>
+                <input type="text" class="nhrotm-edit-usermeta-key" readonly>
+            </label>
+        </p>
+
+        <p>
+            <label>
+                <?php esc_html_e('Meta Value:', 'nhrrob-options-table-manager'); ?>
+                <textarea class="nhrotm-edit-usermeta-value"></textarea>
+            </label>
+        </p>
+
+        <button class="button button-primary nhrotm-update-usermeta">Update</button>
     </div>
 </div>

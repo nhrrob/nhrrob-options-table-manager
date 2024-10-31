@@ -217,7 +217,8 @@
 }
 
 /* Data table  */
-.nhrotm-data-table-wrap select[name="nhrotm-data-table_length"] {
+.nhrotm-data-table-wrap select[name="nhrotm-data-table_length"],
+.nhrotm-data-table-wrap select[name="nhrotm-data-table-usermeta_length"] {
     width: 45px;
 }
 
@@ -231,7 +232,8 @@
 
 /* Modal design  */
 .nhrotm-add-option-modal,
-.nhrotm-edit-option-modal {
+.nhrotm-edit-option-modal,
+.nhrotm-edit-usermeta-modal {
     display: none;
     position: fixed; /* Stay in place */
     z-index: 1000; /* Sit on top */
