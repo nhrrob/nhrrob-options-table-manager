@@ -10,8 +10,8 @@
     <!-- Table  -->
     <div class="nhrotm-data-table-wrap">
         <div class="tab mt-5 mb-3">
-            <button class="tablinks active"><?php esc_html_e('Options Table', 'nhrrob-options-table-manager'); ?></button>
-            <button class="tablinks"><?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?></button>
+            <button class="tablinks active options-table"><?php esc_html_e('Options Table', 'nhrrob-options-table-manager'); ?></button>
+            <button class="tablinks usermeta-table"><?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?></button>
         </div>
 
         <table id="nhrotm-data-table" class="wp-list-table widefat fixed striped">
@@ -21,6 +21,22 @@
                     <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            </tbody>
+        </table>
+
+        <table id="nhrotm-data-table-usermeta" class="wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e('User Meta ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Meta Key', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Meta Value', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
                 </tr>
             </thead>

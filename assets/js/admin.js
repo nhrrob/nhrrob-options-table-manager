@@ -195,6 +195,39 @@
         $(document).on('click', '.nhrotm-data-table-wrap .tab .tablinks', function() {
             $('.nhrotm-data-table-wrap .tab .tablinks').removeClass('active');
             $(this).addClass('active');
+            
+            if ( $(this).hasClass('options-table') ) {
+                console.log('options table');
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
+                $( '#nhrotm-data-table_wrapper' ).fadeIn();
+            } else if ( $(this).hasClass('usermeta-table') ) {
+                console.log('usermeta table');
+
+                $( '#nhrotm-data-table_wrapper' ).fadeOut();
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeIn();
+            }
+        });
+
+        // User Meta Table
+        $('#nhrotm-data-table-usermeta').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "type": "GET",
+                "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_usermeta_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+            },
+            "columns": [
+                { "data": "umeta_id" },
+                { "data": "user_id" },
+                { "data": "meta_key" },
+                { "data": "meta_value" },
+                { "data": "actions", "orderable": false }
+            ],
+            "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
+            // "scrollY": "400px",     // Fixed height
+            // "scrollCollapse": true,
+            // "paging": true,
+            // "order": [[0, 'asc']], // Default order on the first column in ascending
         });
     });
 })(jQuery);

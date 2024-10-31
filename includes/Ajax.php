@@ -16,6 +16,8 @@ class Ajax extends App{
         add_action('wp_ajax_nhrotm_edit_option', [ $this, 'edit_option' ]);
         add_action('wp_ajax_nhrotm_delete_option', [ $this, 'delete_option' ]);
         add_action('wp_ajax_nhrotm_option_usage_analytics', [ $this, 'option_usage_analytics' ]);
+
+        add_action('wp_ajax_nhrotm_usermeta_table_data', [ $this, 'usermeta_table_data' ]);
     }
 
     public function option_table_data() {
@@ -246,6 +248,64 @@ class Ajax extends App{
         
         wp_send_json_success($data);
         wp_die();
+    }
+
+    public function usermeta_table_data() {
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+        
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'usermeta';
+
+        // Pagination parameters
+        $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
+        $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
+        
+        // Search parameter
+        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        
+        // Sorting parameters
+        $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? sanitize_text_field( $_GET['order'][0]['dir'] ) : 'asc';
+
+        // Define columns in the correct order for sorting
+        $columns = ['umeta_id', 'user_id', 'meta_key', 'meta_value'];
+        $order_column = $columns[$order_column_index] ?? $columns[0];
+
+        // Get total record count
+        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+
+        // Build query with search, filtering, and sorting
+        $query = "SELECT * FROM $table_name";
+        if (!empty($search)) {
+            $query .= $wpdb->prepare(" WHERE meta_key LIKE %s OR meta_value LIKE %s", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
+        }
+        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM ($query) AS temp");
+        
+        $query .= " ORDER BY $order_column $order_direction LIMIT $start, $length";
+
+        // Execute query
+        $data = $wpdb->get_results($query, ARRAY_A);
+
+        // Wrap the option_value in the scrollable-cell div
+        foreach ($data as &$row) {
+            $row['meta_value']    = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
+            $row['actions']         = '<button class="nhrotm-edit-button" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
+                                       <button class="nhrotm-delete-button" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
+        }
+        
+        // Prepare response for DataTables
+        $response = array(
+            "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
+            "recordsTotal" => $total_records,
+            "recordsFiltered" => $filtered_records,
+            "data" => $data
+        );
+
+        wp_send_json($response);
     }
     
 }

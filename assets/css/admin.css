@@ -342,3 +342,8 @@
   .tab button.active {
     background-color: #ccc;
   }
+
+  /* Usermeta Table  */
+  #nhrotm-data-table-usermeta_wrapper {
+    display: none;
+  }
