@@ -30,6 +30,8 @@
             </tbody>
         </table>
 
+        <span class="logged-user-id is-hidden">Logged User ID: <?php echo esc_html( get_current_user_id() ); ?></span>
+
         <table id="nhrotm-data-table-usermeta" class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
