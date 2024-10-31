@@ -16,6 +16,10 @@ class Ajax extends App{
         add_action('wp_ajax_nhrotm_edit_option', [ $this, 'edit_option' ]);
         add_action('wp_ajax_nhrotm_delete_option', [ $this, 'delete_option' ]);
         add_action('wp_ajax_nhrotm_option_usage_analytics', [ $this, 'option_usage_analytics' ]);
+
+        add_action('wp_ajax_nhrotm_usermeta_table_data', [ $this, 'usermeta_table_data' ]);
+        add_action('wp_ajax_nhrotm_edit_usermeta', [ $this, 'edit_usermeta' ]);
+        add_action('wp_ajax_nhrotm_delete_usermeta', [ $this, 'delete_usermeta' ]);
     }
 
     public function option_table_data() {
@@ -245,6 +249,149 @@ class Ajax extends App{
         });
         
         wp_send_json_success($data);
+        wp_die();
+    }
+
+    public function usermeta_table_data() {
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+        
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'usermeta';
+
+        // Pagination parameters
+        $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
+        $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
+        
+        // Search parameter
+        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        
+        // Sorting parameters
+        $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? sanitize_text_field( $_GET['order'][0]['dir'] ) : 'asc';
+
+        // Define columns in the correct order for sorting
+        $columns = ['umeta_id', 'user_id', 'meta_key', 'meta_value'];
+        $order_column = $columns[$order_column_index] ?? $columns[0];
+
+        // Get total record count
+        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+
+        // Build query with search, filtering, and sorting
+        $query = "SELECT * FROM $table_name";
+        if (!empty($search)) {
+            $query .= $wpdb->prepare(" WHERE meta_key LIKE %s OR meta_value LIKE %s", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
+        }
+        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM ($query) AS temp");
+        
+        $query .= " ORDER BY $order_column $order_direction LIMIT $start, $length";
+
+        // Execute query
+        $data = $wpdb->get_results($query, ARRAY_A);
+
+        // Wrap the option_value in the scrollable-cell div
+        foreach ($data as &$row) {
+            $row['meta_value']    = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
+            $row['actions']         = '<button class="nhrotm-edit-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
+                                       <button class="nhrotm-delete-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
+        }
+        
+        // Prepare response for DataTables
+        $response = array(
+            "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
+            "recordsTotal" => $total_records,
+            "recordsFiltered" => $filtered_records,
+            "data" => $data
+        );
+
+        wp_send_json($response);
+    }
+
+    public function edit_usermeta() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+    
+        // Ensure the user has the right capability
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+            wp_die();
+        }
+    
+        // Sanitize and validate input data
+        $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '';
+        $meta_value = isset($_POST['meta_value']) ? stripslashes_deep(sanitize_text_field($_POST['meta_value'])) : '';
+    
+        if (empty($user_id)) {
+            wp_send_json_error('User ID is invalid');
+            wp_die();
+        }
+        
+        if (empty($meta_key)) {
+            wp_send_json_error('Meta key is required');
+            wp_die();
+        }
+
+        if (in_array($meta_key, $this->get_protected_usermetas())) {
+            wp_send_json_error('This meta is protected and cannot be edited');
+            wp_die();
+        }
+    
+        // Update the option
+        if (update_user_meta( $user_id, $meta_key, $meta_value )) {
+            wp_send_json_success('Meta updated successfully');
+        } else {
+            wp_send_json_error('Failed to update meta');
+        }
+    
+        wp_die();
+    }
+
+    public function delete_usermeta() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+    
+        // Ensure the user has the right capability
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+            wp_die();
+        }
+    
+        // Sanitize and validate input data
+        $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '';
+    
+        if (empty($user_id)) {
+            wp_send_json_error('User id is invalid');
+            wp_die();
+        }
+        
+        if (empty($meta_key)) {
+            wp_send_json_error('Meta key is required');
+            wp_die();
+        }
+
+        if (in_array($meta_key, $this->get_protected_usermetas())) {
+            wp_send_json_error('This meta is protected and cannot be deleted');
+            wp_die();
+        }
+    
+        // Delete the option
+        if (delete_user_meta($user_id, $meta_key)) {
+            wp_send_json_success('Option deleted successfully');
+        } else {
+            wp_send_json_error('Failed to delete option');
+        }
+    
         wp_die();
     }
     

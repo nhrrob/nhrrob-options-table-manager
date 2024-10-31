@@ -3,9 +3,14 @@
         "use strict";
 
         let protectedOptions = nhrotmOptionsTableManager.protected_options;
+        let protectedUsermetas = nhrotmOptionsTableManager.protected_usermetas;
 
         function isProtected(optionName) {
             return protectedOptions.includes(optionName);
+        }
+        
+        function isProtectedMeta(metaKey) {
+            return protectedUsermetas.includes(metaKey);
         }
 
         // Datatable display
@@ -190,5 +195,140 @@
                 }
             });
         }
+
+        // Toggle
+        $(document).on('click', '.nhrotm-data-table-wrap .tab .tablinks', function() {
+            $('.nhrotm-data-table-wrap .tab .tablinks').removeClass('active');
+            $(this).addClass('active');
+            
+            if ( $(this).hasClass('options-table') ) {
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
+                $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
+
+                $( '#nhrotm-data-table_wrapper' ).fadeIn();
+            } else if ( $(this).hasClass('usermeta-table') ) {
+                $( '#nhrotm-data-table_wrapper' ).fadeOut();
+
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeIn();
+                $('.nhrotm-data-table-wrap .logged-user-id').fadeIn();
+            }
+        });
+
+        // User Meta Table
+        $('#nhrotm-data-table-usermeta').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "type": "GET",
+                "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_usermeta_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+            },
+            "columns": [
+                { "data": "umeta_id" },
+                { "data": "user_id" },
+                { "data": "meta_key" },
+                { "data": "meta_value" },
+                { "data": "actions", "orderable": false }
+            ],
+            "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
+            // "scrollY": "400px",     // Fixed height
+            // "scrollCollapse": true,
+            // "paging": true,
+            // "order": [[0, 'asc']], // Default order on the first column in ascending
+        });
+
+        // Edit Usermeta
+        $('#nhrotm-data-table-usermeta').on('click', '.nhrotm-edit-button-usermeta', function() {
+            editUsermeta(this);
+        });
+
+        // Close modal when clicking outside of it
+        $('.nhrotm-edit-usermeta-modal').on('click', function(event) {
+            if ($(event.target).is('.nhrotm-edit-usermeta-modal')) { // Check if the clicked target is the modal overlay
+                $('.nhrotm-edit-usermeta-modal').addClass('is-hidden').fadeOut();
+            }
+        });
+    
+        function editUsermeta($this) {
+            const row = $('#nhrotm-data-table-usermeta').DataTable().row($($this).parents('tr')).data();
+            
+            let userId = parseInt( row.user_id );
+            $('.nhrotm-edit-usermeta-key').val(row.meta_key);
+            $('.nhrotm-edit-usermeta-value').val(row.meta_value.replace(/<div class="scrollable-cell">|<\/div>/g, ''));
+                
+            if (isProtectedMeta(row.meta_key)) {
+                alert('This meta is protected and cannot be edited.');
+                return;
+            }
+
+            $('.nhrotm-edit-usermeta-modal').show();
+
+            $('.nhrotm-update-usermeta').off('click').on('click', function() {
+                const metaKey = $('.nhrotm-edit-usermeta-key').val();
+                const metaValue = $('.nhrotm-edit-usermeta-value').val();
+        
+                $.ajax({
+                    url: nhrotmOptionsTableManager.ajaxUrl,
+                    method: "POST",
+                    data: {
+                        action: "nhrotm_edit_usermeta",
+                        nonce: nhrotmOptionsTableManager.nonce,
+                        user_id: userId,
+                        meta_key: metaKey,
+                        meta_value: metaValue,
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert("Meta updated successfully!");
+                            $('.nhrotm-edit-usermeta-modal').hide();
+                            $('#nhrotm-data-table-usermeta').DataTable().ajax.reload(); // Reload table data
+                        } else {
+                            alert('Error: ' + response.data);
+                            // alert("Failed to update meta.");
+                        }
+                    }
+                });
+            });
+        }
+
+        // Delete Usermeta
+        $('#nhrotm-data-table-usermeta').on('click', '.nhrotm-delete-button-usermeta', function() {
+            console.log('clicked!');
+            deleteUsermeta(this);
+        });
+    
+        function deleteUsermeta($this) {
+            const row = $('#nhrotm-data-table-usermeta').DataTable().row($($this).parents('tr')).data();            
+            let userId = parseInt( row.user_id );
+            let metaKey = row.meta_key;
+
+            if (isProtected(metaKey)) {
+                alert('This meta is protected and cannot be deleted.');
+                return;
+            }
+
+            if (confirm("Are you sure you want to delete this meta?")) {
+                jQuery.ajax({
+                    url: nhrotmOptionsTableManager.ajaxUrl,
+                    method: "POST",
+                    data: {
+                        action: "nhrotm_delete_usermeta",
+                        nonce: nhrotmOptionsTableManager.nonce,
+                        user_id: userId,
+                        meta_key: metaKey
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert("Meta deleted successfully!");
+                            jQuery('#nhrotm-data-table-usermeta').DataTable().ajax.reload(); // Reload table data
+                        } else {
+                            // alert("Failed to delete meta.");
+                            alert('Error: ' + response.data);
+                        }
+                    }
+                });
+            }
+        }
+
+        
     });
 })(jQuery);

@@ -248,6 +248,38 @@ trait GlobalTrait
         );
     
         return array_merge($core_options, $default_options);
-    }    
+    }
+    
+    public function get_protected_usermetas() {
+        $core_usermetas = array(
+            'nickname',
+            'first_name',
+            'last_name',
+            'description',
+            'rich_editing',
+            'syntax_highlighting',
+            'comment_shortcuts',
+            'admin_color',
+            'use_ssl',
+            'show_admin_bar_front',
+            'locale',
+            'wp_capabilities',
+            'wp_user_level',
+            'show_welcome_panel',
+            'session_tokens',
+            'wp_user-settings',
+            'wp_user-settings-time',
+            'wp_persisted_preferences',
+        );
+    
+        $default_usermetas = array(
+            '_last_login',
+            'last_update',
+            'wc_last_active',
+            '_woocommerce_tracks_anon_id',
+        );
+    
+        return array_merge($core_usermetas, $default_usermetas);
+    }
 
 }
