@@ -91,12 +91,10 @@
     
         function editOption(id, $this) {
             const row = $('#nhrotm-data-table').DataTable().row($($this).parents('tr')).data();
-            
-            let optionValue = row.option_value.replace(/<div class="scrollable-cell">|<\/div>/g, '');
-            optionValue = decodeHtmlEntities(optionValue);
+            let option_value;
             
             $('.nhrotm-edit-option-name').val(row.option_name);
-            $('.nhrotm-edit-option-value').val(optionValue);
+            $('.nhrotm-edit-option-value').val('');
             $('.nhrotm-edit-option-autoload').val(row.autoload);
                 
             if (isProtected(row.option_name)) {
@@ -104,13 +102,47 @@
                 return;
             }
 
-            $('.nhrotm-edit-option-modal').show();
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: "POST",
+                data: {
+                    action: "nhrotm_get_option",
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    option_name: row.option_name,
+                },
+                success: function(response) {
+                    if (response.success) {
+                        option_value = response.data.option_value ?? '';
+                        
+                        if (typeof response.data.option_value === 'object') {
+                            option_value = JSON.stringify(option_value, null, 2);
+                            $('.nhrotm-edit-option-value').val(option_value);
+                        } else {
+                            $('.nhrotm-edit-option-value').val(option_value);
+                        }
 
+                        $('.nhrotm-edit-option-modal').show();
+                    } else {
+                        let message = response.data.message ?? 'Error: Failed to find option value';
+                        // $('.nhrotm-edit-option-value').val(option_value);
+                        alert(message);
+                    }
+                }
+            });
+            
             $('.nhrotm-update-option').off('click').on('click', function() {
                 const optionName = $('.nhrotm-edit-option-name').val();
                 const optionValue = $('.nhrotm-edit-option-value').val();
                 const autoload = $('.nhrotm-edit-option-autoload').val();
         
+                try {
+                    optionValue = JSON.parse(optionValue);
+                } catch (e) {
+                    // Value remains a string if not valid JSON
+                }
+
+                // console.log(optionValue);
+                // console.log(JSON.parse(optionValue));
                 $.ajax({
                     url: nhrotmOptionsTableManager.ajaxUrl,
                     method: "POST",
@@ -332,15 +364,7 @@
             }
         }
 
-        // Handle serialize data
-        function decodeHtmlEntities(encodedString) {
-            const textArea = document.createElement('textarea');
-            textArea.innerHTML = encodedString;
-            return textArea.value;
-        }
-
         // 
-
         
     });
 })(jQuery);

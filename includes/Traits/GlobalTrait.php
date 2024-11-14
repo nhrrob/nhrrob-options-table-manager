@@ -282,4 +282,56 @@ trait GlobalTrait
         return array_merge($core_usermetas, $default_usermetas);
     }
 
+    // Helper function to recursively sanitize arrays and objects
+    public function sanitize_recursive(&$data) {
+        // Handle arrays using array_walk_recursive for deep sanitization
+        if (is_array($data)) {
+            array_walk_recursive($data, function (&$item) {
+                $item = sanitize_text_field($item);
+            });
+        }
+        // Handle objects by converting them to arrays and applying the function recursively
+        elseif (is_object($data)) {
+            foreach ($data as $key => &$value) {
+                if (is_scalar($value)) {
+                    $value = sanitize_text_field($value);
+                } else {
+                    $this->sanitize_recursive($value); // Recurse for arrays or nested objects
+                }
+            }
+        }
+    }
+
+    public function castValues(&$array, $option_name = '') {
+        $exceptional_option_names = $this->exceptional_option_names();
+
+        foreach ($array as $key => &$value) {
+            if (is_array($value)) {
+                $this->castValues($value); // Recursive call for nested arrays
+            } elseif (is_numeric($value)) {
+                $value = (int) $value; // Convert numeric strings to integers
+            } elseif ($value === "true") {
+                $value = true; // Convert "true" string to boolean true
+            } elseif ($value === "false") {
+                $value = false; // Convert "false" string to boolean false
+            } elseif (empty($value) && $key === "recurrence") {
+                $value = false; // Ensure recurrence defaults to false if empty
+            }
+
+            if ( ! empty( $option_name ) && in_array( $option_name, $exceptional_option_names ) ) {
+                if ( empty($value) && $key === "recurrence" ) {
+                    $value = false;
+                }
+            }
+        }
+    }
+
+    public function exceptional_option_names() {
+        return [
+            'betterlinks_notices',
+        ];
+    }
+    
+    //
+
 }

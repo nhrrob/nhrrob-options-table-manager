@@ -5,13 +5,14 @@ namespace Nhrotm\OptionsTableManager;
 /**
  * Ajax handler class
  */
-class Ajax extends App{
+class Ajax extends App {
 
     /**
      * Class constructor
      */
     function __construct() {
         add_action('wp_ajax_nhrotm_option_table_data', [ $this, 'option_table_data' ]);
+        add_action('wp_ajax_nhrotm_get_option', [ $this, 'get_option' ]);
         add_action('wp_ajax_nhrotm_add_option', [ $this, 'add_option' ]);
         add_action('wp_ajax_nhrotm_edit_option', [ $this, 'edit_option' ]);
         add_action('wp_ajax_nhrotm_delete_option', [ $this, 'delete_option' ]);
@@ -80,6 +81,58 @@ class Ajax extends App{
         wp_send_json($response);
     }
 
+    public function get_option() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+
+        // Ensure the user has the right capability
+        if (! current_user_can('manage_options') ) {
+            wp_send_json_error('Insufficient permissions');
+            wp_die();
+        }
+
+        // Sanitize and validate input data
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
+        // $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field($_POST['new_option_value'])) : '';
+        // $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field($_POST['new_option_autoload']) : 'no';
+
+        if (empty($option_name)) {
+            wp_send_json_error('Option name is required');
+            wp_die();
+        }
+
+        // if (empty($option_value)) {
+        //     wp_send_json_error('Option value is required');
+        //     wp_die();
+        // }
+
+        // if (get_option($option_name) !== false) {
+        //     wp_send_json_error('Option already exists');
+        //     wp_die();
+        // }
+
+        // Add the option
+        $option_value = get_option($option_name);
+        $option_value = ! empty( $option_value ) && is_serialized($option_value) ? maybe_unserialize($option_value) : $option_value;
+
+        $response = [];
+        
+        if ( false !== $option_value ) {
+            $response['option_name'] = $option_name;
+            $response['option_value'] = $option_value;
+            $response['message'] = 'Option found successfully';
+            wp_send_json_success($response);
+        } else {
+            $response['message'] = 'Failed to find option';
+            wp_send_json_error($response);
+        }
+
+        wp_die();
+    }
+
     public function add_option() {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
@@ -138,9 +191,35 @@ class Ajax extends App{
     
         // Sanitize and validate input data
         $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
-        $option_value = isset($_POST['option_value']) ? stripslashes_deep(sanitize_text_field($_POST['option_value'])) : '';
         $autoload = isset($_POST['autoload']) ? sanitize_text_field($_POST['autoload']) : null;
     
+        $option_value = '';
+        // check if json encoded
+        
+        $_POST['option_value'] = json_decode(stripslashes_deep($_POST['option_value']), true);
+        print_r($_POST['option_value']);
+
+        // print_r(json_decode(stripslashes_deep($_POST['option_value'])));
+        if (is_array($_POST['option_value']) || is_object($_POST['option_value'])) {
+            // $option_value = maybe_serialize($_POST['option_value']);
+            
+            // Recursively sanitize each element
+            
+            // $sanitized_value = array_map('sanitize_text_field', (array) $_POST['option_value']);
+            $option_value_array = $_POST['option_value'];
+            $this->sanitize_recursive( $option_value_array );
+            $this->castValues($option_value_array, $option_name);
+            print_r($option_value_array);
+            
+            $option_value = maybe_serialize($option_value_array);
+
+        } else {
+            $option_value = sanitize_text_field($_POST['option_value']);
+            // $option_value = sanitize_text_field($_POST['option_value']);
+        }
+        print_r($option_value);
+        
+        wp_die('ok');
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
             wp_die();
@@ -150,9 +229,8 @@ class Ajax extends App{
             wp_send_json_error('This option is protected and cannot be edited');
             wp_die();
         }
-    
-        // Update the option
-        if (update_option($option_name, maybe_unserialize($option_value), $autoload)) {
+        
+        if (update_option($option_name, $option_value, $autoload)) {
             wp_send_json_success('Option updated successfully');
         } else {
             wp_send_json_error('Failed to update option');
