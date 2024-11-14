@@ -75,7 +75,7 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 
 == Changelog ==
 
-= 1.1.1 - 01/11/2024 =
+= 1.1.1 - 13/11/2024 =
 - Added: Usermeta table support added
 - Added: Modal close when clicked outside. Props @mdnahidhasan
 - Added: Edit, delete feature for usermeta table
