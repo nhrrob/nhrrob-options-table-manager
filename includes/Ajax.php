@@ -139,6 +139,7 @@ class Ajax extends App{
         // Sanitize and validate input data
         $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
         $option_value = isset($_POST['option_value']) ? stripslashes_deep(sanitize_text_field($_POST['option_value'])) : '';
+        $autoload = isset($_POST['autoload']) ? sanitize_text_field($_POST['autoload']) : null;
     
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
@@ -151,7 +152,7 @@ class Ajax extends App{
         }
     
         // Update the option
-        if (update_option($option_name, $option_value)) {
+        if (update_option($option_name, maybe_unserialize($option_value), $autoload)) {
             wp_send_json_success('Option updated successfully');
         } else {
             wp_send_json_error('Failed to update option');

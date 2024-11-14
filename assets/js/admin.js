@@ -92,8 +92,11 @@
         function editOption(id, $this) {
             const row = $('#nhrotm-data-table').DataTable().row($($this).parents('tr')).data();
             
+            let optionValue = row.option_value.replace(/<div class="scrollable-cell">|<\/div>/g, '');
+            optionValue = decodeHtmlEntities(optionValue);
+            
             $('.nhrotm-edit-option-name').val(row.option_name);
-            $('.nhrotm-edit-option-value').val(row.option_value.replace(/<div class="scrollable-cell">|<\/div>/g, ''));
+            $('.nhrotm-edit-option-value').val(optionValue);
             $('.nhrotm-edit-option-autoload').val(row.autoload);
                 
             if (isProtected(row.option_name)) {
@@ -328,6 +331,15 @@
                 });
             }
         }
+
+        // Handle serialize data
+        function decodeHtmlEntities(encodedString) {
+            const textArea = document.createElement('textarea');
+            textArea.innerHTML = encodedString;
+            return textArea.value;
+        }
+
+        // 
 
         
     });
