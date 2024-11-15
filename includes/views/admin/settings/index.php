@@ -81,8 +81,8 @@
             <label>
                 <?php esc_html_e('Autoload:', 'nhrrob-options-table-manager'); ?>
                 <select class="nhrotm-new-option-autoload">
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
                 </select>
             </label>
         </p>
@@ -113,6 +113,8 @@
         <p>
             <label><?php esc_html_e('Autoload:', 'nhrrob-options-table-manager'); ?>
                 <select class="nhrotm-edit-option-autoload">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
                     <option value="yes">Yes</option>
                     <option value="no">No</option>
                     <option value="on">On</option>

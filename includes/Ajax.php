@@ -189,37 +189,27 @@ class Ajax extends App {
             wp_die();
         }
     
-        // Sanitize and validate input data
         $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
         $autoload = isset($_POST['autoload']) ? sanitize_text_field($_POST['autoload']) : null;
     
-        $option_value = '';
-        // check if json encoded
-        
-        $_POST['option_value'] = json_decode(stripslashes_deep($_POST['option_value']), true);
-        print_r($_POST['option_value']);
+        $option_value = $_POST['option_value']; // will be sanitized below
 
-        // print_r(json_decode(stripslashes_deep($_POST['option_value'])));
-        if (is_array($_POST['option_value']) || is_object($_POST['option_value'])) {
-            // $option_value = maybe_serialize($_POST['option_value']);
-            
-            // Recursively sanitize each element
-            
-            // $sanitized_value = array_map('sanitize_text_field', (array) $_POST['option_value']);
-            $option_value_array = $_POST['option_value'];
-            $this->sanitize_recursive( $option_value_array );
-            $this->castValues($option_value_array, $option_name);
-            print_r($option_value_array);
-            
-            $option_value = maybe_serialize($option_value_array);
+        $option_value = stripslashes_deep( $option_value );
 
+        if ( is_serialized( $option_value ) ) {
+            $option_value = maybe_unserialize( $option_value );
         } else {
-            $option_value = sanitize_text_field($_POST['option_value']);
-            // $option_value = sanitize_text_field($_POST['option_value']);
+            $decoded_value = json_decode($option_value, true);
+            $option_value = is_null($decoded_value) ? $option_value : $decoded_value;
         }
-        print_r($option_value);
-        
-        wp_die('ok');
+    
+        if (is_array( $option_value ) || is_object( $option_value )) {
+            $this->sanitize_recursive( $option_value );
+            $this->castValues($option_value, $option_name);
+        } else {
+            $option_value = sanitize_text_field($option_value);
+        }
+
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
             wp_die();
@@ -230,7 +220,7 @@ class Ajax extends App {
             wp_die();
         }
         
-        if (update_option($option_name, $option_value, $autoload)) {
+        if (update_option($option_name, $option_value)) {
             wp_send_json_success('Option updated successfully');
         } else {
             wp_send_json_error('Failed to update option');

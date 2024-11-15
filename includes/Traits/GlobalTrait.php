@@ -286,13 +286,19 @@ trait GlobalTrait
     public function sanitize_recursive(&$data) {
         // Handle arrays using array_walk_recursive for deep sanitization
         if (is_array($data)) {
-            array_walk_recursive($data, function (&$item) {
-                $item = sanitize_text_field($item);
+            array_walk_recursive($data, function (&$item, $key) {
+                if ($key !== 'content') {
+                    $item = sanitize_text_field($item); // Only sanitize if the key is not 'content'
+                }
             });
         }
         // Handle objects by converting them to arrays and applying the function recursively
         elseif (is_object($data)) {
             foreach ($data as $key => &$value) {
+                if ($key === 'content') {
+                    continue; // Skip sanitization for 'content' fields
+                }
+                
                 if (is_scalar($value)) {
                     $value = sanitize_text_field($value);
                 } else {
@@ -303,7 +309,7 @@ trait GlobalTrait
     }
 
     public function castValues(&$array, $option_name = '') {
-        $exceptional_option_names = $this->exceptional_option_names();
+        // $exceptional_option_names = $this->exceptional_option_names();
 
         foreach ($array as $key => &$value) {
             if (is_array($value)) {
@@ -318,11 +324,11 @@ trait GlobalTrait
                 $value = false; // Ensure recurrence defaults to false if empty
             }
 
-            if ( ! empty( $option_name ) && in_array( $option_name, $exceptional_option_names ) ) {
-                if ( empty($value) && $key === "recurrence" ) {
-                    $value = false;
-                }
-            }
+            // if ( ! empty( $option_name ) && in_array( $option_name, $exceptional_option_names ) ) {
+            //     if ( empty($value) && $key === "recurrence" ) {
+            //         $value = false;
+            //     }
+            // }
         }
     }
 
@@ -331,7 +337,7 @@ trait GlobalTrait
             'betterlinks_notices',
         ];
     }
-    
+
     //
 
 }

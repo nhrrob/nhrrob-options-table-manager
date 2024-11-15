@@ -14,7 +14,7 @@
         }
 
         // Datatable display
-        $('#nhrotm-data-table').DataTable({
+        var table = $('#nhrotm-data-table').DataTable({
             "processing": true,
             "serverSide": true,
             "ajax": {
@@ -157,7 +157,7 @@
                         if (response.success) {
                             alert("Option updated successfully!");
                             $('.nhrotm-edit-option-modal').hide();
-                            $('#nhrotm-data-table').DataTable().ajax.reload(); // Reload table data
+                            table.ajax.reload(null, false); // Reload table data
                         } else {
                             alert('Error: ' + response.data);
                             // alert("Failed to update option.");
