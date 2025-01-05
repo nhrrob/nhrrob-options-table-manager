@@ -4,7 +4,7 @@ Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,9 +75,10 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 
 == Changelog ==
 
-= 1.1.2-beta1 - 17/11/2024 =
+= 1.1.2 - 05/01/2025 =
 - Added: Serialize data edit support. Props @mdnahidhasan
 - Few minor bug fixing & improvements
+- Happy New Year 2025!
 
 = 1.1.1 - 13/11/2024 =
 - Added: Usermeta table support added
