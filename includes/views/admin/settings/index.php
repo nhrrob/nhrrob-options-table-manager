@@ -12,6 +12,7 @@
         <div class="tab mt-5 mb-3">
             <button class="tablinks active options-table"><?php esc_html_e('Options Table', 'nhrrob-options-table-manager'); ?></button>
             <button class="tablinks usermeta-table"><?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?></button>
+            <button class="tablinks better_payment-table"><?php esc_html_e('Better Payment Table', 'nhrrob-options-table-manager'); ?></button>
         </div>
 
         <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
@@ -40,6 +41,25 @@
                     <th><?php esc_html_e('Meta Key', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Meta Value', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            </tbody>
+        </table>
+
+        <table id="nhrotm-data-table-better_payment" class="nhrotm-data-table wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Transaction ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Email', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Amount', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Form Fields', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Source', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Status', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
                 </tr>
             </thead>
 

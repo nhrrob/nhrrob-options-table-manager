@@ -346,6 +346,7 @@
   }
 
   /* Usermeta Table  */
-  #nhrotm-data-table-usermeta_wrapper {
+  #nhrotm-data-table-usermeta_wrapper,
+  #nhrotm-data-table-better_payment_wrapper {
     display: none;
   }
