@@ -21,6 +21,10 @@ class Ajax extends App {
         add_action('wp_ajax_nhrotm_usermeta_table_data', [ $this, 'usermeta_table_data' ]);
         add_action('wp_ajax_nhrotm_edit_usermeta', [ $this, 'edit_usermeta' ]);
         add_action('wp_ajax_nhrotm_delete_usermeta', [ $this, 'delete_usermeta' ]);
+        
+        add_action('wp_ajax_nhrotm_better_payment_table_data', [ $this, 'better_payment_table_data' ]);
+        // add_action('wp_ajax_nhrotm_edit_usermeta', [ $this, 'edit_usermeta' ]);
+        // add_action('wp_ajax_nhrotm_delete_usermeta', [ $this, 'delete_usermeta' ]);
     }
 
     public function option_table_data() {
@@ -462,6 +466,67 @@ class Ajax extends App {
         }
     
         wp_die();
+    }
+
+    public function better_payment_table_data() {
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+        
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'better_payment';
+
+        // Pagination parameters
+        $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
+        $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
+        
+        // Search parameter
+        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        
+        // Sorting parameters
+        $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? sanitize_text_field( $_GET['order'][0]['dir'] ) : 'desc';
+
+        // Define columns in the correct order for sorting
+        $columns = ['id', 'transaction_id', 'amount', 'status', 'source', 'payment_date', 'email', 'form_fields_info', 'currency'];
+        $order_column = $columns[$order_column_index] ?? $columns[0];
+
+        // Get total record count
+        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+
+        // Build query with search, filtering, and sorting
+        $query = "SELECT * FROM $table_name";
+        if (!empty($search)) {
+            $query .= $wpdb->prepare(" WHERE id LIKE %s OR transaction_id LIKE %s OR amount LIKE %s OR status LIKE %s OR source LIKE %s OR payment_date LIKE %s OR email LIKE %s OR form_fields_info LIKE %s OR currency LIKE %s", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
+        }
+        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM ($query) AS temp");
+        
+        $query .= " ORDER BY $order_column $order_direction LIMIT $start, $length";
+
+        // Execute query
+        $data = $wpdb->get_results($query, ARRAY_A);
+
+        // Wrap the option_value in the scrollable-cell div
+        foreach ($data as &$row) {
+            $row['amount']              = esc_html($row['currency'] . ' ' . $row['amount']);
+            $row['payment_date']        = esc_html(wp_date(get_option('date_format'), strtotime( $row['payment_date'] ) ));
+            $row['form_fields_info']    = '<div class="scrollable-cell">' . esc_html($row['form_fields_info']) . '</div>';
+            
+            // $row['actions']         = '<button class="nhrotm-edit-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
+            //                            <button class="nhrotm-delete-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
+        }
+        
+        // Prepare response for DataTables
+        $response = array(
+            "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
+            "recordsTotal" => $total_records,
+            "recordsFiltered" => $filtered_records,
+            "data" => $data
+        );
+
+        wp_send_json($response);
     }
     
 }

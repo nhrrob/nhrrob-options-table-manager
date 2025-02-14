@@ -246,6 +246,12 @@
 
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeIn();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeIn();
+            } else if ( $(this).hasClass('better_payment-table') ) {
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
+                $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
+                $( '#nhrotm-data-table_wrapper' ).fadeOut();
+
+                $('#nhrotm-data-table-better_payment_wrapper').fadeIn();
             }
         });
 
@@ -364,7 +370,30 @@
             }
         }
 
-        // 
+        // Better Payment Table
+        $('#nhrotm-data-table-better_payment').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "type": "GET",
+                "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_better_payment_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+            },
+            "columns": [
+                { "data": "id", 'visible': false },
+                { "data": "transaction_id" },
+                { "data": "email" },
+                { "data": "amount" },
+                { "data": "form_fields_info" },
+                { "data": "source" },
+                { "data": "status" },
+                { "data": "payment_date" },
+            ],
+            "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
+            // "scrollY": "400px",     // Fixed height
+            // "scrollCollapse": true,
+            // "paging": true,
+            // "order": [[0, 'asc']], // Default order on the first column in ascending
+        });
         
     });
 })(jQuery);
