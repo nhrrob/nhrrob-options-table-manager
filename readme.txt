@@ -75,6 +75,10 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 
 == Changelog ==
 
+= 1.1.3-beta1 - 14/02/2025 =
+- Added: Better Payment table support added
+- Few minor bug fixing & improvements
+
 = 1.1.2 - 05/01/2025 =
 - Added: Serialize data edit support. Props @mdnahidhasan
 - Few minor bug fixing & improvements
