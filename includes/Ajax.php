@@ -120,6 +120,22 @@ class Ajax extends App {
 
         // Add the option
         $option_value = get_option($option_name);
+
+        // if ($option_value === false) {
+        //     wp_send_json_error('Option not found');
+        //     wp_die();
+        // }
+
+        // If it's serialized, unserialize it safely
+        // if (is_serialized($option_value)) {
+        //     $option_value = maybe_unserialize($option_value);
+        // }
+
+        // Convert to array if needed
+        // if (!is_array($option_value)) {
+        //     $option_value = array('value' => $option_value);
+        // }
+
         $option_value = ! empty( $option_value ) && is_serialized($option_value) ? maybe_unserialize($option_value) : $option_value;
 
         $response = [];
@@ -194,28 +210,14 @@ class Ajax extends App {
         }
     
         $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
-        $autoload = isset($_POST['autoload']) ? sanitize_text_field($_POST['autoload']) : null;
-    
-        $option_value = $_POST['option_value']; // will be sanitized below
-
-        $option_value = stripslashes_deep( $option_value );
-
-        if ( is_serialized( $option_value ) ) {
-            $option_value = maybe_unserialize( $option_value );
-        } else {
-            $decoded_value = json_decode($option_value, true);
-            $option_value = is_null($decoded_value) ? $option_value : $decoded_value;
-        }
-    
-        if (is_array( $option_value ) || is_object( $option_value )) {
-            $this->sanitize_recursive( $option_value );
-            $this->castValues($option_value, $option_name);
-        } else {
-            $option_value = sanitize_text_field($option_value);
-        }
 
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
+            wp_die();
+        }
+
+        if (!isset($_POST['option_value'])) {
+            wp_send_json_error('Option value is required');
             wp_die();
         }
 
@@ -223,8 +225,44 @@ class Ajax extends App {
             wp_send_json_error('This option is protected and cannot be edited');
             wp_die();
         }
+
+        $raw_option_value = wp_unslash($_POST['option_value']);
+        // $option_value = stripslashes_deep( $option_value ); 
+
+        $original_value = get_option($option_name);
+        $is_original_serialized = is_serialized($original_value);
+
+        if (json_decode($raw_option_value) !== null && json_last_error() === JSON_ERROR_NONE) {
+            $decoded_value = json_decode($raw_option_value, true);
+            
+            $sanitized_value = $this->sanitize_array_recursive($decoded_value);
+        } else if (is_serialized($raw_option_value)) {
+            try {
+                $unserialized = maybe_unserialize($raw_option_value);
+                    
+                if ($unserialized === false) {
+                    wp_send_json_error('Invalid serialized data format');
+                    wp_die();
+                }
+                
+                if (is_array($unserialized) || is_object($unserialized)) {
+                    $sanitized_value = $this->sanitize_array_recursive((array)$unserialized);
+                } else {
+                    $sanitized_value = sanitize_text_field($unserialized);
+                }
+
+            } catch (\Exception $e) {
+                wp_send_json_error('Error processing serialized data: ' . $e->getMessage());
+                wp_die();
+            }
+        } else {
+            // Plain string/value
+            $sanitized_value = sanitize_text_field($raw_option_value);
+        }
+
+        $autoload = isset($_POST['autoload']) ? sanitize_text_field($_POST['autoload']) : null;
         
-        if (update_option($option_name, $option_value)) {
+        if (update_option($option_name, $sanitized_value, $autoload)) {
             wp_send_json_success('Option updated successfully');
         } else {
             wp_send_json_error('Failed to update option');
@@ -232,6 +270,59 @@ class Ajax extends App {
     
         wp_die();
     }
+
+    /**
+     * Recursively sanitize an array while preserving structure
+     */
+    private function sanitize_array_recursive($data) {
+        // If it's an object, convert to array first
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        if (!is_array($data)) {
+            if (is_bool($data)) {
+                return (bool)$data;
+            } else if (is_numeric($data)) {
+                return $data + 0; // Convert to proper number type
+            } else if (is_string($data)) {
+                return sanitize_text_field($data);
+            } else {
+                // For other types, convert to string and sanitize
+                return sanitize_text_field((string)$data);
+            }
+        }    
+        
+        $content_keys = ['content'];
+        
+        $sanitized = array();
+        foreach ($data as $key => $value) {
+            // Sanitize the key
+            $clean_key = sanitize_text_field($key);
+            
+            if (is_array($value)  || is_object($value)) {
+                $sanitized[$clean_key] = $this->sanitize_array_recursive($value);
+            }  else if (is_string($value) && in_array($clean_key, $content_keys)) {
+                // Use wp_kses_post for HTML content fields
+                $sanitized[$clean_key] = wp_kses_post($value);
+            } else {
+                // Handle different value types appropriately
+                if (is_bool($value)) {
+                    $sanitized[$clean_key] = (bool)$value;
+                } else if (is_numeric($value)) {
+                    $sanitized[$clean_key] = $value + 0; // Convert to proper number type
+                } else if (is_string($value)) {
+                    $sanitized[$clean_key] = sanitize_text_field($value);
+                } else {
+                    // For other types, convert to string and sanitize
+                    $sanitized[$clean_key] = sanitize_text_field((string)$value);
+                }
+            }
+        }
+        
+        return $sanitized;
+    }
+
 
     public function delete_option() {
         // Verify nonce
