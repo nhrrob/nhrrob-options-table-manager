@@ -14,5 +14,9 @@
         "psr-4": {
             "Nhrotm\\OptionsTableManager\\": "includes/"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "10up/wp_mock": "dev-trunk"
     }
 }
