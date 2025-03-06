@@ -229,12 +229,21 @@ class Ajax extends App {
         $raw_option_value = wp_unslash($_POST['option_value']);
         // $option_value = stripslashes_deep( $option_value ); 
 
+        // if (is_serialized_string($raw_option_value)) {
+        //     wp_send_json_error('Serialized objects are not allowed');
+        //     wp_die();
+        // }
+
+        if (preg_match('/O:\d+:"[^"]++":\d+:{/', $raw_option_value)) {
+            wp_send_json_error('Object serialization is not allowed');
+            wp_die();
+        }
+
         $original_value = get_option($option_name);
         $is_original_serialized = is_serialized($original_value);
 
-        if (json_decode($raw_option_value) !== null && json_last_error() === JSON_ERROR_NONE) {
-            $decoded_value = json_decode($raw_option_value, true);
-            
+        $decoded_value = json_decode($raw_option_value, true);
+        if ($decoded_value !== null && json_last_error() === JSON_ERROR_NONE) {
             $sanitized_value = $this->sanitize_array_recursive($decoded_value);
         } else if (is_serialized($raw_option_value)) {
             try {
