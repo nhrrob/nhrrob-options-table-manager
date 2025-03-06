@@ -24,6 +24,7 @@ class ComposerStaticInit9da0bb700250b4b33b32a0a2bf7ec409
         ),
         'N' => 
         array (
+            'Nhrotm\\OptionsTableManager\\Tests\\' => 33,
             'Nhrotm\\OptionsTableManager\\' => 27,
         ),
         'M' => 
@@ -45,6 +46,10 @@ class ComposerStaticInit9da0bb700250b4b33b32a0a2bf7ec409
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'Nhrotm\\OptionsTableManager\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/tests',
         ),
         'Nhrotm\\OptionsTableManager\\' => 
         array (

@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'WP_Mock\\' => array($vendorDir . '/10up/wp_mock/php/WP_Mock'),
     'PhpParser\\' => array($vendorDir . '/nikic/php-parser/lib/PhpParser'),
+    'Nhrotm\\OptionsTableManager\\Tests\\' => array($baseDir . '/tests'),
     'Nhrotm\\OptionsTableManager\\' => array($baseDir . '/includes'),
     'Mockery\\' => array($vendorDir . '/mockery/mockery/library/Mockery'),
     'Doctrine\\Instantiator\\' => array($vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator'),
