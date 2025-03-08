@@ -4,7 +4,7 @@ Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,8 +75,9 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 
 == Changelog ==
 
-= 1.1.3-beta1 - 14/02/2025 =
+= 1.1.3 - 09/03/2025 =
 - Added: Better Payment table support added
+- Added: Security improvements 
 - Few minor bug fixing & improvements
 
 = 1.1.2 - 05/01/2025 =
