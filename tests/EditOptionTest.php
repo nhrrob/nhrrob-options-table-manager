@@ -15,11 +15,6 @@ class EditOptionTest extends TestCase {
         $this->ajax = $this->getMockBuilder(Ajax::class)
             ->setMethods(['get_protected_options', 'sanitize_array_recursive'])
             ->getMock();
-
-        // // Create a partial mock of the plugin class
-        // $this->plugin = $this->getMockBuilder(\Nhrotm_Options_Table_Manager::class)
-        //     // ->onlyMethods(['get_protected_options', 'sanitize_array_recursive'])
-        //     ->getMock();
     }
 
     protected function tearDown(): void {
@@ -287,6 +282,10 @@ class EditOptionTest extends TestCase {
      * Test prevention of object serialization exploit
      */
     public function testPreventObjectSerializationExploit() {
+        WP_Mock::userFunction('wp_die')
+            ->with()
+            ->andThrow(new WP_Die_Exception());
+
         // Mock nonce verification
         WP_Mock::userFunction('wp_verify_nonce')
             ->with('test_nonce', 'nhrotm-admin-nonce')
@@ -299,8 +298,18 @@ class EditOptionTest extends TestCase {
             ->once()
             ->andReturn(true);
 
+        WP_Mock::userFunction('sanitize_text_field')
+            ->andReturnUsing(function($input) {
+                return $input; // Simply return the input for any call
+            });
+
+        WP_Mock::userFunction('wp_unslash')
+            ->andReturnUsing(function($input) {
+                return $input;
+            });
+
         // Mock protected options method
-        $this->plugin->expects($this->once())
+        $this->ajax->expects($this->once())
             ->method('get_protected_options')
             ->willReturn([]);
 
@@ -317,8 +326,8 @@ class EditOptionTest extends TestCase {
         ];
 
         // Call the method (expect wp_die to be called)
-        $this->expectException(\WP_Die_Exception::class);
-        $this->plugin->edit_option();
+        $this->expectException(WP_Die_Exception::class);
+        $this->ajax->edit_option();
     }
 }
 
