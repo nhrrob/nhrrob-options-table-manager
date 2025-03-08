@@ -283,7 +283,7 @@ class Ajax extends App {
     /**
      * Recursively sanitize an array while preserving structure
      */
-    private function sanitize_array_recursive($data) {
+    public function sanitize_array_recursive($data) {
         // If it's an object, convert to array first
         if (is_object($data)) {
             $data = (array) $data;
