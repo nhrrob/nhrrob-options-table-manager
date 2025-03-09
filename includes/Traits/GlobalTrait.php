@@ -7,6 +7,7 @@ trait GlobalTrait
     public function dd($var)
     {
         echo "<pre>";
+        // phpcs:ignore:WordPress.PHP.DevelopmentFunctions.error_log_print_r
         print_r($var);
         wp_die('ok');
     }
@@ -230,11 +231,8 @@ trait GlobalTrait
         );
     
         $default_options = array(
-            '_site_transient_update_core',
             '_site_transient_timeout_theme_roots',
             '_site_transient_theme_roots',
-            '_site_transient_update_themes',
-            '_site_transient_update_plugins',
             '_transient_doing_cron',
             '_transient_plugins_delete_result_1',
             '_transient_plugin_slugs',
