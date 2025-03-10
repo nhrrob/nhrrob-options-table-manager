@@ -29,7 +29,7 @@ class Ajax extends App {
 
     public function option_table_data() {
         // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -42,11 +42,11 @@ class Ajax extends App {
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
         
         // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( $_GET['order'][0]['dir'] ) ) : 'asc';
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
 
         // Define columns in the correct order for sorting
         $columns = ['option_id', 'option_name', 'option_value', 'autoload'];
@@ -59,7 +59,7 @@ class Ajax extends App {
         
         // Get total record count with prepared statement
         $total_records = $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}options")
+            "SELECT COUNT(*) FROM {$wpdb->prefix}options"
         );
         
         // Prepare queries for different order options
@@ -313,7 +313,7 @@ class Ajax extends App {
 
     public function get_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -325,7 +325,7 @@ class Ajax extends App {
         }
 
         // Sanitize and validate input data
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
         // $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field($_POST['new_option_value'])) : '';
         // $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field($_POST['new_option_autoload']) : 'no';
 
@@ -381,7 +381,7 @@ class Ajax extends App {
 
     public function add_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -393,9 +393,9 @@ class Ajax extends App {
         }
 
         // Sanitize and validate input data
-        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field($_POST['new_option_name']) : '';
-        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field($_POST['new_option_value'])) : '';
-        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field($_POST['new_option_autoload']) : 'no';
+        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field( wp_unslash( $_POST['new_option_name'] ) ) : '';
+        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field( wp_unslash( $_POST['new_option_value'] ) )) : '';
+        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field( wp_unslash( $_POST['new_option_autoload'] ) ) : 'no';
 
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
@@ -424,7 +424,7 @@ class Ajax extends App {
     
     public function edit_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -435,7 +435,7 @@ class Ajax extends App {
             wp_die();
         }
     
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
 
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
@@ -452,7 +452,7 @@ class Ajax extends App {
             wp_die();
         }
 
-        $raw_option_value = wp_unslash($_POST['option_value']);
+        $raw_option_value = sanitize_text_field( wp_unslash($_POST['option_value']) );
         // $option_value = stripslashes_deep( $option_value ); 
 
         // if (is_serialized_string($raw_option_value)) {
@@ -495,7 +495,7 @@ class Ajax extends App {
             $sanitized_value = sanitize_text_field($raw_option_value);
         }
 
-        $autoload = isset($_POST['autoload']) ? sanitize_text_field($_POST['autoload']) : null;
+        $autoload = isset($_POST['autoload']) ? sanitize_text_field( wp_unslash( $_POST['autoload'] ) ) : null;
         
         if (update_option($option_name, $sanitized_value, $autoload)) {
             wp_send_json_success('Option updated successfully');
@@ -561,7 +561,7 @@ class Ajax extends App {
 
     public function delete_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -573,7 +573,7 @@ class Ajax extends App {
         }
     
         // Sanitize and validate input data
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
     
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
@@ -597,7 +597,7 @@ class Ajax extends App {
 
     public function option_usage_analytics() {
         // Verify nonce and permissions
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -610,7 +610,7 @@ class Ajax extends App {
         $table_name = $wpdb->prefix . 'options';
     
         // Query to get all option names
-        $results = $wpdb->get_results("SELECT option_name FROM $table_name", ARRAY_A);
+        $results = $wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
         
         $prefix_count = [];
     
@@ -653,7 +653,7 @@ class Ajax extends App {
 
     public function usermeta_table_data() {
         // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -666,11 +666,11 @@ class Ajax extends App {
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
         
         // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        $search = isset($_GET['search']['value']) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( $_GET['order'][0]['dir'] ) ) : 'asc';
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
     
         // Define columns in the correct order for sorting
         $columns = ['umeta_id', 'user_id', 'meta_key', 'meta_value'];
@@ -683,7 +683,7 @@ class Ajax extends App {
         
         // Get total record count with prepared statement
         $total_records = $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}usermeta")
+            "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta"
         );
         
         // Prepare queries for different order options
@@ -937,7 +937,7 @@ class Ajax extends App {
 
     public function edit_usermeta() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -950,8 +950,8 @@ class Ajax extends App {
     
         // Sanitize and validate input data
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '';
-        $meta_value = isset($_POST['meta_value']) ? stripslashes_deep(sanitize_text_field($_POST['meta_value'])) : '';
+        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field( wp_unslash( $_POST['meta_key'] ) ) : '';
+        $meta_value = isset($_POST['meta_value']) ? stripslashes_deep(sanitize_text_field( wp_unslash( $_POST['meta_value'] ) )) : '';
     
         if (empty($user_id)) {
             wp_send_json_error('User ID is invalid');
@@ -980,7 +980,7 @@ class Ajax extends App {
 
     public function delete_usermeta() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -993,7 +993,7 @@ class Ajax extends App {
     
         // Sanitize and validate input data
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '';
+        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field( wp_unslash( $_POST['meta_key'] ) ) : '';
     
         if (empty($user_id)) {
             wp_send_json_error('User id is invalid');
@@ -1022,7 +1022,7 @@ class Ajax extends App {
 
     public function better_payment_table_data() {
         // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -1035,11 +1035,11 @@ class Ajax extends App {
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
         
         // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        $search = isset($_GET['search']['value']) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower(sanitize_text_field($_GET['order'][0]['dir'])) : 'desc';
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'desc';
     
         // Define columns in the correct order for sorting
         $columns = ['id', 'transaction_id', 'amount', 'status', 'source', 'payment_date', 'email', 'form_fields_info', 'currency'];
@@ -1052,7 +1052,7 @@ class Ajax extends App {
         
         // Get total record count with prepared statement
         $total_records = $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}better_payment")
+            "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment"
         );
         
         // Prepare queries for different search and order options
