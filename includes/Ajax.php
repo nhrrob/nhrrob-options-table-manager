@@ -58,6 +58,7 @@ class Ajax extends App {
         $order_column = $columns[$order_column_index];
         
         // Get total record count with prepared statement
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->prefix}options"
         );
@@ -68,6 +69,7 @@ class Ajax extends App {
             $search_like = '%' . $wpdb->esc_like($search) . '%';
             
             // Get filtered count
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $filtered_records = $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM {$wpdb->prefix}options WHERE option_name LIKE %s OR option_value LIKE %s",
@@ -79,6 +81,7 @@ class Ajax extends App {
             // Get data with search and properly hardcoded ORDER BY
             if ($order_column === 'option_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -90,6 +93,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -103,6 +107,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'option_name') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -114,6 +119,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -127,6 +133,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'option_value') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -138,6 +145,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -151,6 +159,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'autoload') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -162,6 +171,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -175,6 +185,7 @@ class Ajax extends App {
                 }
             } else {
                 // Default fallback
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $data = $wpdb->get_results(
                     $wpdb->prepare(
                         "SELECT * FROM {$wpdb->prefix}options 
@@ -193,6 +204,7 @@ class Ajax extends App {
             // Get data without search and properly hardcoded ORDER BY
             if ($order_column === 'option_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -203,6 +215,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -215,6 +228,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'option_name') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -225,6 +239,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -237,6 +252,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'option_value') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -247,6 +263,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -259,6 +276,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'autoload') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -269,6 +287,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}options 
@@ -281,6 +300,7 @@ class Ajax extends App {
                 }
             } else {
                 // Default fallback
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $data = $wpdb->get_results(
                     $wpdb->prepare(
                         "SELECT * FROM {$wpdb->prefix}options 
@@ -610,6 +630,7 @@ class Ajax extends App {
         $table_name = $wpdb->prefix . 'options';
     
         // Query to get all option names
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $results = $wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
         
         $prefix_count = [];
@@ -682,6 +703,7 @@ class Ajax extends App {
         $order_column = $columns[$order_column_index];
         
         // Get total record count with prepared statement
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta"
         );
@@ -692,6 +714,7 @@ class Ajax extends App {
             $search_like = '%' . $wpdb->esc_like($search) . '%';
             
             // Get filtered count
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $filtered_records = $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta WHERE meta_key LIKE %s OR meta_value LIKE %s",
@@ -703,6 +726,7 @@ class Ajax extends App {
             // Get data with search and properly hardcoded ORDER BY
             if ($order_column === 'umeta_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -714,6 +738,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -727,6 +752,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'user_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -738,6 +764,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -751,6 +778,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'meta_key') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -762,6 +790,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -775,6 +804,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'meta_value') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -786,6 +816,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -799,6 +830,7 @@ class Ajax extends App {
                 }
             } else {
                 // Default fallback
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $data = $wpdb->get_results(
                     $wpdb->prepare(
                         "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -817,6 +849,7 @@ class Ajax extends App {
             // Get data without search and properly hardcoded ORDER BY
             if ($order_column === 'umeta_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -827,6 +860,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -839,6 +873,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'user_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -849,6 +884,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -861,6 +897,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'meta_key') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -871,6 +908,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -883,6 +921,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'meta_value') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -893,6 +932,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -905,6 +945,7 @@ class Ajax extends App {
                 }
             } else {
                 // Default fallback
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $data = $wpdb->get_results(
                     $wpdb->prepare(
                         "SELECT * FROM {$wpdb->prefix}usermeta 
@@ -919,6 +960,7 @@ class Ajax extends App {
         
         // Wrap the meta_value in the scrollable-cell div
         foreach ($data as &$row) {
+            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
             $row['meta_value'] = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
             $row['actions'] = '<button class="nhrotm-edit-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
                 <button class="nhrotm-delete-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
@@ -1051,6 +1093,7 @@ class Ajax extends App {
         $order_column = $columns[$order_column_index];
         
         // Get total record count with prepared statement
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment"
         );
@@ -1060,6 +1103,7 @@ class Ajax extends App {
             $search_like = '%' . $wpdb->esc_like($search) . '%';
             
             // Get filtered count
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $filtered_records = $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment WHERE 
@@ -1086,6 +1130,7 @@ class Ajax extends App {
             // Complete hardcoded query paths for each possible order column and direction
             if ($order_column === 'id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1107,6 +1152,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1130,6 +1176,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'transaction_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1151,6 +1198,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1174,6 +1222,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'amount') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1195,6 +1244,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1218,6 +1268,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'status') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1239,6 +1290,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1262,6 +1314,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'source') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1283,6 +1336,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1306,6 +1360,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'payment_date') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1327,6 +1382,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1350,6 +1406,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'email') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1371,6 +1428,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1394,6 +1452,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'form_fields_info') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1415,6 +1474,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1438,6 +1498,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'currency') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1459,6 +1520,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1482,6 +1544,7 @@ class Ajax extends App {
                 }
             } else {
                 // Default fallback if column is not recognized
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $data = $wpdb->get_results(
                     $wpdb->prepare(
                         "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1510,6 +1573,7 @@ class Ajax extends App {
             // Complete hardcoded query paths for each possible order column and direction without search
             if ($order_column === 'id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1520,6 +1584,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1532,6 +1597,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'transaction_id') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1542,6 +1608,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1554,6 +1621,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'amount') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1564,6 +1632,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1576,6 +1645,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'status') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1586,6 +1656,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1598,6 +1669,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'source') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1608,6 +1680,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1620,6 +1693,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'payment_date') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1630,6 +1704,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1642,6 +1717,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'email') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1652,6 +1728,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1664,6 +1741,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'form_fields_info') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1674,6 +1752,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1686,6 +1765,7 @@ class Ajax extends App {
                 }
             } elseif ($order_column === 'currency') {
                 if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1696,6 +1776,7 @@ class Ajax extends App {
                         ARRAY_A
                     );
                 } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $data = $wpdb->get_results(
                         $wpdb->prepare(
                             "SELECT * FROM {$wpdb->prefix}better_payment 
@@ -1708,6 +1789,7 @@ class Ajax extends App {
                 }
             } else {
                 // Default fallback if column is not recognized
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $data = $wpdb->get_results(
                     $wpdb->prepare(
                         "SELECT * FROM {$wpdb->prefix}better_payment 
