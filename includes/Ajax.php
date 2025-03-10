@@ -660,7 +660,7 @@ class Ajax extends App {
         
         global $wpdb;
         $table_name = $wpdb->prefix . 'usermeta';
-
+        
         // Pagination parameters
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
@@ -670,32 +670,258 @@ class Ajax extends App {
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? sanitize_text_field( $_GET['order'][0]['dir'] ) : 'asc';
-
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( $_GET['order'][0]['dir'] ) ) : 'asc';
+    
         // Define columns in the correct order for sorting
         $columns = ['umeta_id', 'user_id', 'meta_key', 'meta_value'];
-        $order_column = $columns[$order_column_index] ?? $columns[0];
-
-        // Get total record count
-        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-
-        // Build query with search, filtering, and sorting
-        $query = "SELECT * FROM $table_name";
-        if (!empty($search)) {
-            $query .= $wpdb->prepare(" WHERE meta_key LIKE %s OR meta_value LIKE %s", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
-        }
-        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM ($query) AS temp");
         
-        $query .= " ORDER BY $order_column $order_direction LIMIT $start, $length";
-
-        // Execute query
-        $data = $wpdb->get_results($query, ARRAY_A);
-
-        // Wrap the option_value in the scrollable-cell div
+        // Ensure order column is valid using whitelist approach
+        if ($order_column_index < 0 || $order_column_index >= count($columns)) {
+            $order_column_index = 0; // Default to first column
+        }
+        $order_column = $columns[$order_column_index];
+        
+        // Get total record count with prepared statement
+        $total_records = $wpdb->get_var(
+            $wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}usermeta")
+        );
+        
+        // Prepare queries for different order options
+        // Using separate complete queries for each column and direction to avoid concatenation
+        if (!empty($search)) {
+            $search_like = '%' . $wpdb->esc_like($search) . '%';
+            
+            // Get filtered count
+            $filtered_records = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta WHERE meta_key LIKE %s OR meta_value LIKE %s",
+                    $search_like,
+                    $search_like
+                )
+            );
+            
+            // Get data with search and properly hardcoded ORDER BY
+            if ($order_column === 'umeta_id') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY umeta_id DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY umeta_id ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'user_id') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY user_id DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY user_id ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'meta_key') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY meta_key DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY meta_key ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'meta_value') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY meta_value DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            WHERE meta_key LIKE %s OR meta_value LIKE %s
+                            ORDER BY meta_value ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } else {
+                // Default fallback
+                $data = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}usermeta 
+                        WHERE meta_key LIKE %s OR meta_value LIKE %s
+                        ORDER BY umeta_id ASC
+                        LIMIT %d, %d",
+                        $search_like, $search_like, $start, $length
+                    ),
+                    ARRAY_A
+                );
+            }
+        } else {
+            // No search applied, use total as filtered count
+            $filtered_records = $total_records;
+            
+            // Get data without search and properly hardcoded ORDER BY
+            if ($order_column === 'umeta_id') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY umeta_id DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY umeta_id ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'user_id') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY user_id DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY user_id ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'meta_key') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY meta_key DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY meta_key ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'meta_value') {
+                if ($order_direction === 'desc') {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY meta_value DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}usermeta 
+                            ORDER BY meta_value ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } else {
+                // Default fallback
+                $data = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}usermeta 
+                        ORDER BY umeta_id ASC
+                        LIMIT %d, %d",
+                        $start, $length
+                    ),
+                    ARRAY_A
+                );
+            }
+        }
+        
+        // Wrap the meta_value in the scrollable-cell div
         foreach ($data as &$row) {
-            $row['meta_value']    = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
-            $row['actions']         = '<button class="nhrotm-edit-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
-                                       <button class="nhrotm-delete-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
+            $row['meta_value'] = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
+            $row['actions'] = '<button class="nhrotm-edit-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
+                <button class="nhrotm-delete-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
         }
         
         // Prepare response for DataTables
@@ -705,7 +931,7 @@ class Ajax extends App {
             "recordsFiltered" => $filtered_records,
             "data" => $data
         );
-
+        
         wp_send_json($response);
     }
 
