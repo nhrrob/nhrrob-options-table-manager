@@ -239,10 +239,12 @@
             if ( $(this).hasClass('options-table') ) {
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
+                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
 
                 $( '#nhrotm-data-table_wrapper' ).fadeIn();
             } else if ( $(this).hasClass('usermeta-table') ) {
                 $( '#nhrotm-data-table_wrapper' ).fadeOut();
+                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
 
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeIn();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeIn();
