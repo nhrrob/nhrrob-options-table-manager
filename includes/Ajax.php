@@ -29,49 +29,295 @@ class Ajax extends App {
 
     public function option_table_data() {
         // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
         
         global $wpdb;
         $table_name = $wpdb->prefix . 'options';
-
+        
         // Pagination parameters
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
         
         // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? sanitize_text_field( $_GET['order'][0]['dir'] ) : 'asc';
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
 
         // Define columns in the correct order for sorting
         $columns = ['option_id', 'option_name', 'option_value', 'autoload'];
-        $order_column = $columns[$order_column_index] ?? $columns[0];
-
-        // Get total record count
-        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-
-        // Build query with search, filtering, and sorting
-        $query = "SELECT * FROM $table_name";
-        if (!empty($search)) {
-            $query .= $wpdb->prepare(" WHERE option_name LIKE %s OR option_value LIKE %s", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
-        }
-        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM ($query) AS temp");
         
-        $query .= " ORDER BY $order_column $order_direction LIMIT $start, $length";
-
-        // Execute query
-        $data = $wpdb->get_results($query, ARRAY_A);
-
+        // Ensure order column is valid using whitelist approach
+        if ($order_column_index < 0 || $order_column_index >= count($columns)) {
+            $order_column_index = 0; // Default to first column
+        }
+        $order_column = $columns[$order_column_index];
+        
+        // Get total record count with prepared statement
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $total_records = $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}options"
+        );
+        
+        // Prepare queries for different order options
+        // Using separate complete queries for each column and direction to avoid concatenation
+        if (!empty($search)) {
+            $search_like = '%' . $wpdb->esc_like($search) . '%';
+            
+            // Get filtered count
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $filtered_records = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}options WHERE option_name LIKE %s OR option_value LIKE %s",
+                    $search_like,
+                    $search_like
+                )
+            );
+            
+            // Get data with search and properly hardcoded ORDER BY
+            if ($order_column === 'option_id') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY option_id DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY option_id ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'option_name') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY option_name DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY option_name ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'option_value') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY option_value DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY option_value ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'autoload') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY autoload DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            WHERE option_name LIKE %s OR option_value LIKE %s
+                            ORDER BY autoload ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } else {
+                // Default fallback
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $data = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}options 
+                        WHERE option_name LIKE %s OR option_value LIKE %s
+                        ORDER BY option_id ASC
+                        LIMIT %d, %d",
+                        $search_like, $search_like, $start, $length
+                    ),
+                    ARRAY_A
+                );
+            }
+        } else {
+            // No search applied, use total as filtered count
+            $filtered_records = $total_records;
+            
+            // Get data without search and properly hardcoded ORDER BY
+            if ($order_column === 'option_id') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY option_id DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY option_id ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'option_name') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY option_name DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY option_name ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'option_value') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY option_value DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY option_value ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'autoload') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY autoload DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}options 
+                            ORDER BY autoload ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } else {
+                // Default fallback
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $data = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}options 
+                        ORDER BY option_id ASC
+                        LIMIT %d, %d",
+                        $start, $length
+                    ),
+                    ARRAY_A
+                );
+            }
+        }
+        
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
-            $row['option_value']    = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
-            $row['actions']         = '<button class="nhrotm-edit-button" data-id="' . esc_attr($row['option_id']) . '">Edit</button>
-                                       <button class="nhrotm-delete-button" data-id="' . esc_attr($row['option_id']) . '">Delete</button>';
+            $row['option_value'] = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
+            $row['actions'] = '<button class="nhrotm-edit-button" data-id="' . esc_attr($row['option_id']) . '">Edit</button>
+                <button class="nhrotm-delete-button" data-id="' . esc_attr($row['option_id']) . '">Delete</button>';
         }
         
         // Prepare response for DataTables
@@ -81,13 +327,13 @@ class Ajax extends App {
             "recordsFiltered" => $filtered_records,
             "data" => $data
         );
-
+        
         wp_send_json($response);
     }
 
     public function get_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -99,7 +345,7 @@ class Ajax extends App {
         }
 
         // Sanitize and validate input data
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
         // $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field($_POST['new_option_value'])) : '';
         // $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field($_POST['new_option_autoload']) : 'no';
 
@@ -120,6 +366,22 @@ class Ajax extends App {
 
         // Add the option
         $option_value = get_option($option_name);
+
+        // if ($option_value === false) {
+        //     wp_send_json_error('Option not found');
+        //     wp_die();
+        // }
+
+        // If it's serialized, unserialize it safely
+        // if (is_serialized($option_value)) {
+        //     $option_value = maybe_unserialize($option_value);
+        // }
+
+        // Convert to array if needed
+        // if (!is_array($option_value)) {
+        //     $option_value = array('value' => $option_value);
+        // }
+
         $option_value = ! empty( $option_value ) && is_serialized($option_value) ? maybe_unserialize($option_value) : $option_value;
 
         $response = [];
@@ -139,7 +401,7 @@ class Ajax extends App {
 
     public function add_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -151,9 +413,9 @@ class Ajax extends App {
         }
 
         // Sanitize and validate input data
-        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field($_POST['new_option_name']) : '';
-        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field($_POST['new_option_value'])) : '';
-        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field($_POST['new_option_autoload']) : 'no';
+        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field( wp_unslash( $_POST['new_option_name'] ) ) : '';
+        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field( wp_unslash( $_POST['new_option_value'] ) )) : '';
+        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field( wp_unslash( $_POST['new_option_autoload'] ) ) : 'no';
 
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
@@ -182,7 +444,7 @@ class Ajax extends App {
     
     public function edit_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -193,29 +455,15 @@ class Ajax extends App {
             wp_die();
         }
     
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
-        $autoload = isset($_POST['autoload']) ? sanitize_text_field($_POST['autoload']) : null;
-    
-        $option_value = $_POST['option_value']; // will be sanitized below
-
-        $option_value = stripslashes_deep( $option_value );
-
-        if ( is_serialized( $option_value ) ) {
-            $option_value = maybe_unserialize( $option_value );
-        } else {
-            $decoded_value = json_decode($option_value, true);
-            $option_value = is_null($decoded_value) ? $option_value : $decoded_value;
-        }
-    
-        if (is_array( $option_value ) || is_object( $option_value )) {
-            $this->sanitize_recursive( $option_value );
-            $this->castValues($option_value, $option_name);
-        } else {
-            $option_value = sanitize_text_field($option_value);
-        }
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
 
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
+            wp_die();
+        }
+
+        if (!isset($_POST['option_value'])) {
+            wp_send_json_error('Option value is required');
             wp_die();
         }
 
@@ -223,8 +471,53 @@ class Ajax extends App {
             wp_send_json_error('This option is protected and cannot be edited');
             wp_die();
         }
+
+        $raw_option_value = sanitize_text_field( wp_unslash($_POST['option_value']) );
+        // $option_value = stripslashes_deep( $option_value ); 
+
+        // if (is_serialized_string($raw_option_value)) {
+        //     wp_send_json_error('Serialized objects are not allowed');
+        //     wp_die();
+        // }
+
+        if (preg_match('/O:\d+:"[^"]++":\d+:{/', $raw_option_value)) {
+            wp_send_json_error('Object serialization is not allowed');
+            wp_die();
+        }
+
+        $original_value = get_option($option_name);
+        $is_original_serialized = is_serialized($original_value);
+
+        $decoded_value = json_decode($raw_option_value, true);
+        if ($decoded_value !== null && json_last_error() === JSON_ERROR_NONE) {
+            $sanitized_value = $this->sanitize_array_recursive($decoded_value);
+        } else if (is_serialized($raw_option_value)) {
+            try {
+                $unserialized = maybe_unserialize($raw_option_value);
+                    
+                if ($unserialized === false) {
+                    wp_send_json_error('Invalid serialized data format');
+                    wp_die();
+                }
+                
+                if (is_array($unserialized) || is_object($unserialized)) {
+                    $sanitized_value = $this->sanitize_array_recursive((array)$unserialized);
+                } else {
+                    $sanitized_value = sanitize_text_field($unserialized);
+                }
+
+            } catch (\Exception $e) {
+                wp_send_json_error('Error processing serialized data: ' . $e->getMessage());
+                wp_die();
+            }
+        } else {
+            // Plain string/value
+            $sanitized_value = sanitize_text_field($raw_option_value);
+        }
+
+        $autoload = isset($_POST['autoload']) ? sanitize_text_field( wp_unslash( $_POST['autoload'] ) ) : null;
         
-        if (update_option($option_name, $option_value)) {
+        if (update_option($option_name, $sanitized_value, $autoload)) {
             wp_send_json_success('Option updated successfully');
         } else {
             wp_send_json_error('Failed to update option');
@@ -233,9 +526,62 @@ class Ajax extends App {
         wp_die();
     }
 
+    /**
+     * Recursively sanitize an array while preserving structure
+     */
+    public function sanitize_array_recursive($data) {
+        // If it's an object, convert to array first
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        if (!is_array($data)) {
+            if (is_bool($data)) {
+                return (bool)$data;
+            } else if (is_numeric($data)) {
+                return $data + 0; // Convert to proper number type
+            } else if (is_string($data)) {
+                return sanitize_text_field($data);
+            } else {
+                // For other types, convert to string and sanitize
+                return sanitize_text_field((string)$data);
+            }
+        }    
+        
+        $content_keys = ['content'];
+        
+        $sanitized = array();
+        foreach ($data as $key => $value) {
+            // Sanitize the key
+            $clean_key = sanitize_text_field($key);
+            
+            if (is_array($value)  || is_object($value)) {
+                $sanitized[$clean_key] = $this->sanitize_array_recursive($value);
+            }  else if (is_string($value) && in_array($clean_key, $content_keys)) {
+                // Use wp_kses_post for HTML content fields
+                $sanitized[$clean_key] = wp_kses_post($value);
+            } else {
+                // Handle different value types appropriately
+                if (is_bool($value)) {
+                    $sanitized[$clean_key] = (bool)$value;
+                } else if (is_numeric($value)) {
+                    $sanitized[$clean_key] = $value + 0; // Convert to proper number type
+                } else if (is_string($value)) {
+                    $sanitized[$clean_key] = sanitize_text_field($value);
+                } else {
+                    // For other types, convert to string and sanitize
+                    $sanitized[$clean_key] = sanitize_text_field((string)$value);
+                }
+            }
+        }
+        
+        return $sanitized;
+    }
+
+
     public function delete_option() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -247,7 +593,7 @@ class Ajax extends App {
         }
     
         // Sanitize and validate input data
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field($_POST['option_name']) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
     
         if (empty($option_name)) {
             wp_send_json_error('Option name is required');
@@ -271,7 +617,7 @@ class Ajax extends App {
 
     public function option_usage_analytics() {
         // Verify nonce and permissions
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -284,7 +630,8 @@ class Ajax extends App {
         $table_name = $wpdb->prefix . 'options';
     
         // Query to get all option names
-        $results = $wpdb->get_results("SELECT option_name FROM $table_name", ARRAY_A);
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $results = $wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
         
         $prefix_count = [];
     
@@ -327,65 +674,124 @@ class Ajax extends App {
 
     public function usermeta_table_data() {
         // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
-            wp_send_json_error('Invalid nonce');
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid security token');
+            wp_die();
+        }
+        
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
             wp_die();
         }
         
         global $wpdb;
         $table_name = $wpdb->prefix . 'usermeta';
-
-        // Pagination parameters
-        $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
-        $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
+        
+        // Pagination parameters with defaults and validation
+        $start = isset($_GET['start']) ? max(0, intval($_GET['start'])) : 0;
+        $length = isset($_GET['length']) ? min(max(1, intval($_GET['length'])), 100) : 10;
         
         // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? sanitize_text_field( $_GET['order'][0]['dir'] ) : 'asc';
-
-        // Define columns in the correct order for sorting
-        $columns = ['umeta_id', 'user_id', 'meta_key', 'meta_value'];
-        $order_column = $columns[$order_column_index] ?? $columns[0];
-
-        // Get total record count
-        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-
-        // Build query with search, filtering, and sorting
-        $query = "SELECT * FROM $table_name";
-        if (!empty($search)) {
-            $query .= $wpdb->prepare(" WHERE meta_key LIKE %s OR meta_value LIKE %s", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
-        }
-        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM ($query) AS temp");
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) 
+            ? strtolower(sanitize_text_field(wp_unslash($_GET['order'][0]['dir']))) 
+            : 'asc';
+    
+        // Define columns in the correct order for sorting with DB column mapping
+        $columns = [
+            'umeta_id',
+            'user_id',
+            'meta_key',
+            'meta_value'
+        ];
         
-        $query .= " ORDER BY $order_column $order_direction LIMIT $start, $length";
-
-        // Execute query
-        $data = $wpdb->get_results($query, ARRAY_A);
-
-        // Wrap the option_value in the scrollable-cell div
+        // Ensure order column is valid
+        $order_column = isset($columns[$order_column_index]) ? $columns[$order_column_index] : 'umeta_id';
+        
+        // Base query parts
+        $select_query = "SELECT * FROM {$wpdb->prefix}usermeta";
+        $count_query = "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta";
+        
+        // Apply search filter if provided
+        $where_clause = '';
+        $query_args = [];
+        
+        if (!empty($search)) {
+            $where_clause = " WHERE meta_key LIKE %s OR meta_value LIKE %s";
+            $search_like = '%' . $wpdb->esc_like($search) . '%';
+            $query_args[] = $search_like;
+            $query_args[] = $search_like;
+        }
+        
+        // Add order clause
+        $order_clause = " ORDER BY {$order_column} {$order_direction}";
+        
+        // Add limit clause
+        $limit_clause = " LIMIT %d, %d";
+        $query_args[] = $start;
+        $query_args[] = $length;
+        
+        // Get total records without filtering
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $total_records = $wpdb->get_var($count_query);
+        
+        // Get filtered records count
+        if (!empty($where_clause)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $filtered_records = $wpdb->get_var(
+                $wpdb->prepare(
+                    $count_query . $where_clause,
+                    $query_args[0],
+                    $query_args[1]
+                )
+            );
+        } else {
+            $filtered_records = $total_records;
+        }
+        
+        // Get the data
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $data = $wpdb->get_results(
+            $wpdb->prepare(
+                $select_query . $where_clause . $order_clause . $limit_clause,
+                ...$query_args
+            ),
+            ARRAY_A
+        );
+        
+        // Process the results
         foreach ($data as &$row) {
-            $row['meta_value']    = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
-            $row['actions']         = '<button class="nhrotm-edit-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
-                                       <button class="nhrotm-delete-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
+            // Apply proper escaping for output
+            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+            $row['meta_value'] = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
+            
+            // Add action buttons with proper escaping
+            $row['actions'] = sprintf(
+                '<button class="nhrotm-edit-button-usermeta" data-id="%1$s">Edit</button> ' .
+                '<button class="nhrotm-delete-button-usermeta" data-id="%1$s">Delete</button>',
+                esc_attr($row['umeta_id'])
+            );
         }
         
         // Prepare response for DataTables
-        $response = array(
+        $response = [
             "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
             "recordsTotal" => $total_records,
             "recordsFiltered" => $filtered_records,
             "data" => $data
-        );
-
+        ];
+        
         wp_send_json($response);
+        wp_die(); // Ensure proper termination
     }
 
     public function edit_usermeta() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -398,8 +804,8 @@ class Ajax extends App {
     
         // Sanitize and validate input data
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '';
-        $meta_value = isset($_POST['meta_value']) ? stripslashes_deep(sanitize_text_field($_POST['meta_value'])) : '';
+        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field( wp_unslash( $_POST['meta_key'] ) ) : '';
+        $meta_value = isset($_POST['meta_value']) ? stripslashes_deep(sanitize_text_field( wp_unslash( $_POST['meta_value'] ) )) : '';
     
         if (empty($user_id)) {
             wp_send_json_error('User ID is invalid');
@@ -428,7 +834,7 @@ class Ajax extends App {
 
     public function delete_usermeta() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
@@ -441,7 +847,7 @@ class Ajax extends App {
     
         // Sanitize and validate input data
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '';
+        $meta_key = isset($_POST['meta_key']) ? sanitize_text_field( wp_unslash( $_POST['meta_key'] ) ) : '';
     
         if (empty($user_id)) {
             wp_send_json_error('User id is invalid');
@@ -470,52 +876,752 @@ class Ajax extends App {
 
     public function better_payment_table_data() {
         // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'nhrotm-admin-nonce')) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
         
         global $wpdb;
         $table_name = $wpdb->prefix . 'better_payment';
-
+        
         // Pagination parameters
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
         
         // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field($_GET['search']['value']) : '';
+        $search = isset($_GET['search']['value']) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? sanitize_text_field( $_GET['order'][0]['dir'] ) : 'desc';
-
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'desc';
+    
         // Define columns in the correct order for sorting
         $columns = ['id', 'transaction_id', 'amount', 'status', 'source', 'payment_date', 'email', 'form_fields_info', 'currency'];
-        $order_column = $columns[$order_column_index] ?? $columns[0];
-
-        // Get total record count
-        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-
-        // Build query with search, filtering, and sorting
-        $query = "SELECT * FROM $table_name";
-        if (!empty($search)) {
-            $query .= $wpdb->prepare(" WHERE id LIKE %s OR transaction_id LIKE %s OR amount LIKE %s OR status LIKE %s OR source LIKE %s OR payment_date LIKE %s OR email LIKE %s OR form_fields_info LIKE %s OR currency LIKE %s", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
-        }
-        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM ($query) AS temp");
         
-        $query .= " ORDER BY $order_column $order_direction LIMIT $start, $length";
-
-        // Execute query
-        $data = $wpdb->get_results($query, ARRAY_A);
-
-        // Wrap the option_value in the scrollable-cell div
-        foreach ($data as &$row) {
-            $row['amount']              = esc_html($row['currency'] . ' ' . $row['amount']);
-            $row['payment_date']        = esc_html(wp_date(get_option('date_format'), strtotime( $row['payment_date'] ) ));
-            $row['form_fields_info']    = '<div class="scrollable-cell">' . esc_html($row['form_fields_info']) . '</div>';
+        // Ensure order column is valid using whitelist approach
+        if ($order_column_index < 0 || $order_column_index >= count($columns)) {
+            $order_column_index = 0; // Default to first column
+        }
+        $order_column = $columns[$order_column_index];
+        
+        // Get total record count with prepared statement
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $total_records = $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment"
+        );
+        
+        // Search and ordering logic
+        if (!empty($search)) {
+            $search_like = '%' . $wpdb->esc_like($search) . '%';
             
-            // $row['actions']         = '<button class="nhrotm-edit-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Edit</button>
-            //                            <button class="nhrotm-delete-button-usermeta" data-id="' . esc_attr($row['umeta_id']) . '">Delete</button>';
+            // Get filtered count
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $filtered_records = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment WHERE 
+                    id LIKE %s OR 
+                    transaction_id LIKE %s OR 
+                    amount LIKE %s OR 
+                    status LIKE %s OR 
+                    source LIKE %s OR 
+                    payment_date LIKE %s OR 
+                    email LIKE %s OR 
+                    form_fields_info LIKE %s OR 
+                    currency LIKE %s",
+                    $search_like, $search_like, $search_like, $search_like, 
+                    $search_like, $search_like, $search_like, $search_like, $search_like
+                )
+            );
+            
+            // Set up search parameters for reuse
+            $search_params = array(
+                $search_like, $search_like, $search_like, $search_like,
+                $search_like, $search_like, $search_like, $search_like, $search_like
+            );
+            
+            // Complete hardcoded query paths for each possible order column and direction
+            if ($order_column === 'id') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY id DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY id ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'transaction_id') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY transaction_id DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY transaction_id ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'amount') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY amount DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY amount ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'status') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY status DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY status ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'source') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY source DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY source ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'payment_date') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY payment_date DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY payment_date ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'email') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY email DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY email ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'form_fields_info') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY form_fields_info DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY form_fields_info ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'currency') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY currency DESC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            WHERE id LIKE %s OR 
+                            transaction_id LIKE %s OR 
+                            amount LIKE %s OR 
+                            status LIKE %s OR 
+                            source LIKE %s OR 
+                            payment_date LIKE %s OR 
+                            email LIKE %s OR 
+                            form_fields_info LIKE %s OR 
+                            currency LIKE %s
+                            ORDER BY currency ASC
+                            LIMIT %d, %d",
+                            $search_like, $search_like, $search_like, $search_like, 
+                            $search_like, $search_like, $search_like, $search_like, $search_like,
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } else {
+                // Default fallback if column is not recognized
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $data = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}better_payment 
+                        WHERE id LIKE %s OR 
+                        transaction_id LIKE %s OR 
+                        amount LIKE %s OR 
+                        status LIKE %s OR 
+                        source LIKE %s OR 
+                        payment_date LIKE %s OR 
+                        email LIKE %s OR 
+                        form_fields_info LIKE %s OR 
+                        currency LIKE %s
+                        ORDER BY id DESC
+                        LIMIT %d, %d",
+                        $search_like, $search_like, $search_like, $search_like, 
+                        $search_like, $search_like, $search_like, $search_like, $search_like,
+                        $start, $length
+                    ),
+                    ARRAY_A
+                );
+            }
+        } else {
+            // No search applied, use total as filtered count
+            $filtered_records = $total_records;
+            
+            // Complete hardcoded query paths for each possible order column and direction without search
+            if ($order_column === 'id') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY id DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY id ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'transaction_id') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY transaction_id DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY transaction_id ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'amount') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY amount DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY amount ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'status') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY status DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY status ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'source') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY source DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY source ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'payment_date') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY payment_date DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY payment_date ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'email') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY email DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY email ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'form_fields_info') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY form_fields_info DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY form_fields_info ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } elseif ($order_column === 'currency') {
+                if ($order_direction === 'desc') {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY currency DESC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                } else {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $data = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}better_payment 
+                            ORDER BY currency ASC
+                            LIMIT %d, %d",
+                            $start, $length
+                        ),
+                        ARRAY_A
+                    );
+                }
+            } else {
+                // Default fallback if column is not recognized
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $data = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}better_payment 
+                        ORDER BY id DESC
+                        LIMIT %d, %d",
+                        $start, $length
+                    ),
+                    ARRAY_A
+                );
+            }
+        }
+        
+        // Format the data
+        foreach ($data as &$row) {
+            $row['amount'] = esc_html($row['currency'] . ' ' . $row['amount']);
+            $row['payment_date'] = esc_html(wp_date(get_option('date_format'), strtotime($row['payment_date'])));
+            $row['form_fields_info'] = '<div class="scrollable-cell">' . esc_html($row['form_fields_info']) . '</div>';
+            // Uncomment if you need action buttons
+            // $row['actions'] = '<button class="nhrotm-edit-payment" data-id="' . esc_attr($row['id']) . '">Edit</button>
+            //     <button class="nhrotm-delete-payment" data-id="' . esc_attr($row['id']) . '">Delete</button>';
         }
         
         // Prepare response for DataTables
@@ -525,7 +1631,7 @@ class Ajax extends App {
             "recordsFiltered" => $filtered_records,
             "data" => $data
         );
-
+        
         wp_send_json($response);
     }
     
