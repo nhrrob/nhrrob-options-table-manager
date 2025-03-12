@@ -718,7 +718,7 @@ class Ajax extends App {
         
         // Base query parts
         $select_query = "SELECT * FROM {$wpdb->prefix}usermeta";
-        $count_query = "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta";
+        // $count_query = "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta";
         
         // Apply search filter if provided
         $where_clause = '';
@@ -741,14 +741,14 @@ class Ajax extends App {
         
         // Get total records without filtering
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $total_records = $wpdb->get_var($count_query);
+        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}usermeta");
         
         // Get filtered records count
         if (!empty($where_clause)) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $filtered_records = $wpdb->get_var(
                 $wpdb->prepare(
-                    $count_query . $where_clause,
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta" . $where_clause,
                     $query_args[0],
                     $query_args[1]
                 )

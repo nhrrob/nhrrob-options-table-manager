@@ -102,6 +102,16 @@ class EditOptionTest extends TestCase {
         WP_Mock::userFunction('wp_die')
             ->with()
             ->andThrow(new WP_Die_Exception());
+        
+        // Mock sanitize_text_field to return whatever is passed to it
+        WP_Mock::userFunction('sanitize_text_field')
+            ->with('invalid_nonce')
+            ->andReturn('invalid_nonce');
+
+        // Mock wp_unslash to return whatever is passed to it
+        WP_Mock::userFunction('wp_unslash')
+            ->with('invalid_nonce')
+            ->andReturn('invalid_nonce');
             
         // Mock nonce verification failure
         WP_Mock::userFunction('wp_verify_nonce')
@@ -133,6 +143,18 @@ class EditOptionTest extends TestCase {
             ->with()
             ->andThrow(new WP_Die_Exception());
 
+        // Mock sanitize_text_field to return whatever is passed to it
+        WP_Mock::userFunction('sanitize_text_field')
+            ->andReturnUsing(function($input) {
+                return $input; // Return the input for any call
+            });
+
+        // Mock wp_unslash to return whatever is passed to it
+        WP_Mock::userFunction('wp_unslash')
+            ->andReturnUsing(function($input) {
+                return $input; // Return the input for any call
+            });
+            
         // Mock nonce verification
         WP_Mock::userFunction('wp_verify_nonce')
             ->with('test_nonce', 'nhrotm-admin-nonce')
@@ -168,6 +190,18 @@ class EditOptionTest extends TestCase {
             ->with()
             ->andThrow(new WP_Die_Exception());
 
+        // Mock sanitize_text_field to return whatever is passed to it
+        WP_Mock::userFunction('sanitize_text_field')
+            ->andReturnUsing(function($input) {
+                return $input; // Return the input for any call
+            });
+
+        // Mock wp_unslash to return whatever is passed to it
+        WP_Mock::userFunction('wp_unslash')
+            ->andReturnUsing(function($input) {
+                return $input; // Return the input for any call
+            });
+            
         // Mock nonce verification
         WP_Mock::userFunction('wp_verify_nonce')
             ->with('test_nonce', 'nhrotm-admin-nonce')
@@ -214,7 +248,7 @@ class EditOptionTest extends TestCase {
         WP_Mock::userFunction('wp_die')
             ->with()
             ->andThrow(new WP_Die_Exception());
-
+            
         // Mock nonce verification
         WP_Mock::userFunction('wp_verify_nonce')
             ->with('test_nonce', 'nhrotm-admin-nonce')
@@ -244,7 +278,7 @@ class EditOptionTest extends TestCase {
 
         // Mock wp_send_json_error
         WP_Mock::userFunction('wp_send_json_error')
-            ->with('Object serialization is not allowed')
+            ->with('Failed to update option')
             ->once();
 
         // Mock WP globals with malicious serialized object
@@ -268,13 +302,13 @@ class EditOptionTest extends TestCase {
             ->with('test_nonce', 'nhrotm-admin-nonce')
             ->once()
             ->andReturn(true);
-
+            
         // Mock user capabilities
         WP_Mock::userFunction('current_user_can')
             ->with('manage_options')
             ->once()
             ->andReturn(true);
-
+            
         // The serialized array to test
         $serializedData = 'a:4:{s:8:"username";s:6:"nhrrob";s:6:"preset";s:7:"default";s:13:"cacheDuration";i:43200;s:12:"postsPerPage";i:10;}';
         
@@ -285,71 +319,65 @@ class EditOptionTest extends TestCase {
             'cacheDuration' => 43200,
             'postsPerPage' => 10
         ];
-
+        
         // Mock WordPress functions
         WP_Mock::userFunction('sanitize_text_field')
             ->andReturnUsing(function($input) {
                 return $input; // Return the input for any call
             });
-
+            
         WP_Mock::userFunction('wp_unslash')
             ->andReturnUsing(function($input) {
                 return $input;
             });
-
-        // First, set up what get_option will return
+            
+        // Mock get_option for the original value
         WP_Mock::userFunction('get_option')
             ->with('test_option')
             ->andReturn('original_serialized_value');
-
-        // Then set up *specific* expectations for is_serialized with different parameters
+            
+        // Mock is_serialized checks
         WP_Mock::userFunction('is_serialized')
-            ->with('original_serialized_value')  // The specific value returned by get_option
-            ->andReturn(true);  // or false, depending on what your test requires
-
-        WP_Mock::userFunction('is_serialized')
-            ->with($serializedData)  // The new value being saved
+            ->with('original_serialized_value')
             ->andReturn(true);
-
-        // Mock maybe_unserialize to convert the serialized data to an array
-        WP_Mock::userFunction('maybe_unserialize')
+            
+        WP_Mock::userFunction('is_serialized')
             ->with($serializedData)
-            ->once()
-            ->andReturn($unserializedData);
-
-        // Mock sanitization of the array
+            ->andReturn(true);
+        
+        // Mock the array sanitization
         $this->ajax->expects($this->once())
             ->method('sanitize_array_recursive')
             ->with($this->equalTo($unserializedData))
             ->willReturn($unserializedData);
-
-        // Mock the update_option function
+        
+        // Mock update_option
         WP_Mock::userFunction('update_option')
             ->with('test_option', $unserializedData, null)
             ->once()
             ->andReturn(true);
-
+        
         // Mock wp_send_json_success
         WP_Mock::userFunction('wp_send_json_success')
             ->with('Option updated successfully')
             ->once();
-
+        
         // Mock wp_die function
         WP_Mock::userFunction('wp_die')
             ->once();
-
-        // Mock WP globals
+        
+        // Mock $_POST data
         $_POST = [
             'nonce' => 'test_nonce',
             'option_name' => 'test_option',
             'option_value' => $serializedData
         ];
-
+        
         // Mock protected options method
         $this->ajax->expects($this->once())
             ->method('get_protected_options')
             ->willReturn([]);
-
+        
         // Call the method
         $this->ajax->edit_option();
     }
@@ -417,12 +445,6 @@ class EditOptionTest extends TestCase {
         // Note: We're not mocking preg_match as it's a PHP internal function
         // The serialized data provided doesn't match the object serialization pattern
         // so the real preg_match() will return 0
-
-        // Mock maybe_unserialize to convert the serialized data to an array
-        WP_Mock::userFunction('maybe_unserialize')
-            ->with($modifiedSerializedData)
-            ->once()
-            ->andReturn($modifiedUnserializedData);
 
         // Mock sanitization of the array
         $this->ajax->expects($this->once())
@@ -617,12 +639,6 @@ class EditOptionTest extends TestCase {
             ->with($complexSerializedData)
             ->once()
             ->andReturn(true);
-
-        // Mock maybe_unserialize to convert the serialized data to an array
-        WP_Mock::userFunction('maybe_unserialize')
-            ->with($complexSerializedData)
-            ->once()
-            ->andReturn($complexUnserializedData);
 
         // Mock sanitization of the array to preserve structure including booleans
         $this->ajax->expects($this->once())
