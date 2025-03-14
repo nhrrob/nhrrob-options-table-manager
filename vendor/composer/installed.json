@@ -7,12 +7,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/10up/wp_mock.git",
-                "reference": "010d556e0482e4d94776a5b0641429dca00333e4"
+                "reference": "f25b5895ed31bf5e7036fe0c666664364ae011c2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/10up/wp_mock/zipball/010d556e0482e4d94776a5b0641429dca00333e4",
-                "reference": "010d556e0482e4d94776a5b0641429dca00333e4",
+                "url": "https://api.github.com/repos/10up/wp_mock/zipball/f25b5895ed31bf5e7036fe0c666664364ae011c2",
+                "reference": "f25b5895ed31bf5e7036fe0c666664364ae011c2",
                 "shasum": ""
             },
             "require": {
@@ -35,7 +35,7 @@
                 "sebastian/comparator": "^4.0.8",
                 "sempro/phpunit-pretty-print": "^1.4"
             },
-            "time": "2024-08-08T04:41:18+00:00",
+            "time": "2025-03-12T00:36:13+00:00",
             "default-branch": true,
             "type": "library",
             "installation-source": "dist",
@@ -54,7 +54,7 @@
             "description": "A mocking library to take the pain out of unit testing for WordPress",
             "support": {
                 "issues": "https://github.com/10up/wp_mock/issues",
-                "source": "https://github.com/10up/wp_mock/tree/trunk"
+                "source": "https://github.com/10up/wp_mock/tree/1.1.0"
             },
             "install-path": "../10up/wp_mock"
         },
@@ -116,12 +116,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/instantiator.git",
-                "reference": "8ec66b1425f6506905f6880a8c7cd85ba8537b00"
+                "reference": "32877dd24a4a2b324698e07b2d3285fb44e627c6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/instantiator/zipball/8ec66b1425f6506905f6880a8c7cd85ba8537b00",
-                "reference": "8ec66b1425f6506905f6880a8c7cd85ba8537b00",
+                "url": "https://api.github.com/repos/doctrine/instantiator/zipball/32877dd24a4a2b324698e07b2d3285fb44e627c6",
+                "reference": "32877dd24a4a2b324698e07b2d3285fb44e627c6",
                 "shasum": ""
             },
             "require": {
@@ -136,7 +136,7 @@
                 "phpstan/phpstan-phpunit": "^1.3",
                 "phpunit/phpunit": "^10.5"
             },
-            "time": "2025-02-11T07:45:10+00:00",
+            "time": "2025-03-10T23:43:28+00:00",
             "default-branch": true,
             "type": "library",
             "installation-source": "dist",
@@ -913,12 +913,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "7fcb3793ca4cf63ad51605747e52b32ad788f61c"
+                "reference": "0ba51826060145c283f852646230783151b3ff34"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/7fcb3793ca4cf63ad51605747e52b32ad788f61c",
-                "reference": "7fcb3793ca4cf63ad51605747e52b32ad788f61c",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/0ba51826060145c283f852646230783151b3ff34",
+                "reference": "0ba51826060145c283f852646230783151b3ff34",
                 "shasum": ""
             },
             "require": {
@@ -954,7 +954,7 @@
                 "ext-soap": "To be able to generate mocks based on WSDL files",
                 "ext-xdebug": "PHP extension that provides line coverage as well as branch and path coverage"
             },
-            "time": "2025-03-04T12:16:09+00:00",
+            "time": "2025-03-13T14:02:12+00:00",
             "bin": [
                 "phpunit"
             ],

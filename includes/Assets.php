@@ -83,7 +83,8 @@ class Assets extends App {
             'confirm' => __( 'Are you sure?', 'nhrrob-options-table-manager' ),
             'error' => __( 'Something went wrong', 'nhrrob-options-table-manager' ),
             'protected_options' => $this->get_protected_options(),
-            'protected_usermetas' => $this->get_protected_usermetas()
+            'protected_usermetas' => $this->get_protected_usermetas(),
+            'is_better_payment_installed' => $this->is_better_payment_installed(),
         ] );
     }
 }

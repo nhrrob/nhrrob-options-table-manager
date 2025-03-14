@@ -23,5 +23,8 @@
     "require-dev": {
         "phpunit/phpunit": "^9.6",
         "10up/wp_mock": "dev-trunk"
+    },
+    "scripts": {
+        "deploy": "composer install --no-dev && wp dist-archive . && composer install"
     }
 }

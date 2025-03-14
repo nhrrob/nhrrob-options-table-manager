@@ -12,7 +12,10 @@
         <div class="tab mt-5 mb-3">
             <button class="tablinks active options-table"><?php esc_html_e('Options Table', 'nhrrob-options-table-manager'); ?></button>
             <button class="tablinks usermeta-table"><?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?></button>
+            
+            <?php if ( $is_better_payment_installed ) : ?>
             <button class="tablinks better_payment-table"><?php esc_html_e('Better Payment Table', 'nhrrob-options-table-manager'); ?></button>
+            <?php endif; ?>
         </div>
 
         <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
@@ -49,6 +52,7 @@
             </tbody>
         </table>
 
+        <?php if ( $is_better_payment_installed ) : ?>
         <table id="nhrotm-data-table-better_payment" class="nhrotm-data-table wp-list-table widefat fixed striped">
             <thead>
                 <tr>
@@ -67,6 +71,7 @@
 
             </tbody>
         </table>
+        <?php endif; ?>
     </div>
 
     <div>

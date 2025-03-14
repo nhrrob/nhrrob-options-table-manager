@@ -336,6 +336,10 @@ trait GlobalTrait
         ];
     }
 
+    public function is_better_payment_installed() {
+        return class_exists('\Better_Payment');
+    }
+
     //
 
 }
