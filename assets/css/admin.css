@@ -350,3 +350,27 @@
   #nhrotm-data-table-better_payment_wrapper {
     display: none;
   }
+
+  /* Toast Notification */
+.nhrotm-toast {
+    position: fixed;
+    top: 50px;
+    right: 50px;
+    padding: 10px 20px !important;
+    border-radius: 4px !important;
+    color: white;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+    border: none !important;
+    display: none;
+  }
+  .nhrotm-toast.success {
+    background-color: #4CAF50;
+  }
+  .nhrotm-toast.error {
+    background-color: #F44336;
+  }
+  .nhrotm-toast.warning {
+    background-color: #FF9800;
+  }

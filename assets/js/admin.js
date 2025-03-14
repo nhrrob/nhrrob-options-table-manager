@@ -14,6 +14,21 @@
             return protectedUsermetas.includes(metaKey);
         }
 
+        // Toast notification system
+        function showToast(message, type = 'success') {
+            // Remove any existing toasts
+            $('.nhrotm-toast').remove();
+            
+            // Create toast element
+            const toast = $('<div class="nhrotm-toast ' + type + '">' + message + '</div>');
+            $('body').append(toast);
+            
+            // Show and then hide after 3 seconds
+            toast.fadeIn(300).delay(3000).fadeOut(300, function() {
+                $(this).remove();
+            });
+        }
+
         // Datatable display
         var table = $('#nhrotm-data-table').DataTable({
             "processing": true,
@@ -67,11 +82,11 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert("Option added successfully!");
+                        showToast("Option added successfully!", "success");
                         $('.nhrotm-add-option-modal').hide();
                         $('#nhrotm-data-table').DataTable().ajax.reload(); // Reload table data
                     } else {
-                        alert('Failed to add option: ' + response.data);
+                        showToast('Failed to add option: ' + response.data, "error");
                     }
                 }
             });
@@ -99,7 +114,7 @@
             $('.nhrotm-edit-option-autoload').val(row.autoload);
                 
             if (isProtected(row.option_name)) {
-                alert('This option is protected and cannot be edited.');
+                showToast('This option is protected and cannot be edited.', "warning");
                 return;
             }
 
@@ -126,7 +141,7 @@
                     } else {
                         let message = response.data.message ?? 'Error: Failed to find option value';
                         // $('.nhrotm-edit-option-value').val(option_value);
-                        alert(message);
+                        showToast(message, "error");
                     }
                 }
             });
@@ -156,12 +171,11 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            alert("Option updated successfully!");
+                            showToast("Option updated successfully!", "success");
                             $('.nhrotm-edit-option-modal').hide();
                             table.ajax.reload(null, false); // Reload table data
                         } else {
-                            alert('Error: ' + response.data);
-                            // alert("Failed to update option.");
+                            showToast('Error: ' + response.data, "error");
                         }
                     }
                 });
@@ -178,7 +192,7 @@
             let optionName = row.option_name;
 
             if (isProtected(optionName)) {
-                alert('This option is protected and cannot be deleted.');
+                showToast('This option is protected and cannot be deleted.', "warning");
                 return;
             }
 
@@ -193,11 +207,10 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            alert("Option deleted successfully!");
+                            showToast("Option deleted successfully!", "success");
                             jQuery('#nhrotm-data-table').DataTable().ajax.reload(); // Reload table data
                         } else {
-                            alert("Failed to delete option.");
-                            // alert('Error: ' + response.data);
+                            showToast("Failed to delete option.", "error");
                         }
                     }
                 });
@@ -226,7 +239,7 @@
                         tableContent += "</table>";
                         $('#nhrotm-usage-analytics-results').html(tableContent);
                     } else {
-                        alert("Error: " + response.data);
+                        showToast("Error: " + response.data, "error");
                     }
                 }
             });
@@ -300,7 +313,7 @@
             $('.nhrotm-edit-usermeta-value').val(row.meta_value.replace(/<div class="scrollable-cell">|<\/div>/g, ''));
                 
             if (isProtectedMeta(row.meta_key)) {
-                alert('This meta is protected and cannot be edited.');
+                showToast('This meta is protected and cannot be edited.', "warning");
                 return;
             }
 
@@ -322,12 +335,11 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            alert("Meta updated successfully!");
+                            showToast("Meta updated successfully!", "success");
                             $('.nhrotm-edit-usermeta-modal').hide();
                             $('#nhrotm-data-table-usermeta').DataTable().ajax.reload(); // Reload table data
                         } else {
-                            alert('Error: ' + response.data);
-                            // alert("Failed to update meta.");
+                            showToast('Error: ' + response.data, "error");
                         }
                     }
                 });
@@ -346,7 +358,7 @@
             let metaKey = row.meta_key;
 
             if (isProtected(metaKey)) {
-                alert('This meta is protected and cannot be deleted.');
+                showToast('This meta is protected and cannot be deleted.', "warning");
                 return;
             }
 
@@ -362,11 +374,10 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            alert("Meta deleted successfully!");
+                            showToast("Meta deleted successfully!", "success");
                             jQuery('#nhrotm-data-table-usermeta').DataTable().ajax.reload(); // Reload table data
                         } else {
-                            // alert("Failed to delete meta.");
-                            alert('Error: ' + response.data);
+                            showToast('Error: ' + response.data, "error");
                         }
                     }
                 });

@@ -322,10 +322,11 @@ class Ajax extends App {
             
             $row['actions'] = sprintf(
                 '<button class="nhrotm-edit-button" data-id="%s" %s>Edit</button>
-                <button class="nhrotm-delete-button" data-id="%s">Delete</button>',
+                <button class="nhrotm-delete-button" data-id="%s" %s>Delete</button>',
                 esc_attr($row['option_id']),
                 $protected_attr,
-                esc_attr($row['option_id'])
+                esc_attr($row['option_id']),
+                $protected_attr,
             );
         }
         
@@ -953,10 +954,11 @@ class Ajax extends App {
             $row['meta_value'] = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
             $row['actions'] = sprintf(
                 '<button class="nhrotm-edit-button-usermeta" data-id="%s" %s>Edit</button>
-                <button class="nhrotm-delete-button-usermeta" data-id="%s">Delete</button>',
+                <button class="nhrotm-delete-button-usermeta" data-id="%s" %s>Delete</button>',
                 esc_attr($row['umeta_id']),
                 $protected_attr,
-                esc_attr($row['umeta_id'])
+                esc_attr($row['umeta_id']),
+                $protected_attr,
             );
         }
     
