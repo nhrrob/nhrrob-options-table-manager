@@ -4,7 +4,7 @@ Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,8 @@ Manage the wp_options table and get analytics on options usage.
 == Description ==
 - 🚀 [GitHub Repository](https://github.com/nhrrob/nhrrob-options-table-manager): Found a bug or have a feature request? Let us know!
 - 💬 [Slack Community](https://join.slack.com/t/nhrrob/shared_invite/zt-2m3nyrl1f-eKv7wwJzsiALcg0nY6~e0Q): Got questions or just want to chat? Come hang out with us on Slack!
+
+https://www.youtube.com/watch?v=le89m1qfb0U
 
 Are you fed up with the size of wp otions table? You are not alone! 
 Install this plugin and get a fine view of the table and analytics.
@@ -69,11 +71,22 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 == Screenshots ==
 
 1. DataTable view of the wp_options table
-2. Analytics on plugin usage by prefixes
-3. Plugin features at a glance
+2. Add option modal screen
+3. Options table search view
+4. Edit option modal for serialized data
+5. Options table usage analytics
+6. Plugin features at a glance
 
 
 == Changelog ==
+
+= 1.1.5 - 14/03/2025 =
+- Added: Protected option and usermeta now having tooltip on edit and delete button
+- Added: Class exists check for Better Payment table
+- Added: Toast notification added replacing alert messages
+- Fixed: Fatal error due to PHPUnit vendor file missing
+- Fixed: Usermeta table pagination issue
+- Few minor bug fixing & improvements
 
 = 1.1.4 - 12/03/2025 =
 - Few minor bug fixing & improvements

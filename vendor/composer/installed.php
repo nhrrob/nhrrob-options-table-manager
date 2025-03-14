@@ -5,7 +5,7 @@
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'c2ad281e3302296e3134794153bde4b90fec7f49',
+        'reference' => 'dba98765f9cc0e552896e643526a5154d2d8b9e1',
         'name' => 'nhrotm/options-table-manager',
         'dev' => true,
     ),
@@ -18,7 +18,7 @@
             'aliases' => array(
                 0 => '9999999-dev',
             ),
-            'reference' => '010d556e0482e4d94776a5b0641429dca00333e4',
+            'reference' => 'f25b5895ed31bf5e7036fe0c666664364ae011c2',
             'dev_requirement' => true,
         ),
         'antecedent/patchwork' => array(
@@ -48,7 +48,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/instantiator',
             'aliases' => array(),
-            'reference' => '8ec66b1425f6506905f6880a8c7cd85ba8537b00',
+            'reference' => '32877dd24a4a2b324698e07b2d3285fb44e627c6',
             'dev_requirement' => true,
         ),
         'hamcrest/hamcrest-php' => array(
@@ -92,7 +92,7 @@
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'c2ad281e3302296e3134794153bde4b90fec7f49',
+            'reference' => 'dba98765f9cc0e552896e643526a5154d2d8b9e1',
             'dev_requirement' => false,
         ),
         'nikic/php-parser' => array(
@@ -175,7 +175,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../phpunit/phpunit',
             'aliases' => array(),
-            'reference' => '7fcb3793ca4cf63ad51605747e52b32ad788f61c',
+            'reference' => '0ba51826060145c283f852646230783151b3ff34',
             'dev_requirement' => true,
         ),
         'sebastian/cli-parser' => array(

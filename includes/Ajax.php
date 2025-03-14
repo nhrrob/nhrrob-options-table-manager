@@ -315,9 +315,19 @@ class Ajax extends App {
         
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
+            $is_protected = in_array($row['option_name'], $this->get_protected_options());
+            $protected_attr = $is_protected ? sprintf('title="%s" disabled', esc_attr__('Protected', 'nhrrob-options-table-manager')) : '';
+
             $row['option_value'] = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
-            $row['actions'] = '<button class="nhrotm-edit-button" data-id="' . esc_attr($row['option_id']) . '">Edit</button>
-                <button class="nhrotm-delete-button" data-id="' . esc_attr($row['option_id']) . '">Delete</button>';
+            
+            $row['actions'] = sprintf(
+                '<button class="nhrotm-edit-button" data-id="%s" %s>Edit</button>
+                <button class="nhrotm-delete-button" data-id="%s" %s>Delete</button>',
+                esc_attr($row['option_id']),
+                $protected_attr,
+                esc_attr($row['option_id']),
+                $protected_attr,
+            );
         }
         
         // Prepare response for DataTables
@@ -937,12 +947,18 @@ class Ajax extends App {
     
         // Format output
         foreach ($data as &$row) {
+            $is_protected = in_array($row['meta_key'], $this->get_protected_usermetas());
+            $protected_attr = $is_protected ? sprintf('title="%s" disabled', esc_attr__('Protected', 'nhrrob-options-table-manager')) : '';
+            
             // phpcs:ignore:WordPress.DB.SlowDBQuery.slow_db_query_meta_value
             $row['meta_value'] = '<div class="scrollable-cell">' . esc_html($row['meta_value']) . '</div>';
             $row['actions'] = sprintf(
-                '<button class="nhrotm-edit-button-usermeta" data-id="%1$s">Edit</button> ' .
-                '<button class="nhrotm-delete-button-usermeta" data-id="%1$s">Delete</button>',
-                esc_attr($row['umeta_id'])
+                '<button class="nhrotm-edit-button-usermeta" data-id="%s" %s>Edit</button>
+                <button class="nhrotm-delete-button-usermeta" data-id="%s" %s>Delete</button>',
+                esc_attr($row['umeta_id']),
+                $protected_attr,
+                esc_attr($row['umeta_id']),
+                $protected_attr,
             );
         }
     
