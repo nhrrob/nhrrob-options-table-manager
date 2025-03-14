@@ -4,7 +4,7 @@ Tags: wp options, wp options table, wp_options, transients, development
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,11 +71,22 @@ Yes, indeed! Using the datatable feature, the search functionality in NHR Option
 == Screenshots ==
 
 1. DataTable view of the wp_options table
-2. Analytics on plugin usage by prefixes
-3. Plugin features at a glance
+2. Add option modal screen
+3. Options table search view
+4. Edit option modal for serialized data
+5. Options table usage analytics
+6. Plugin features at a glance
 
 
 == Changelog ==
+
+= 1.1.5 - 14/03/2025 =
+- Added: Protected option and usermeta now having tooltip on edit and delete button
+- Added: Class exists check for Better Payment table
+- Added: Toast notification added replacing alert messages
+- Fixed: Fatal error due to PHPUnit vendor file missing
+- Fixed: Usermeta table pagination issue
+- Few minor bug fixing & improvements
 
 = 1.1.4 - 12/03/2025 =
 - Few minor bug fixing & improvements
