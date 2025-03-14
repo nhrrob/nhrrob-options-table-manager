@@ -245,6 +245,9 @@
             });
         }
 
+        let usermetaTableAdjusted = false;
+        let betterPaymentTableAdjusted = false;
+
         // Toggle
         $(document).on('click', '.nhrotm-data-table-wrap .tab .tablinks', function() {
             $('.nhrotm-data-table-wrap .tab .tablinks').removeClass('active');
@@ -262,12 +265,22 @@
 
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeIn();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeIn();
+
+                if ( ! usermetaTableAdjusted ) {
+                    $('#nhrotm-data-table-usermeta').DataTable().columns.adjust().draw();
+                    usermetaTableAdjusted = true;
+                }
             } else if ( $(this).hasClass('better_payment-table') ) {
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
                 $( '#nhrotm-data-table_wrapper' ).fadeOut();
 
                 $('#nhrotm-data-table-better_payment_wrapper').fadeIn();
+
+                if ( ! betterPaymentTableAdjusted ) {
+                    $('#nhrotm-data-table-better_payment').DataTable().columns.adjust().draw();
+                    betterPaymentTableAdjusted = true;
+                }
             }
         });
 
