@@ -325,9 +325,9 @@
     overflow: hidden;
     border: 1px solid #ccc;
     background-color: #f1f1f1;
-  }
+}
   
-  .tab button {
+.tab button {
     background-color: inherit;
     float: left;
     border: none;
@@ -335,23 +335,23 @@
     cursor: pointer;
     padding: 14px 16px;
     transition: 0.3s;
-  }
-  
-  .tab button:hover {
+}
+
+.tab button:hover {
     background-color: #ddd;
-  }
-  
-  .tab button.active {
+}
+
+.tab button.active {
     background-color: #ccc;
-  }
+}
 
-  /* Usermeta Table  */
-  #nhrotm-data-table-usermeta_wrapper,
-  #nhrotm-data-table-better_payment_wrapper {
+/* Usermeta Table  */
+#nhrotm-data-table-usermeta_wrapper,
+#nhrotm-data-table-better_payment_wrapper {
     display: none;
-  }
+}
 
-  /* Toast Notification */
+/* Toast Notification */
 .nhrotm-toast {
     position: fixed;
     top: 50px;
@@ -364,13 +364,16 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
     border: none !important;
     display: none;
-  }
-  .nhrotm-toast.success {
+}
+  
+.nhrotm-toast.success {
     background-color: #4CAF50;
-  }
-  .nhrotm-toast.error {
+}
+  
+.nhrotm-toast.error {
     background-color: #F44336;
-  }
-  .nhrotm-toast.warning {
+}
+  
+.nhrotm-toast.warning {
     background-color: #FF9800;
-  }
+}
