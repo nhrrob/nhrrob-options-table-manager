@@ -4,7 +4,7 @@ Tags: wp options, wp_options, transients, usermeta, development
 Requires at least: 6.0  
 Tested up to: 6.7  
 Requires PHP: 7.4  
-Stable tag: 1.1.5  
+Stable tag: 1.1.6  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -84,6 +84,10 @@ Not yet, but this feature is coming soon!
 6. Options usage analytics
 
 == Changelog ==
+
+= 1.1.6 - 15/03/2025 =
+- Fixed: Fatal error due to composer dev files
+- Few minor bug fixing & improvements
 
 = 1.1.5 - 14/03/2025 =
 - Added: Protected option and usermeta now having tooltip on edit and delete button
