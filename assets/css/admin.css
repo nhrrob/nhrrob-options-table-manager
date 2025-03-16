@@ -377,3 +377,11 @@
 .nhrotm-toast.warning {
     background-color: #FF9800;
 }
+
+#nhrotm-data-table tfoot input {
+    padding: 8px 10px;
+    margin: 0;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    font-weight: normal;
+}

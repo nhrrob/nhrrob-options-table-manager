@@ -29,6 +29,16 @@
                 </tr>
             </thead>
 
+            <tfoot>
+                <tr>
+                    <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                </tr>
+            </tfoot>
+            
             <tbody>
 
             </tbody>

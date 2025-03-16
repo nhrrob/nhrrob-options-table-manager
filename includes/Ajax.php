@@ -47,7 +47,7 @@ class Ajax extends App {
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
         $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
-
+    
         // Define columns in the correct order for sorting
         $columns = ['option_id', 'option_name', 'option_value', 'autoload'];
         
@@ -63,261 +63,93 @@ class Ajax extends App {
             "SELECT COUNT(*) FROM {$wpdb->prefix}options"
         );
         
-        // Prepare queries for different order options
-        // Using separate complete queries for each column and direction to avoid concatenation
+        // Get column search values
+        $column_search = [];
+        if (isset($_GET['columns']) && is_array($_GET['columns'])) {
+            foreach ($_GET['columns'] as $column) {
+                if (isset($column['search']['value'])) {
+                    $column_search[] = sanitize_text_field(wp_unslash($column['search']['value']));
+                } else {
+                    $column_search[] = '';
+                }
+            }
+        }
+        
+        // Build WHERE clause for search conditions
+        $where_clauses = [];
+        
+        // Global search
         if (!empty($search)) {
             $search_like = '%' . $wpdb->esc_like($search) . '%';
-            
-            // Get filtered count
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $filtered_records = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->prefix}options WHERE option_name LIKE %s OR option_value LIKE %s",
-                    $search_like,
-                    $search_like
-                )
+            $where_clauses[] = $wpdb->prepare(
+                "(option_name LIKE %s OR option_value LIKE %s)",
+                $search_like,
+                $search_like
             );
+        }
+        
+        // Individual column searches
+        if (!empty($column_search)) {
+            // option_id column (index 0)
+            if (!empty($column_search[0])) {
+                // For numeric column, use exact match or range
+                if (is_numeric($column_search[0])) {
+                    $where_clauses[] = $wpdb->prepare("option_id = %d", intval($column_search[0]));
+                }
+            }
             
-            // Get data with search and properly hardcoded ORDER BY
-            if ($order_column === 'option_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY option_id DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY option_id ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'option_name') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY option_name DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY option_name ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'option_value') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY option_value DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY option_value ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'autoload') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY autoload DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            WHERE option_name LIKE %s OR option_value LIKE %s
-                            ORDER BY autoload ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } else {
-                // Default fallback
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $data = $wpdb->get_results(
-                    $wpdb->prepare(
-                        "SELECT * FROM {$wpdb->prefix}options 
-                        WHERE option_name LIKE %s OR option_value LIKE %s
-                        ORDER BY option_id ASC
-                        LIMIT %d, %d",
-                        $search_like, $search_like, $start, $length
-                    ),
-                    ARRAY_A
+            // option_name column (index 1)
+            if (!empty($column_search[1])) {
+                $where_clauses[] = $wpdb->prepare(
+                    "option_name LIKE %s",
+                    '%' . $wpdb->esc_like($column_search[1]) . '%'
                 );
             }
-        } else {
-            // No search applied, use total as filtered count
-            $filtered_records = $total_records;
             
-            // Get data without search and properly hardcoded ORDER BY
-            if ($order_column === 'option_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY option_id DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY option_id ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'option_name') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY option_name DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY option_name ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'option_value') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY option_value DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY option_value ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'autoload') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY autoload DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}options 
-                            ORDER BY autoload ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } else {
-                // Default fallback
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $data = $wpdb->get_results(
-                    $wpdb->prepare(
-                        "SELECT * FROM {$wpdb->prefix}options 
-                        ORDER BY option_id ASC
-                        LIMIT %d, %d",
-                        $start, $length
-                    ),
-                    ARRAY_A
+            // option_value column (index 2)
+            if (!empty($column_search[2])) {
+                $where_clauses[] = $wpdb->prepare(
+                    "option_value LIKE %s",
+                    '%' . $wpdb->esc_like($column_search[2]) . '%'
+                );
+            }
+            
+            // autoload column (index 3)
+            if (!empty($column_search[3])) {
+                $where_clauses[] = $wpdb->prepare(
+                    "autoload LIKE %s",
+                    '%' . $wpdb->esc_like($column_search[3]) . '%'
                 );
             }
         }
+        
+        // Combine WHERE clauses
+        $where_sql = '';
+        if (!empty($where_clauses)) {
+            $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+        }
+        
+        // Count filtered records
+        $filtered_records_sql = "SELECT COUNT(*) FROM {$wpdb->prefix}options {$where_sql}";
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $filtered_records = $wpdb->get_var($filtered_records_sql);
+        
+        // SQL for ordering
+        $order_sql = "ORDER BY {$order_column} {$order_direction}";
+        
+        // Get data with search, order, and pagination
+        $data_sql = "SELECT * FROM {$wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $data = $wpdb->get_results(
+            $wpdb->prepare($data_sql, $start, $length),
+            ARRAY_A
+        );
         
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
             $is_protected = in_array($row['option_name'], $this->get_protected_options());
             $protected_attr = $is_protected ? sprintf('title="%s" disabled', esc_attr__('Protected', 'nhrrob-options-table-manager')) : '';
-
+    
             $row['option_value'] = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
             
             $row['actions'] = sprintf(

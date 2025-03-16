@@ -36,6 +36,12 @@
             "ajax": {
                 "type": "GET",
                 "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_option_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+                "data": function(d) {
+                    // Add column search values to the request
+                    for (let i = 0; i < d.columns.length; i++) {
+                        d.columns[i].search.value = $('#nhrotm-data-table tfoot input').eq(i).val();
+                    }
+                }
             },
             "columns": [
                 { "data": "option_id" },
@@ -48,7 +54,26 @@
             // "scrollY": "400px",     // Fixed height
             // "scrollCollapse": true,
             // "paging": true,
-            // "order": [[0, 'asc']], // Default order on the first column in ascending
+            // "order": [[0, 'asc']], // Default order on the first column in ascending,
+            "initComplete": function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let column = this;
+                        let title = column.footer().textContent;
+         
+                        // Create input element
+                        let input = document.createElement('input');
+                        input.placeholder = title;
+                        column.footer().replaceChildren(input);
+         
+                        input.addEventListener('keyup', function() {
+                            if (column.search() !== this.value) {
+                              column.search(this.value).draw();
+                            }
+                        });
+                    });
+            }
         });
 
         // Add option
