@@ -281,53 +281,44 @@ trait GlobalTrait
     }
 
     // Helper function to recursively sanitize arrays and objects
-    public function sanitize_recursive(&$data) {
-        // Handle arrays using array_walk_recursive for deep sanitization
+    public function sanitize_recursive($data) {
         if (is_array($data)) {
-            array_walk_recursive($data, function (&$item, $key) {
-                if ($key !== 'content') {
-                    $item = sanitize_text_field($item); // Only sanitize if the key is not 'content'
-                }
-            });
-        }
-        // Handle objects by converting them to arrays and applying the function recursively
-        elseif (is_object($data)) {
-            foreach ($data as $key => &$value) {
-                if ($key === 'content') {
-                    continue; // Skip sanitization for 'content' fields
-                }
-                
-                if (is_scalar($value)) {
-                    $value = sanitize_text_field($value);
-                } else {
-                    $this->sanitize_recursive($value); // Recurse for arrays or nested objects
+            $sanitized_array = [];
+            foreach ($data as $key => $value) {
+                $sanitized_key = sanitize_key($key);
+                if ($sanitized_key !== '') {
+                    $sanitized_array[$sanitized_key] = $this->sanitize_recursive($value);
                 }
             }
+            return $sanitized_array;
+        } elseif (is_object($data)) {
+            $sanitized_object = new \stdClass();
+            $object_vars = get_object_vars($data);
+            
+            foreach ($object_vars as $key => $value) {
+                $sanitized_key = $this->sanitize_key($key);
+                if ($sanitized_key !== '') {
+                    $sanitized_object->$sanitized_key = $this->sanitize_recursive($value);
+                }
+            }
+            return $sanitized_object;
+        } else {
+            return $this->sanitize_item($data);
         }
     }
 
-    public function castValues(&$array, $option_name = '') {
-        // $exceptional_option_names = $this->exceptional_option_names();
+    public function sanitize_item( $item ){
+        $item_formatted = '';
 
-        foreach ($array as $key => &$value) {
-            if (is_array($value)) {
-                $this->castValues($value); // Recursive call for nested arrays
-            } elseif (is_numeric($value)) {
-                $value = (int) $value; // Convert numeric strings to integers
-            } elseif ($value === "true") {
-                $value = true; // Convert "true" string to boolean true
-            } elseif ($value === "false") {
-                $value = false; // Convert "false" string to boolean false
-            } elseif (empty($value) && $key === "recurrence") {
-                $value = false; // Ensure recurrence defaults to false if empty
-            }
-
-            // if ( ! empty( $option_name ) && in_array( $option_name, $exceptional_option_names ) ) {
-            //     if ( empty($value) && $key === "recurrence" ) {
-            //         $value = false;
-            //     }
-            // }
+        if ( is_numeric( $item )) {
+            $item_formatted = intval( $item );
+        } elseif ( is_email( $item )) {
+            $item_formatted = sanitize_email( $item );
+        } else {
+            $item_formatted = sanitize_text_field( wp_unslash( $item ) );
         }
+
+        return $item_formatted;
     }
 
     public function exceptional_option_names() {

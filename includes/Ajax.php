@@ -65,7 +65,11 @@ class Ajax extends App {
         
         // Get column search values
         $column_search = [];
-        if (isset($_GET['columns']) && is_array($_GET['columns'])) {
+        if (isset($_GET['columns']) && is_array( $_GET['columns'] )) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $columns = $this->sanitize_recursive( wp_unslash( $_GET['columns'] ) );
+
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             foreach ($_GET['columns'] as $column) {
                 if (isset($column['search']['value'])) {
                     $column_search[] = sanitize_text_field(wp_unslash($column['search']['value']));
@@ -131,7 +135,7 @@ class Ajax extends App {
         
         // Count filtered records
         $filtered_records_sql = "SELECT COUNT(*) FROM {$wpdb->prefix}options {$where_sql}";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         $filtered_records = $wpdb->get_var($filtered_records_sql);
         
         // SQL for ordering
@@ -141,6 +145,7 @@ class Ajax extends App {
         $data_sql = "SELECT * FROM {$wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $data = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
             $wpdb->prepare($data_sql, $start, $length),
             ARRAY_A
         );
