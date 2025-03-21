@@ -41,6 +41,8 @@
                     for (let i = 0; i < d.columns.length; i++) {
                         d.columns[i].search.value = $('#nhrotm-data-table tfoot input').eq(i).val();
                     }
+
+                    d.optionTypeFilter = $('#option-type-filter').val();
                 }
             },
             "columns": [
@@ -448,6 +450,37 @@
                 // "order": [[0, 'asc']], // Default order on the first column in ascending
             });
         }
+
+        // Filtering
+        // Add filter dropdown handler
+        $('#option-type-filter').on('change', function() {
+            table.ajax.reload();
+        });
+
+        // Add "Delete All Transients" button handler
+        $('#delete-all-transients').on('click', function() {
+            if (confirm('Are you sure you want to delete all transients? This action cannot be undone.')) {
+                $.ajax({
+                    url: nhrotmOptionsTableManager.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'nhrotm_delete_all_transients',
+                        nonce: nhrotmOptionsTableManager.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('All transients deleted successfully!');
+                            table.ajax.reload();
+                        } else {
+                            alert('Failed to delete transients: ' + response.data);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while deleting transients.');
+                    }
+                });
+            }
+        });
         
     });
 })(jQuery);

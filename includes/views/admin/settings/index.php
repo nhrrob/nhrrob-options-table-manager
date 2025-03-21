@@ -18,6 +18,24 @@
             <?php endif; ?>
         </div>
 
+        <!-- Filter starts -->
+        <div class="nhrotm-filter-container">
+            <div class="nhrotm-filter-row">
+                <div class="nhrotm-filter-group">
+                    <select id="option-type-filter">
+                        <option value="all-options"><?php esc_html_e('All Options', 'nhrrob-options-table-manager'); ?></option>
+                        <option value="all-transients"><?php esc_html_e('All Transients', 'nhrrob-options-table-manager'); ?></option>
+                        <option value="active-transients"><?php esc_html_e('Active Transients', 'nhrrob-options-table-manager'); ?></option>
+                        <option value="expired-transients"><?php esc_html_e('Expired Transients', 'nhrrob-options-table-manager'); ?></option>
+                    </select>
+                </div>
+                <div class="nhrotm-filter-group">
+                    <button id="delete-all-transients" class="button button-danger"><?php esc_html_e('Delete Expired Transients', 'nhrrob-options-table-manager'); ?></button>
+                </div>
+            </div>
+        </div> 
+        <!-- Filter ends  -->
+         
         <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
             <thead>
                 <tr>

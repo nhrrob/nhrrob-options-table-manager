@@ -43,6 +43,7 @@ class Ajax extends App {
         
         // Search parameter
         $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
+        $option_type_filter = isset($_GET['optionTypeFilter']) && in_array($_GET['optionTypeFilter'], ['all-options', 'all-transients', 'active-transients', 'expired-transients']) ? sanitize_text_field(wp_unslash($_GET['optionTypeFilter'])) : 'all-options';
         
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
@@ -463,6 +464,32 @@ class Ajax extends App {
             wp_send_json_error('Failed to delete option');
         }
     
+        wp_die();
+    }
+
+    /**
+     * Delete all transients from the options table
+     */
+    public function delete_all_transients() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+        
+        global $wpdb;
+        
+        // Delete all transients
+        $deleted = $wpdb->query(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%_transient_%'"
+        );
+        
+        if ($deleted !== false) {
+            wp_send_json_success(array('deleted' => $deleted));
+        } else {
+            wp_send_json_error('Database error');
+        }
+        
         wp_die();
     }
 

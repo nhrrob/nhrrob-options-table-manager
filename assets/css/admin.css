@@ -385,3 +385,58 @@
     border-radius: 5px;
     font-weight: normal;
 }
+
+/* Filter  */
+
+.nhrotm-filter-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nhrotm-filter-row {
+    display: flex;
+    /* justify-content: space-between; */
+    justify-content: center;
+    align-items: center;
+    /* margin-bottom: 15px; */
+    gap: 10px;
+}
+
+.nhrotm-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#option-type-filter {
+    min-width: 200px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#delete-all-transients {
+    background-color: #e74c3c;
+    padding: 4px 8px;
+    color: white;
+    border: none;
+}
+
+.option-status {
+    display: inline-block;
+    padding: 3px 8px;
+    color: white;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.option-status-active {
+    background-color: #2ecc71;
+}
+
+.option-status-expired {
+    background-color: #e74c3c;
+}
