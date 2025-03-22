@@ -377,3 +377,50 @@
 .nhrotm-toast.warning {
     background-color: #FF9800;
 }
+
+#nhrotm-data-table tfoot input {
+    padding: 8px 10px;
+    margin: 0;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    font-weight: normal;
+}
+
+/* Filter  */
+
+.nhrotm-filter-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nhrotm-filter-row {
+    display: flex;
+    /* justify-content: space-between; */
+    justify-content: center;
+    align-items: center;
+    /* margin-bottom: 15px; */
+    gap: 10px;
+}
+
+.nhrotm-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#option-type-filter {
+    min-width: 200px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#delete-expired-transients {
+    background-color: #e74c3c;
+    padding: 4px 8px;
+    color: white;
+    border: none;
+}

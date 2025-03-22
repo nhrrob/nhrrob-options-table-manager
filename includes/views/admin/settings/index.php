@@ -18,6 +18,22 @@
             <?php endif; ?>
         </div>
 
+        <!-- Filter starts -->
+        <div class="nhrotm-filter-container">
+            <div class="nhrotm-filter-row">
+                <div class="nhrotm-filter-group">
+                    <select id="option-type-filter">
+                        <option value="all-options"><?php esc_html_e('All Options', 'nhrrob-options-table-manager'); ?></option>
+                        <option value="all-transients"><?php esc_html_e('All Transients', 'nhrrob-options-table-manager'); ?></option>
+                    </select>
+                </div>
+                <div class="nhrotm-filter-group">
+                    <button id="delete-expired-transients" class="button button-danger" disabled><?php esc_html_e('Delete Expired Transients', 'nhrrob-options-table-manager'); ?></button>
+                </div>
+            </div>
+        </div> 
+        <!-- Filter ends  -->
+         
         <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
             <thead>
                 <tr>
@@ -29,6 +45,16 @@
                 </tr>
             </thead>
 
+            <tfoot>
+                <tr>
+                    <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                </tr>
+            </tfoot>
+            
             <tbody>
 
             </tbody>

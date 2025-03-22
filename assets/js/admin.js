@@ -36,6 +36,25 @@
             "ajax": {
                 "type": "GET",
                 "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_option_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+                "data": function(d) {
+                    // Add column search values to the request
+                    for (let i = 0; i < d.columns.length; i++) {                        
+                        d.columns[i].search.value = $('#nhrotm-data-table tfoot input').eq(i).val();
+                    }
+
+                    // Option type filter
+                    $('#delete-expired-transients').attr('disabled', true);
+                    d.optionTypeFilter = $('#option-type-filter').val();
+
+                    if ( d.optionTypeFilter === 'all-transients' ) {
+                        $('#delete-expired-transients').attr('disabled', false);
+
+                        let currentSearch = d.columns[1].search.value || '';
+                        if (!currentSearch.includes('transient_')) {
+                            d.columns[1].search.value = 'transient_' + currentSearch;
+                        }
+                    }
+                }
             },
             "columns": [
                 { "data": "option_id" },
@@ -48,7 +67,26 @@
             // "scrollY": "400px",     // Fixed height
             // "scrollCollapse": true,
             // "paging": true,
-            // "order": [[0, 'asc']], // Default order on the first column in ascending
+            // "order": [[0, 'asc']], // Default order on the first column in ascending,
+            "initComplete": function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let column = this;
+                        let title = column.footer().textContent;
+         
+                        // Create input element
+                        let input = document.createElement('input');
+                        input.placeholder = title;
+                        column.footer().replaceChildren(input);
+         
+                        input.addEventListener('keyup', function() {
+                            if (column.search() !== this.value) {
+                              column.search(this.value).draw();
+                            }
+                        });
+                    });
+            }
         });
 
         // Add option
@@ -423,6 +461,37 @@
                 // "order": [[0, 'asc']], // Default order on the first column in ascending
             });
         }
+
+        // Filtering
+        // Add filter dropdown handler
+        $('#option-type-filter').on('change', function() {
+            table.ajax.reload();
+        });
+
+        // Add "Delete All Transients" button handler
+        $('#delete-expired-transients').on('click', function() {
+            if (confirm('Are you sure you want to delete expired transients? This action cannot be undone.')) {
+                $.ajax({
+                    url: nhrotmOptionsTableManager.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'nhrotm_delete_expired_transients',
+                        nonce: nhrotmOptionsTableManager.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast("Expired transients deleted successfully!", "success");
+                            table.ajax.reload();
+                        } else {
+                            showToast('Failed to delete transients: ' + response.data, "error");
+                        }
+                    },
+                    error: function() {
+                        showToast('An error occurred while deleting transients.', "error");
+                    }
+                });
+            }
+        });
         
     });
 })(jQuery);

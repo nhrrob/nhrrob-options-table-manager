@@ -25,6 +25,8 @@
         "10up/wp_mock": "dev-trunk"
     },
     "scripts": {
-        "deploy": "composer install --no-dev && wp dist-archive . && composer install"
+        "deploy": "composer install --no-dev && wp dist-archive . && composer install",
+        "dev": "composer install",
+        "build": "composer install --no-dev"
     }
 }
