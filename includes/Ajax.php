@@ -490,6 +490,7 @@ class Ajax extends App {
         global $wpdb;
         
         // Get all transient options
+        // phpcs:ignore:WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $transients = $wpdb->get_results(
             "SELECT option_name, option_value 
             FROM {$wpdb->options} 
@@ -508,7 +509,7 @@ class Ajax extends App {
                 if (false === get_transient($transient_name)) {
                     // Transient has expired, delete it
                     $deleted_transients[] = $transient_name;
-                    delete_transient($transient_name);
+                    delete_transient(esc_sql( $transient_name ) );
                 }
             }
 
