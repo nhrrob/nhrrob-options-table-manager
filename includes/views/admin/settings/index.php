@@ -28,7 +28,7 @@
                     </select>
                 </div>
                 <div class="nhrotm-filter-group">
-                    <button id="delete-all-transients" class="button button-danger" disabled><?php esc_html_e('Delete Expired Transients', 'nhrrob-options-table-manager'); ?></button>
+                    <button id="delete-expired-transients" class="button button-danger" disabled><?php esc_html_e('Delete Expired Transients', 'nhrrob-options-table-manager'); ?></button>
                 </div>
             </div>
         </div> 

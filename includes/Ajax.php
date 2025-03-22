@@ -16,6 +16,7 @@ class Ajax extends App {
         add_action('wp_ajax_nhrotm_add_option', [ $this, 'add_option' ]);
         add_action('wp_ajax_nhrotm_edit_option', [ $this, 'edit_option' ]);
         add_action('wp_ajax_nhrotm_delete_option', [ $this, 'delete_option' ]);
+        add_action('wp_ajax_nhrotm_delete_expired_transients', [ $this, 'delete_expired_transients' ]);
         add_action('wp_ajax_nhrotm_option_usage_analytics', [ $this, 'option_usage_analytics' ]);
 
         add_action('wp_ajax_nhrotm_usermeta_table_data', [ $this, 'usermeta_table_data' ]);
@@ -477,9 +478,9 @@ class Ajax extends App {
     }
 
     /**
-     * Delete all transients from the options table
+     * Delete expired transients from the options table
      */
-    public function delete_all_transients() {
+    public function delete_expired_transients() {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
@@ -488,18 +489,38 @@ class Ajax extends App {
         
         global $wpdb;
         
-        // Delete all transients
-        $deleted = $wpdb->query(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%_transient_%'"
+        // Get all transient options
+        $transients = $wpdb->get_results(
+            "SELECT option_name, option_value 
+            FROM {$wpdb->options} 
+            WHERE option_name LIKE '%_transient_%' 
+            AND option_name NOT LIKE '%_transient_timeout_%'",
+            ARRAY_A
         );
         
-        if ($deleted !== false) {
-            wp_send_json_success(array('deleted' => $deleted));
-        } else {
+        try {
+            $deleted_transients = [];
+
+            foreach ($transients as $transient) {
+
+                $transient_name = str_replace('_transient_', '', $transient['option_name']);
+
+                if (false === get_transient($transient_name)) {
+                    // Transient has expired, delete it
+                    $deleted_transients[] = $transient_name;
+                    delete_transient($transient_name);
+                }
+            }
+
+            wp_send_json_success([
+                'message' => 'Expired transients deleted successfully',
+                'count' => count($deleted_transients),
+                'deleted_transients' => $deleted_transients,
+            ]);
+        } catch (\Exception $e) {
             wp_send_json_error('Database error');
+            wp_die();
         }
-        
-        wp_die();
     }
 
     public function option_usage_analytics() {

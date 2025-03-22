@@ -418,7 +418,7 @@
     border-radius: 4px;
 }
 
-#delete-all-transients {
+#delete-expired-transients {
     background-color: #e74c3c;
     padding: 4px 8px;
     color: white;

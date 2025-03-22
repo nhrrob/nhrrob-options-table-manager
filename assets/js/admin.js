@@ -43,9 +43,12 @@
                     }
 
                     // Option type filter
+                    $('#delete-expired-transients').attr('disabled', true);
                     d.optionTypeFilter = $('#option-type-filter').val();
 
                     if ( d.optionTypeFilter === 'all-transients' ) {
+                        $('#delete-expired-transients').attr('disabled', false);
+
                         let currentSearch = d.columns[1].search.value || '';
                         if (!currentSearch.includes('transient_')) {
                             d.columns[1].search.value = 'transient_' + currentSearch;
@@ -466,25 +469,25 @@
         });
 
         // Add "Delete All Transients" button handler
-        $('#delete-all-transients').on('click', function() {
-            if (confirm('Are you sure you want to delete all transients? This action cannot be undone.')) {
+        $('#delete-expired-transients').on('click', function() {
+            if (confirm('Are you sure you want to delete expired transients? This action cannot be undone.')) {
                 $.ajax({
                     url: nhrotmOptionsTableManager.ajaxUrl,
                     type: 'POST',
                     data: {
-                        action: 'nhrotm_delete_all_transients',
+                        action: 'nhrotm_delete_expired_transients',
                         nonce: nhrotmOptionsTableManager.nonce
                     },
                     success: function(response) {
                         if (response.success) {
-                            alert('All transients deleted successfully!');
+                            showToast("Expired transients deleted successfully!", "success");
                             table.ajax.reload();
                         } else {
-                            alert('Failed to delete transients: ' + response.data);
+                            showToast('Failed to delete transients: ' + response.data, "error");
                         }
                     },
                     error: function() {
-                        alert('An error occurred while deleting transients.');
+                        showToast('An error occurred while deleting transients.', "error");
                     }
                 });
             }
