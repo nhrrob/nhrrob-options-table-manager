@@ -155,7 +155,16 @@ class Ajax extends App {
         foreach ($data as &$row) {
             $is_protected = in_array($row['option_name'], $this->get_protected_options());
             $protected_attr = $is_protected ? sprintf('title="%s" disabled', esc_attr__('Protected', 'nhrrob-options-table-manager')) : '';
-    
+        
+            if ( 'all-transients' === $option_type_filter ) {
+                // all options are transients
+                $transient_name = str_replace('_transient_', '', $row['option_name']);
+                $transient_value = get_transient($transient_name);
+
+                $transient_status = $transient_value ? '[active]' : '[expired]';
+                $row['option_name'] = esc_html($transient_status . $row['option_name']);
+            }
+
             $row['option_value'] = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
             
             $row['actions'] = sprintf(
@@ -166,7 +175,7 @@ class Ajax extends App {
                 esc_attr($row['option_id']),
                 $protected_attr,
             );
-        }
+        }        
         
         // Prepare response for DataTables
         $response = array(

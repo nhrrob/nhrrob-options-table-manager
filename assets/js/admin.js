@@ -38,11 +38,19 @@
                 "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_option_table_data&nonce="+nhrotmOptionsTableManager.nonce,
                 "data": function(d) {
                     // Add column search values to the request
-                    for (let i = 0; i < d.columns.length; i++) {
+                    for (let i = 0; i < d.columns.length; i++) {                        
                         d.columns[i].search.value = $('#nhrotm-data-table tfoot input').eq(i).val();
                     }
 
+                    // Option type filter
                     d.optionTypeFilter = $('#option-type-filter').val();
+
+                    if ( d.optionTypeFilter === 'all-transients' ) {
+                        let currentSearch = d.columns[1].search.value || '';
+                        if (!currentSearch.includes('transient_')) {
+                            d.columns[1].search.value = 'transient_' + currentSearch;
+                        }
+                    }
                 }
             },
             "columns": [

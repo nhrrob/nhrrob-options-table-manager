@@ -25,12 +25,10 @@
                     <select id="option-type-filter">
                         <option value="all-options"><?php esc_html_e('All Options', 'nhrrob-options-table-manager'); ?></option>
                         <option value="all-transients"><?php esc_html_e('All Transients', 'nhrrob-options-table-manager'); ?></option>
-                        <option value="active-transients"><?php esc_html_e('Active Transients', 'nhrrob-options-table-manager'); ?></option>
-                        <option value="expired-transients"><?php esc_html_e('Expired Transients', 'nhrrob-options-table-manager'); ?></option>
                     </select>
                 </div>
                 <div class="nhrotm-filter-group">
-                    <button id="delete-all-transients" class="button button-danger"><?php esc_html_e('Delete Expired Transients', 'nhrrob-options-table-manager'); ?></button>
+                    <button id="delete-all-transients" class="button button-danger" disabled><?php esc_html_e('Delete Expired Transients', 'nhrrob-options-table-manager'); ?></button>
                 </div>
             </div>
         </div> 
