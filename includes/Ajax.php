@@ -635,7 +635,7 @@ class Ajax extends App {
         if (!empty($where_clauses)) {
             $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
         }
-        
+
         // Count filtered records
         $filtered_records_sql = "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta {$where_sql}";
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
@@ -767,764 +767,127 @@ class Ajax extends App {
     }
 
     public function better_payment_table_data() {
-        // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce')) {
+        // Verify nonce first
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
-        
+
         global $wpdb;
-        $table_name = $wpdb->prefix . 'better_payment';
-        
+
         // Pagination parameters
-        $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
-        $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
-        
+        $start = isset($_GET['start']) ? max(0, intval($_GET['start'])) : 0;
+        $length = isset($_GET['length']) ? min(max(1, intval($_GET['length'])), 100) : 10;
+
         // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
-        
+        $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
+
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'desc';
-    
-        // Define columns in the correct order for sorting
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? 
+            strtolower(sanitize_text_field(wp_unslash($_GET['order'][0]['dir']))) : 'desc';
+        
+        // Define valid columns for better_payment table
         $columns = ['id', 'transaction_id', 'amount', 'status', 'source', 'payment_date', 'email', 'form_fields_info', 'currency'];
         
-        // Ensure order column is valid using whitelist approach
+        // Validate order column
         if ($order_column_index < 0 || $order_column_index >= count($columns)) {
-            $order_column_index = 0; // Default to first column
+            $order_column_index = 0;
         }
         $order_column = $columns[$order_column_index];
-        
-        // Get total record count with prepared statement
+
+        // Get total record count
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment"
         );
         
-        // Search and ordering logic
+        // Build WHERE clause for search
+        $where_clauses = [];
+
+        // Global search
         if (!empty($search)) {
             $search_like = '%' . $wpdb->esc_like($search) . '%';
+            $search_params = [];
+            $search_sql_parts = [];
             
-            // Get filtered count
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $filtered_records = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment WHERE 
-                    id LIKE %s OR 
-                    transaction_id LIKE %s OR 
-                    amount LIKE %s OR 
-                    status LIKE %s OR 
-                    source LIKE %s OR 
-                    payment_date LIKE %s OR 
-                    email LIKE %s OR 
-                    form_fields_info LIKE %s OR 
-                    currency LIKE %s",
-                    $search_like, $search_like, $search_like, $search_like, 
-                    $search_like, $search_like, $search_like, $search_like, $search_like
-                )
-            );
-            
-            // Set up search parameters for reuse
-            $search_params = array(
-                $search_like, $search_like, $search_like, $search_like,
-                $search_like, $search_like, $search_like, $search_like, $search_like
-            );
-            
-            // Complete hardcoded query paths for each possible order column and direction
-            if ($order_column === 'id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY id DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY id ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'transaction_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY transaction_id DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY transaction_id ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'amount') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY amount DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY amount ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'status') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY status DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY status ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'source') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY source DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY source ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'payment_date') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY payment_date DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY payment_date ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'email') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY email DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY email ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'form_fields_info') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY form_fields_info DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY form_fields_info ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'currency') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY currency DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            WHERE id LIKE %s OR 
-                            transaction_id LIKE %s OR 
-                            amount LIKE %s OR 
-                            status LIKE %s OR 
-                            source LIKE %s OR 
-                            payment_date LIKE %s OR 
-                            email LIKE %s OR 
-                            form_fields_info LIKE %s OR 
-                            currency LIKE %s
-                            ORDER BY currency ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $search_like, $search_like, 
-                            $search_like, $search_like, $search_like, $search_like, $search_like,
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } else {
-                // Default fallback if column is not recognized
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $data = $wpdb->get_results(
-                    $wpdb->prepare(
-                        "SELECT * FROM {$wpdb->prefix}better_payment 
-                        WHERE id LIKE %s OR 
-                        transaction_id LIKE %s OR 
-                        amount LIKE %s OR 
-                        status LIKE %s OR 
-                        source LIKE %s OR 
-                        payment_date LIKE %s OR 
-                        email LIKE %s OR 
-                        form_fields_info LIKE %s OR 
-                        currency LIKE %s
-                        ORDER BY id DESC
-                        LIMIT %d, %d",
-                        $search_like, $search_like, $search_like, $search_like, 
-                        $search_like, $search_like, $search_like, $search_like, $search_like,
-                        $start, $length
-                    ),
-                    ARRAY_A
-                );
+            // Add search for each column
+            foreach ($columns as $column) {
+                $search_sql_parts[] = "{$column} LIKE %s";
+                $search_params[] = $search_like;
             }
-        } else {
-            // No search applied, use total as filtered count
-            $filtered_records = $total_records;
             
-            // Complete hardcoded query paths for each possible order column and direction without search
-            if ($order_column === 'id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY id DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY id ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'transaction_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY transaction_id DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY transaction_id ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'amount') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY amount DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY amount ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'status') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY status DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY status ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'source') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY source DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY source ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'payment_date') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY payment_date DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY payment_date ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'email') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY email DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY email ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'form_fields_info') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY form_fields_info DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY form_fields_info ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'currency') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY currency DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}better_payment 
-                            ORDER BY currency ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } else {
-                // Default fallback if column is not recognized
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $data = $wpdb->get_results(
-                    $wpdb->prepare(
-                        "SELECT * FROM {$wpdb->prefix}better_payment 
-                        ORDER BY id DESC
-                        LIMIT %d, %d",
-                        $start, $length
-                    ),
-                    ARRAY_A
-                );
-            }
+            $where_clauses[] = "(" . implode(' OR ', $search_sql_parts) . ")";
+            $search_params_final = $search_params;
         }
         
-        // Format the data
+        // Combine WHERE clauses
+        $where_sql = '';
+        if (!empty($where_clauses)) {
+            $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+        }
+        
+        // Count filtered records
+        $filtered_records_sql = "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment {$where_sql}";
+        
+        if (!empty($search)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $filtered_records = $wpdb->get_var(
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                $wpdb->prepare($filtered_records_sql, ...$search_params_final)
+            );
+        } else {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+            $filtered_records = $wpdb->get_var($filtered_records_sql);
+        }
+        
+        // SQL for ordering
+        $order_sql = "ORDER BY {$order_column} {$order_direction}";
+        
+        // Get data with search, order, and pagination
+        $data_sql = "SELECT * FROM {$wpdb->prefix}better_payment {$where_sql} {$order_sql} LIMIT %d, %d";
+        
+        if (!empty($search)) {
+            $query_params = array_merge($search_params_final, [$start, $length]);
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $data = $wpdb->get_results(
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                $wpdb->prepare($data_sql, ...$query_params),
+                ARRAY_A
+            );
+        } else {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $data = $wpdb->get_results(
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                $wpdb->prepare($data_sql, $start, $length),
+                ARRAY_A
+            );
+        }
+        
+        // Format data for output
         foreach ($data as &$row) {
             $row['amount'] = esc_html($row['currency'] . ' ' . $row['amount']);
             $row['payment_date'] = esc_html(wp_date(get_option('date_format'), strtotime($row['payment_date'])));
             $row['form_fields_info'] = '<div class="scrollable-cell">' . esc_html($row['form_fields_info']) . '</div>';
             // Uncomment if you need action buttons
-            // $row['actions'] = '<button class="nhrotm-edit-payment" data-id="' . esc_attr($row['id']) . '">Edit</button>
-            //     <button class="nhrotm-delete-payment" data-id="' . esc_attr($row['id']) . '">Delete</button>';
+            // $row['actions'] = sprintf(
+            //     '<button class="nhrotm-edit-payment" data-id="%s">Edit</button>
+            //     <button class="nhrotm-delete-payment" data-id="%s">Delete</button>',
+            //     esc_attr($row['id']),
+            //     esc_attr($row['id'])
+            // );
         }
         
         // Prepare response for DataTables
-        $response = array(
+        $response = [
             "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
             "recordsTotal" => $total_records,
             "recordsFiltered" => $filtered_records,
             "data" => $data
-        );
+        ];
         
         wp_send_json($response);
+        wp_die();
     }
     
 }
