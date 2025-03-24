@@ -611,236 +611,49 @@ class Ajax extends App {
         }
         $order_column = $columns[$order_column_index];
     
-        // Total records count
+        // Get total record count
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta"
         );
-    
-        // Main query logic
+        
+        // Build WHERE clause for search
+        $where_clauses = [];
+
+        // Global search
         if (!empty($search)) {
             $search_like = '%' . $wpdb->esc_like($search) . '%';
-            
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $filtered_records = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta 
-                    WHERE meta_key LIKE %s OR meta_value LIKE %s",
-                    $search_like,
-                    $search_like
-                )
+            $where_clauses[] = $wpdb->prepare(
+                "(meta_key LIKE %s OR meta_value LIKE %s)",
+                $search_like,
+                $search_like
             );
-    
-            // Handle order with complete prepared statements
-            if ($order_column === 'umeta_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY umeta_id DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY umeta_id ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'user_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY user_id DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY user_id ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'meta_key') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY meta_key DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY meta_key ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } else { // meta_value
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY meta_value DESC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            WHERE meta_key LIKE %s OR meta_value LIKE %s
-                            ORDER BY meta_value ASC
-                            LIMIT %d, %d",
-                            $search_like, $search_like, $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            }
-        } else {
-            $filtered_records = $total_records;
-            
-            // Handle order without search
-            if ($order_column === 'umeta_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY umeta_id DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY umeta_id ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'user_id') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY user_id DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY user_id ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } elseif ($order_column === 'meta_key') {
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY meta_key DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY meta_key ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            } else { // meta_value
-                if ($order_direction === 'desc') {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY meta_value DESC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                } else {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $data = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}usermeta 
-                            ORDER BY meta_value ASC
-                            LIMIT %d, %d",
-                            $start, $length
-                        ),
-                        ARRAY_A
-                    );
-                }
-            }
         }
-    
-        // Format output
+        
+        // Combine WHERE clauses
+        $where_sql = '';
+        if (!empty($where_clauses)) {
+            $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+        }
+        
+        // Count filtered records
+        $filtered_records_sql = "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta {$where_sql}";
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+        $filtered_records = $wpdb->get_var($filtered_records_sql);
+        
+        // SQL for ordering
+        $order_sql = "ORDER BY {$order_column} {$order_direction}";
+        
+        // Get data with search, order, and pagination
+        $data_sql = "SELECT * FROM {$wpdb->prefix}usermeta {$where_sql} {$order_sql} LIMIT %d, %d";
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $data = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->prepare($data_sql, $start, $length),
+            ARRAY_A
+        );
+        
+        // Format data for output
         foreach ($data as &$row) {
             $is_protected = in_array($row['meta_key'], $this->get_protected_usermetas());
             $protected_attr = $is_protected ? sprintf('title="%s" disabled', esc_attr__('Protected', 'nhrrob-options-table-manager')) : '';
@@ -853,7 +666,7 @@ class Ajax extends App {
                 esc_attr($row['umeta_id']),
                 $protected_attr,
                 esc_attr($row['umeta_id']),
-                $protected_attr,
+                $protected_attr
             );
         }
     
