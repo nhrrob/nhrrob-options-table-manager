@@ -212,33 +212,8 @@ class Ajax extends App {
             wp_die();
         }
 
-        // if (empty($option_value)) {
-        //     wp_send_json_error('Option value is required');
-        //     wp_die();
-        // }
-
-        // if (get_option($option_name) !== false) {
-        //     wp_send_json_error('Option already exists');
-        //     wp_die();
-        // }
-
         // Add the option
         $option_value = get_option($option_name);
-
-        // if ($option_value === false) {
-        //     wp_send_json_error('Option not found');
-        //     wp_die();
-        // }
-
-        // If it's serialized, unserialize it safely
-        // if (is_serialized($option_value)) {
-        //     $option_value = maybe_unserialize($option_value);
-        // }
-
-        // Convert to array if needed
-        // if (!is_array($option_value)) {
-        //     $option_value = array('value' => $option_value);
-        // }
 
         $option_value = ! empty( $option_value ) && is_serialized($option_value) ? unserialize($option_value, ['allowed_classes' => false]) : $option_value;
 
@@ -332,16 +307,6 @@ class Ajax extends App {
 
         $raw_option_value = sanitize_text_field( wp_unslash($_POST['option_value']) );
         // $option_value = stripslashes_deep( $option_value ); 
-
-        // if (is_serialized_string($raw_option_value)) {
-        //     wp_send_json_error('Serialized objects are not allowed');
-        //     wp_die();
-        // }
-
-        // if (preg_match('/O:\d+:"[^"]++":\d+:{/', $raw_option_value)) {
-        //     wp_send_json_error('Object serialization is not allowed');
-        //     wp_die();
-        // }
 
         $original_value = get_option($option_name);
         $is_original_serialized = is_serialized($original_value);
