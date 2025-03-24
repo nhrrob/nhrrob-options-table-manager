@@ -552,6 +552,12 @@ class Ajax extends App {
             wp_send_json_error('Invalid nonce');
             wp_die();
         }
+
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+            wp_die();
+        }
     
         global $wpdb;
     
@@ -735,6 +741,12 @@ class Ajax extends App {
         // Verify nonce first
         if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
+            wp_die();
+        }
+
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
             wp_die();
         }
 
