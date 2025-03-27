@@ -2,11 +2,8 @@
 namespace Nhrotm\OptionsTableManager\Managers;
 
 use Exception;
-use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 class UsermetaTableManager extends BaseTableManager {
-
-    protected $table_name; // declared in base class. may be not needed here.
 
     public function __construct() {
         parent::__construct();

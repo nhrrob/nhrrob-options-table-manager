@@ -1,17 +1,19 @@
 <?php
 namespace Nhrotm\OptionsTableManager\Ajax;
 
+use Nhrotm\OptionsTableManager\Managers\BetterPaymentTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptionsTableManager;
 use Nhrotm\OptionsTableManager\Managers\UsermetaTableManager;
-use Nhrotm\OptionsTableManager\Services\ValidationService;
 
 class AjaxHandler {
     private $options_manager;
     private $usermeta_manager;
+    private $better_payment_manager;
 
     public function __construct() {
         $this->options_manager = new OptionsTableManager();
         $this->usermeta_manager = new UsermetaTableManager();
+        $this->better_payment_manager = new BetterPaymentTableManager();
         $this->registerHandlers();
     }
 
@@ -28,6 +30,8 @@ class AjaxHandler {
             'nhrotm_usermeta_table_data' => 'usermeta_table_data',
             'nhrotm_edit_usermeta' => 'edit_usermeta',
             'nhrotm_delete_usermeta' => 'delete_usermeta',
+            //
+            'nhrotm_better_payment_table_data' => 'better_payment_table_data',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -142,6 +146,15 @@ class AjaxHandler {
             } else {
                 wp_send_json_error('Failed to delete meta!');
             }
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function better_payment_table_data() {
+        try {
+            $data = $this->better_payment_manager->get_data();
+            wp_send_json($data);
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }

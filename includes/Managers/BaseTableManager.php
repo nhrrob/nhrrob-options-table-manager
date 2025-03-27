@@ -58,38 +58,6 @@ abstract class BaseTableManager implements TableManagerInterface {
     }
 
     /**
-     * Build search conditions for database query
-     * 
-     * @param array $params Search and filter parameters
-     * @return array Query conditions
-     */
-    // protected function buildSearchConditions(array $params) {
-    //     // using $_GET directly. params not needed. Need to test/confirm.
-    //     $conditions = [];
-    //     $bindParams = [];
-
-    //     $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
-
-    //     if (!empty($search)) {
-    //         $searchLike = '%' . $this->wpdb->esc_like($params['search']) . '%';
-    //         $searchColumns = $this->getSearchableColumns();
-            
-    //         $searchConditions = [];
-    //         foreach ($searchColumns as $column) {
-    //             $searchConditions[] = "{$column} LIKE %s";
-    //             $bindParams[] = $searchLike;
-    //         }
-
-    //         $conditions[] = '(' . implode(' OR ', $searchConditions) . ')';
-    //     }
-
-    //     return [
-    //         'conditions' => $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '',
-    //         'params' => $bindParams
-    //     ];
-    // }
-
-    /**
      * Get columns that can be searched
      * 
      * @return array

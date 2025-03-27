@@ -2,11 +2,8 @@
 namespace Nhrotm\OptionsTableManager\Managers;
 
 use Exception;
-use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 class OptionsTableManager extends BaseTableManager {
-
-    protected $table_name; // declared in base class. may be not needed here.
 
     public function __construct() {
         parent::__construct();
@@ -266,7 +263,7 @@ class OptionsTableManager extends BaseTableManager {
         $sanitized_value = '';
         
         if ($decoded_value !== null && json_last_error() === JSON_ERROR_NONE) {
-            $sanitized_value = $this->validation_service->sanitize_array_recursive($decoded_value);
+            $sanitized_value = $this->validation_service->sanitize_recursive($decoded_value);
         } else if (is_serialized($raw_option_value)) {
             try {
                 $unserialized = unserialize($raw_option_value, ['allowed_classes' => false]);
@@ -278,7 +275,7 @@ class OptionsTableManager extends BaseTableManager {
                 if (is_array($unserialized)
                  || is_object($unserialized)
                 ) {
-                    $sanitized_value = $this->validation_service->sanitize_array_recursive((array)$unserialized);
+                    $sanitized_value = $this->validation_service->sanitize_recursive((array)$unserialized);
                 } else {
                     $sanitized_value = sanitize_text_field($unserialized);
                 }
