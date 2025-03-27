@@ -11,12 +11,14 @@ abstract class BaseTableManager implements TableManagerInterface {
     protected $wpdb;
     protected $table_name;
     protected $protected_items = [];
+    protected $protected_items_usermetas = [];
     protected $validation_service;
 
     public function __construct() {
         global $wpdb;
         $this->wpdb = $wpdb;
         $this->protected_items = $this->get_protected_options();
+        $this->protected_items_usermetas = $this->get_protected_usermetas();
         $this->validation_service = new ValidationService();
     }
 
@@ -50,8 +52,9 @@ abstract class BaseTableManager implements TableManagerInterface {
      * @param string $key Item key to check
      * @return bool
      */
-    protected function is_protected_item($key) {
-        return in_array($key, $this->protected_items);
+    protected function is_protected_item($key, $table_name = '') {
+        $protected_items_array = $this->wpdb->prefix . 'usermeta' === $table_name ? $this->protected_items_usermetas : $this->protected_items;
+        return in_array($key, $protected_items_array);
     }
 
     /**

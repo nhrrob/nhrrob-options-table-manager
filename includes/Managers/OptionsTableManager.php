@@ -5,7 +5,6 @@ use Exception;
 use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 class OptionsTableManager extends BaseTableManager {
-    use GlobalTrait;
 
     protected $table_name; // declared in base class. may be not needed here.
 
@@ -320,10 +319,6 @@ class OptionsTableManager extends BaseTableManager {
             throw new \Exception('This option is protected and cannot be deleted');
         }
 
-        if ($this->is_protected_item($option_name)) {
-            throw new \Exception('Protected option cannot be deleted');
-        }
-
         return delete_option($option_name);
     }
 
@@ -334,7 +329,7 @@ class OptionsTableManager extends BaseTableManager {
      * @return bool Success status
      */
     public function delete_expired_transients() {
-        $nonce = sanitize_text_field(wp_unslash($_GET['nonce'])); // #ToDo use $_REQUEST
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
 
         $this->validate_permissions();
         $this->validate_nonce($nonce);

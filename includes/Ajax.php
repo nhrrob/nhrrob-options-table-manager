@@ -735,9 +735,9 @@ class Ajax extends App {
     
         // Delete the option
         if (delete_user_meta($user_id, $meta_key)) {
-            wp_send_json_success('Option deleted successfully');
+            wp_send_json_success('Meta deleted successfully');
         } else {
-            wp_send_json_error('Failed to delete option');
+            wp_send_json_error('Failed to delete meta');
         }
     
         wp_die();

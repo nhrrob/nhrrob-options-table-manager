@@ -2,13 +2,16 @@
 namespace Nhrotm\OptionsTableManager\Ajax;
 
 use Nhrotm\OptionsTableManager\Managers\OptionsTableManager;
+use Nhrotm\OptionsTableManager\Managers\UsermetaTableManager;
 use Nhrotm\OptionsTableManager\Services\ValidationService;
 
 class AjaxHandler {
     private $options_manager;
+    private $usermeta_manager;
 
     public function __construct() {
         $this->options_manager = new OptionsTableManager();
+        $this->usermeta_manager = new UsermetaTableManager();
         $this->registerHandlers();
     }
 
@@ -21,6 +24,10 @@ class AjaxHandler {
             'nhrotm_delete_option' => 'delete_option',
             'nhrotm_delete_expired_transients' => 'delete_expired_transients',
             'nhrotm_option_usage_analytics' => 'option_usage_analytics',
+            //
+            'nhrotm_usermeta_table_data' => 'usermeta_table_data',
+            'nhrotm_edit_usermeta' => 'edit_usermeta',
+            'nhrotm_delete_usermeta' => 'delete_usermeta',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -99,6 +106,42 @@ class AjaxHandler {
         try {
             $result = $this->options_manager->option_usage_analytics();
             wp_send_json_success($result);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function usermeta_table_data() {
+        try {
+            $data = $this->usermeta_manager->get_data();
+            wp_send_json($data);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function edit_usermeta() {
+        try {
+            $result = $this->usermeta_manager->edit_record();
+
+            if ( $result ) {
+                wp_send_json_success('Meta updated successfully!');
+            } else {
+                wp_send_json_error('Failed to update meta!');
+            }
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function delete_usermeta() {
+        try {
+            $result = $this->usermeta_manager->delete_record();
+            if ( $result ) {
+                wp_send_json_success('Meta deleted successfully!');
+            } else {
+                wp_send_json_error('Failed to delete meta!');
+            }
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }
