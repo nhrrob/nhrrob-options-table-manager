@@ -280,47 +280,6 @@ trait GlobalTrait
         return array_merge($core_usermetas, $default_usermetas);
     }
 
-    // Helper function to recursively sanitize arrays and objects
-    public function sanitize_recursive($data) {
-        if (is_array($data)) {
-            $sanitized_array = [];
-            foreach ($data as $key => $value) {
-                $sanitized_key = sanitize_key($key);
-                if ($sanitized_key !== '') {
-                    $sanitized_array[$sanitized_key] = $this->sanitize_recursive($value);
-                }
-            }
-            return $sanitized_array;
-        } elseif (is_object($data)) {
-            $sanitized_object = new \stdClass();
-            $object_vars = get_object_vars($data);
-            
-            foreach ($object_vars as $key => $value) {
-                $sanitized_key = $this->sanitize_key($key);
-                if ($sanitized_key !== '') {
-                    $sanitized_object->$sanitized_key = $this->sanitize_recursive($value);
-                }
-            }
-            return $sanitized_object;
-        } else {
-            return $this->sanitize_item($data);
-        }
-    }
-
-    public function sanitize_item( $item ){
-        $item_formatted = '';
-
-        if ( is_numeric( $item )) {
-            $item_formatted = intval( $item );
-        } elseif ( is_email( $item )) {
-            $item_formatted = sanitize_email( $item );
-        } else {
-            $item_formatted = sanitize_text_field( wp_unslash( $item ) );
-        }
-
-        return $item_formatted;
-    }
-
     public function exceptional_option_names() {
         return [
             'betterlinks_notices',

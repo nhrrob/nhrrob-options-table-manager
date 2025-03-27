@@ -2,11 +2,14 @@
 
 namespace Nhrotm\OptionsTableManager;
 
+use Nhrotm\OptionsTableManager\Services\ValidationService;
+
 /**
  * Ajax handler class
  */
 class Ajax extends App {
 
+    protected $validation_service;
     /**
      * Class constructor
      */
@@ -26,6 +29,8 @@ class Ajax extends App {
         add_action('wp_ajax_nhrotm_better_payment_table_data', [ $this, 'better_payment_table_data' ]);
         // add_action('wp_ajax_nhrotm_edit_usermeta', [ $this, 'edit_usermeta' ]);
         // add_action('wp_ajax_nhrotm_delete_usermeta', [ $this, 'delete_usermeta' ]);
+
+        $this->validation_service = new ValidationService();
     }
 
     public function option_table_data() {
@@ -69,7 +74,8 @@ class Ajax extends App {
         $column_search = [];
         if (isset($_GET['columns']) && is_array( $_GET['columns'] )) {
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $columns = $this->sanitize_recursive( wp_unslash( $_GET['columns'] ) );
+            // $columns = $this->sanitize_recursive( wp_unslash( $_GET['columns'] ) );
+            $columns = $this->validation_service->sanitize_recursive( wp_unslash( $_GET['columns'] ) );
 
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             foreach ($_GET['columns'] as $column) {
