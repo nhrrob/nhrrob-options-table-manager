@@ -16,11 +16,15 @@ class UsermetaTableManager extends BaseTableManager {
      * @return array Options data
      */
     public function get_data() {
-        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
-        $this->validate_nonce($nonce);
         $this->validate_permissions();
 
+        global $wpdb;
+        
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
         
@@ -41,7 +45,7 @@ class UsermetaTableManager extends BaseTableManager {
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM {$this->wpdb->prefix}usermeta"
+            "SELECT COUNT(*) FROM {$wpdb->prefix}usermeta"
         );
 
         // Build WHERE clause for search conditions
@@ -114,10 +118,12 @@ class UsermetaTableManager extends BaseTableManager {
      * @return bool Success status
      */
     public function edit_record() {
-        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
 
         // Sanitize and validate input data
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
@@ -146,10 +152,12 @@ class UsermetaTableManager extends BaseTableManager {
      * @return bool Success status
      */
     public function delete_record() {
-        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
-
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
+        
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
 
         // Sanitize and validate input data
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;

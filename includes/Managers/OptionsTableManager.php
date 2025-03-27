@@ -16,10 +16,14 @@ class OptionsTableManager extends BaseTableManager {
      * @return array Options data
      */
     public function get_data() {
-        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
-        $this->validate_nonce($nonce);
         $this->validate_permissions();
+
+        global $wpdb;
 
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
@@ -42,7 +46,7 @@ class OptionsTableManager extends BaseTableManager {
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM {$this->wpdb->prefix}options"
+            "SELECT COUNT(*) FROM {$wpdb->prefix}options"
         );
 
         // Get column search values
@@ -170,10 +174,12 @@ class OptionsTableManager extends BaseTableManager {
     }
 
     public function get_option() {
-        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
-
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
+        
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
 
         // Sanitize and validate input data
         $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
@@ -202,10 +208,12 @@ class OptionsTableManager extends BaseTableManager {
     }
 
     public function add_option() {
-        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
 
         // Sanitize and validate input data
         $option_name = isset($_POST['new_option_name']) ? sanitize_text_field( wp_unslash( $_POST['new_option_name'] ) ) : '';
@@ -233,10 +241,12 @@ class OptionsTableManager extends BaseTableManager {
      * @return bool Success status
      */
     public function edit_record() {
-        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
 
         $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
 
@@ -257,7 +267,7 @@ class OptionsTableManager extends BaseTableManager {
         try {
             $decoded_value = json_decode($raw_option_value, true);
         } catch (Exception $e) {
-            throw new \Exception('Error processing serialized data: ' . $e->getMessage());
+            throw new \Exception('Error processing serialized data: ' . esc_html( $e->getMessage() ));
         }
 
         $sanitized_value = '';
@@ -282,7 +292,7 @@ class OptionsTableManager extends BaseTableManager {
 
             } catch (\Exception $e) {
                 // parent method has check for thrown exception
-                throw new \Exception('Error processing serialized data: ' . $e->getMessage());
+                throw new \Exception('Error processing serialized data: ' . esc_html( $e->getMessage() ));
             }
         } else {
             // Plain string/value
@@ -301,10 +311,12 @@ class OptionsTableManager extends BaseTableManager {
      * @return bool Success status
      */
     public function delete_record() {
-        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
 
         $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
 
@@ -326,16 +338,20 @@ class OptionsTableManager extends BaseTableManager {
      * @return bool Success status
      */
     public function delete_expired_transients() {
-        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
+
+        global $wpdb;
 
         // Get all transient options
         // phpcs:ignore:WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $transients = $this->wpdb->get_results(
             "SELECT option_name, option_value 
-            FROM {$this->wpdb->options} 
+            FROM {$wpdb->options} 
             WHERE option_name LIKE '%_transient_%' 
             AND option_name NOT LIKE '%_transient_timeout_%'",
             ARRAY_A
@@ -363,19 +379,23 @@ class OptionsTableManager extends BaseTableManager {
 
             return $response;
         } catch (\Exception $e) {
-            throw new \Exception('Database error: ' . $e->getMessage()); // parent method has catch.
+            throw new \Exception('Database error: ' . esc_html( $e->getMessage() )); // parent method has catch.
         }
     }
 
     public function option_usage_analytics() {
-        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
         $this->validate_permissions();
-        $this->validate_nonce($nonce);
     
+        global $wpdb;
+        
         // Query to get all option names
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $results = $this->wpdb->get_results("SELECT option_name FROM {$this->wpdb->prefix}options", ARRAY_A);
+        $results = $this->wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
         
         $prefix_count = [];
     

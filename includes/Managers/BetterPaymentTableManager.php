@@ -16,11 +16,15 @@ class BetterPaymentTableManager extends BaseTableManager {
      * @return array Options data
      */
     public function get_data() {
-        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
 
-        $this->validate_nonce($nonce);
         $this->validate_permissions();
 
+        global $wpdb;
+        
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
         
@@ -41,7 +45,7 @@ class BetterPaymentTableManager extends BaseTableManager {
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM {$this->wpdb->prefix}better_payment"
+            "SELECT COUNT(*) FROM {$wpdb->prefix}better_payment"
         );
 
         // Build WHERE clause for search conditions

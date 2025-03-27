@@ -41,7 +41,7 @@ abstract class BaseTableManager implements TableManagerInterface {
      * @throws \Exception If nonce is invalid
      */
     protected function validate_nonce($nonce, $action = 'nhrotm-admin-nonce') {
-        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($nonce)), $action)) {
+        if (!isset($nonce) || !wp_verify_nonce(sanitize_text_field(wp_unslash($nonce)), $action)) {
             throw new \Exception('Invalid nonce');
         }
     }
