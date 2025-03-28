@@ -297,8 +297,11 @@
                 $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
 
                 $( '#nhrotm-data-table_wrapper' ).fadeIn();
+                $( '.nhrotm-filter-container' ).fadeIn();
+
             } else if ( $(this).hasClass('usermeta-table') ) {
                 $( '#nhrotm-data-table_wrapper' ).fadeOut();
+                $( '.nhrotm-filter-container' ).fadeOut();
                 $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
 
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeIn();
@@ -312,6 +315,7 @@
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
                 $( '#nhrotm-data-table_wrapper' ).fadeOut();
+                $( '.nhrotm-filter-container' ).fadeOut();
 
                 $('#nhrotm-data-table-better_payment_wrapper').fadeIn();
 

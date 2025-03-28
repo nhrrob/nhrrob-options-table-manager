@@ -85,10 +85,11 @@ Not yet, but this feature is coming soon!
 
 == Changelog ==
 
-= 1.1.7 - 23/03/2025 =
+= 1.1.7 - 28/03/2025 =
 - Added: Column search feature
 - Added: Filter by option type - option or transient
 - Added: Delete all expired transients button and functionality
+- Revamped: Codebase updated for better performance
 - Few minor bug fixing & improvements
 
 = 1.1.6 - 15/03/2025 =
