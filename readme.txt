@@ -4,7 +4,7 @@ Tags: wp options, wp_options, transients, usermeta, development
 Requires at least: 6.0  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -89,6 +89,7 @@ Not yet, but this feature is coming soon!
 - Added: Column search feature
 - Added: Filter by option type - option or transient
 - Added: Delete all expired transients button and functionality
+- Added: WP Recipe Make tables (ratings, analytics, changelog) added. Props @abidhasan112
 - Revamped: Codebase updated for better performance
 - WordPress tested up to version is updated to 6.8
 - Few minor bug fixing & improvements
