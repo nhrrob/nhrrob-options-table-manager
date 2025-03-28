@@ -37,8 +37,6 @@ Tired of an overloaded `wp_options` table slowing down your WordPress site? **NH
 ### 🚀 Coming Soon
 We're constantly improving NHR Options Table Manager! Here's what's on the way:
 - **Bulk Deletion** – Quickly remove multiple options and user meta entries at once.
-- **WP Recipe Maker Table Support** – Manage recipe-related data efficiently.
-- **Expired Transient Deletion** – Automatically clean up expired transients to free up database space.
 - **More Exciting Features** – Stay tuned for additional enhancements!
 
 ### ⚡ Easy Installation & Instant Setup
