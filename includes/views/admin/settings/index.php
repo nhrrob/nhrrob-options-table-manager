@@ -19,6 +19,7 @@
             
             <?php if ( $is_wp_recipe_maker_installed ) : ?>
             <button class="tablinks wprm_ratings-table"><?php esc_html_e('WPRM Ratings Table', 'nhrrob-options-table-manager'); ?></button>
+            <button class="tablinks wprm_analytics-table"><?php esc_html_e('WPRM Analytics Table', 'nhrrob-options-table-manager'); ?></button>
             <?php endif; ?>
         </div>
 
@@ -117,6 +118,25 @@
                     <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('IP', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Rating', 'nhrrob-options-table-manager'); ?></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            </tbody>
+        </table>
+
+        <table id="nhrotm-data-table-wprm_analytics" class="nhrotm-data-table wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Type', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Meta', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Object ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Object Meta', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('User Meta', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Created At', 'nhrrob-options-table-manager'); ?></th>
                 </tr>
             </thead>
 

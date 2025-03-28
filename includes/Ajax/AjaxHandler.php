@@ -2,6 +2,7 @@
 namespace Nhrotm\OptionsTableManager\Ajax;
 
 use Nhrotm\OptionsTableManager\Managers\BetterPaymentTableManager;
+use Nhrotm\OptionsTableManager\Managers\CommonTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptionsTableManager;
 use Nhrotm\OptionsTableManager\Managers\UsermetaTableManager;
 use Nhrotm\OptionsTableManager\Managers\WprmRatingsTableManager;
@@ -11,12 +12,16 @@ class AjaxHandler {
     private $usermeta_manager;
     private $better_payment_manager;
     private $wprm_ratings_manager;
+    protected $wpdb;
 
     public function __construct() {
         $this->options_manager = new OptionsTableManager();
         $this->usermeta_manager = new UsermetaTableManager();
         $this->better_payment_manager = new BetterPaymentTableManager();
         $this->wprm_ratings_manager = new WprmRatingsTableManager();
+
+        global $wpdb;
+        $this->wpdb = $wpdb;
         $this->registerHandlers();
     }
 
@@ -37,6 +42,7 @@ class AjaxHandler {
             'nhrotm_better_payment_table_data' => 'better_payment_table_data',
             //
             'nhrotm_wprm_ratings_table_data' => 'wprm_ratings_table_data',
+            'nhrotm_wprm_analytics_table_data' => 'wprm_analytics_table_data',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -168,6 +174,20 @@ class AjaxHandler {
     public function wprm_ratings_table_data() {
         try {
             $data = $this->wprm_ratings_manager->get_data();
+            wp_send_json($data);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+    
+    public function wprm_analytics_table_data() {
+        try {
+            $table_name = $this->wpdb->prefix . 'wprm_analytics';
+            $columns = ['id', 'type', 'meta', 'object_id', 'object_meta', 'user_id', 'user_meta', 'created_at'];
+
+            $common_manager = new CommonTableManager($table_name, $columns);
+
+            $data = $common_manager->get_data();
             wp_send_json($data);
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
