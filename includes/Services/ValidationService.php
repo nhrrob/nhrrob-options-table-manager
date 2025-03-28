@@ -24,7 +24,7 @@ class ValidationService {
 
         foreach ($data as $key => $value) {
             // Sanitize the key
-            $clean_key = sanitize_key($key);
+            $clean_key = \sanitize_key($key);
             
             if ($clean_key === '') {
                 continue; // Skip keys that become empty after sanitization

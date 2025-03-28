@@ -7,7 +7,9 @@ class OptionsTableManager extends BaseTableManager {
 
     public function __construct() {
         parent::__construct();
-        $this->table_name = $this->wpdb->prefix . 'options';
+        $this->table_name = ($this->wpdb && property_exists($this->wpdb, 'prefix')) 
+            ? $this->wpdb->prefix . 'options' 
+            : 'wp_options';
     }
 
     /**
@@ -301,7 +303,7 @@ class OptionsTableManager extends BaseTableManager {
 
         $autoload = isset($_POST['autoload']) ? sanitize_text_field( wp_unslash( $_POST['autoload'] ) ) : null;
         
-        return update_option($option_name, $sanitized_value, $autoload);        
+        return \update_option($option_name, $sanitized_value, $autoload);        
     }
 
     /**

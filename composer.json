@@ -27,6 +27,7 @@
     "scripts": {
         "deploy": "composer install --no-dev && wp dist-archive . && composer install",
         "dev": "composer install",
-        "build": "composer install --no-dev"
+        "build": "composer install --no-dev",
+        "test": "./vendor/bin/phpunit"
     }
 }
