@@ -2,7 +2,7 @@
 Contributors: nhrrob  
 Tags: wp options, wp_options, transients, usermeta, development  
 Requires at least: 6.0  
-Tested up to: 6.7  
+Tested up to: 6.8  
 Requires PHP: 7.4  
 Stable tag: 1.1.6
 License: GPLv2 or later  
@@ -90,6 +90,7 @@ Not yet, but this feature is coming soon!
 - Added: Filter by option type - option or transient
 - Added: Delete all expired transients button and functionality
 - Revamped: Codebase updated for better performance
+- WordPress tested up to version is updated to 6.8
 - Few minor bug fixing & improvements
 
 = 1.1.6 - 15/03/2025 =
