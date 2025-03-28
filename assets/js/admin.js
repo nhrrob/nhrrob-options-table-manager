@@ -5,6 +5,7 @@
         let protectedOptions = nhrotmOptionsTableManager.protected_options;
         let protectedUsermetas = nhrotmOptionsTableManager.protected_usermetas;
         let isBetterPaymentInstalled = nhrotmOptionsTableManager.is_better_payment_installed;
+        let isWpRecipeMakerInstalled = nhrotmOptionsTableManager.is_wp_recipe_maker_installed;
 
         function isProtected(optionName) {
             return protectedOptions.includes(optionName);
@@ -285,6 +286,9 @@
 
         let usermetaTableAdjusted = false;
         let betterPaymentTableAdjusted = false;
+        let wprmRatingsTableAdjusted = false;
+        let wprmAnalyticsTableAdjusted = false;
+        let wprmChangelogTableAdjusted = false;
 
         // Toggle
         $(document).on('click', '.nhrotm-data-table-wrap .tab .tablinks', function() {
@@ -295,6 +299,9 @@
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
                 $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
 
                 $( '#nhrotm-data-table_wrapper' ).fadeIn();
                 $( '.nhrotm-filter-container' ).fadeIn();
@@ -303,6 +310,9 @@
                 $( '#nhrotm-data-table_wrapper' ).fadeOut();
                 $( '.nhrotm-filter-container' ).fadeOut();
                 $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
 
                 $( '#nhrotm-data-table-usermeta_wrapper' ).fadeIn();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeIn();
@@ -316,12 +326,61 @@
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
                 $( '#nhrotm-data-table_wrapper' ).fadeOut();
                 $( '.nhrotm-filter-container' ).fadeOut();
+                $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
 
                 $('#nhrotm-data-table-better_payment_wrapper').fadeIn();
 
                 if ( ! betterPaymentTableAdjusted ) {
                     $('#nhrotm-data-table-better_payment').DataTable().columns.adjust().draw();
                     betterPaymentTableAdjusted = true;
+                }
+            } else if ( $(this).hasClass('wprm_ratings-table') ) {
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
+                $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
+                $( '#nhrotm-data-table_wrapper' ).fadeOut();
+                $( '.nhrotm-filter-container' ).fadeOut();
+                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
+
+                $('#nhrotm-data-table-wprm_ratings_wrapper').fadeIn();
+
+                if ( ! wprmRatingsTableAdjusted ) {
+                    $('#nhrotm-data-table-wprm_ratings').DataTable().columns.adjust().draw();
+                    wprmRatingsTableAdjusted = true;
+                }
+            } else if ( $(this).hasClass('wprm_analytics-table') ) {
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
+                $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
+                $( '#nhrotm-data-table_wrapper' ).fadeOut();
+                $( '.nhrotm-filter-container' ).fadeOut();
+                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
+
+                $('#nhrotm-data-table-wprm_analytics_wrapper').fadeIn();
+
+                if ( ! wprmAnalyticsTableAdjusted ) {
+                    $('#nhrotm-data-table-wprm_analytics').DataTable().columns.adjust().draw();
+                    wprmAnalyticsTableAdjusted = true;
+                }
+            } else if ( $(this).hasClass('wprm_changelog-table') ) {
+                $( '#nhrotm-data-table-usermeta_wrapper' ).fadeOut();
+                $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
+                $( '#nhrotm-data-table_wrapper' ).fadeOut();
+                $( '.nhrotm-filter-container' ).fadeOut();
+                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
+                $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
+
+                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeIn();
+
+                if ( ! wprmChangelogTableAdjusted ) {
+                    $('#nhrotm-data-table-wprm_changelog').DataTable().columns.adjust().draw();
+                    wprmChangelogTableAdjusted = true;
                 }
             }
         });
@@ -457,6 +516,87 @@
                     { "data": "source" },
                     { "data": "status" },
                     { "data": "payment_date" },
+                ],
+                "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
+                // "scrollY": "400px",     // Fixed height
+                // "scrollCollapse": true,
+                // "paging": true,
+                // "order": [[0, 'asc']], // Default order on the first column in ascending
+            });
+        }
+        
+        // WP Recipe Maker Tables
+        if ( isWpRecipeMakerInstalled ) {
+            // wprm_ratings table
+            $('#nhrotm-data-table-wprm_ratings').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "type": "GET",
+                    "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_wprm_ratings_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+                },
+                "columns": [
+                    { "data": "id", 'visible': false },
+                    { "data": "date" },
+                    { "data": "recipe_id" },
+                    { "data": "post_id" },
+                    { "data": "comment_id" },
+                    { "data": "approved" },
+                    { "data": "has_comment" },
+                    { "data": "user_id" },
+                    { "data": "ip" },
+                    { "data": "rating" },
+                ],
+                "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
+                // "scrollY": "400px",     // Fixed height
+                // "scrollCollapse": true,
+                // "paging": true,
+                // "order": [[0, 'asc']], // Default order on the first column in ascending
+            });
+
+            // wprm_analytics table
+            $('#nhrotm-data-table-wprm_analytics').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "type": "GET",
+                    "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_wprm_analytics_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+                },
+                "columns": [
+                    { "data": "id", 'visible': false },
+                    { "data": "type" },
+                    { "data": "meta" },
+                    { "data": "post_id" },
+                    { "data": "recipe_id" },
+                    { "data": "user_id" },
+                    { "data": "visitor_id" },
+                    { "data": "visitor" },
+                    { "data": "created_at" },
+                ],
+                "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
+                // "scrollY": "400px",     // Fixed height
+                // "scrollCollapse": true,
+                // "paging": true,
+                // "order": [[0, 'asc']], // Default order on the first column in ascending
+            });
+            
+            // wprm_changelog table
+            $('#nhrotm-data-table-wprm_changelog').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "type": "GET",
+                    "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_wprm_changelog_table_data&nonce="+nhrotmOptionsTableManager.nonce,
+                },
+                "columns": [
+                    { "data": "id", 'visible': false },
+                    { "data": "type" },
+                    { "data": "meta" },
+                    { "data": "object_id" },
+                    { "data": "object_meta" },
+                    { "data": "user_id" },
+                    { "data": "user_meta" },
+                    { "data": "created_at" },
                 ],
                 "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
                 // "scrollY": "400px",     // Fixed height

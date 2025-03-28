@@ -347,7 +347,9 @@
 
 /* Usermeta Table  */
 #nhrotm-data-table-usermeta_wrapper,
-#nhrotm-data-table-better_payment_wrapper {
+#nhrotm-data-table-better_payment_wrapper,
+#nhrotm-data-table-wprm_ratings_wrapper,
+#nhrotm-data-table-wprm_analytics_wrapper {
     display: none;
 }
 

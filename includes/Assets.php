@@ -85,6 +85,7 @@ class Assets extends App {
             'protected_options' => $this->get_protected_options(),
             'protected_usermetas' => $this->get_protected_usermetas(),
             'is_better_payment_installed' => $this->is_better_payment_installed(),
+            'is_wp_recipe_maker_installed' => $this->is_plugin_installed('\WP_Recipe_Maker'),
         ] );
     }
 }

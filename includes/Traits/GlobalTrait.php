@@ -289,6 +289,10 @@ trait GlobalTrait
     public function is_better_payment_installed() {
         return class_exists('\Better_Payment');
     }
+    
+    public function is_plugin_installed( $class_name = '\WP_Recipe_Maker' ) {
+        return class_exists($class_name);
+    }
 
     //
 
