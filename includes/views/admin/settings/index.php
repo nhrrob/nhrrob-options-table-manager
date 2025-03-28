@@ -16,6 +16,10 @@
             <?php if ( $is_better_payment_installed ) : ?>
             <button class="tablinks better_payment-table"><?php esc_html_e('Better Payment Table', 'nhrrob-options-table-manager'); ?></button>
             <?php endif; ?>
+            
+            <?php if ( $is_wp_recipe_maker_installed ) : ?>
+            <button class="tablinks wprm_ratings-table"><?php esc_html_e('WPRM Ratings Table', 'nhrrob-options-table-manager'); ?></button>
+            <?php endif; ?>
         </div>
 
         <!-- Filter starts -->
@@ -90,6 +94,29 @@
                     <th><?php esc_html_e('Source', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Status', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            </tbody>
+        </table>
+        <?php endif; ?>
+
+        <?php if ( $is_wp_recipe_maker_installed ) : ?>
+        <table id="nhrotm-data-table-wprm_ratings" class="nhrotm-data-table wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Recipe ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Post ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Comment ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Approved', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Has Comment', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('IP', 'nhrrob-options-table-manager'); ?></th>
+                    <th><?php esc_html_e('Rating', 'nhrrob-options-table-manager'); ?></th>
                 </tr>
             </thead>
 
