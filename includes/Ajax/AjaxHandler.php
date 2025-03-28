@@ -43,6 +43,7 @@ class AjaxHandler {
             //
             'nhrotm_wprm_ratings_table_data' => 'wprm_ratings_table_data',
             'nhrotm_wprm_analytics_table_data' => 'wprm_analytics_table_data',
+            'nhrotm_wprm_changelog_table_data' => 'wprm_changelog_table_data',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -183,6 +184,20 @@ class AjaxHandler {
     public function wprm_analytics_table_data() {
         try {
             $table_name = $this->wpdb->prefix . 'wprm_analytics';
+            $columns = ['id', 'type', 'meta', 'post_id', 'recipe_id', 'user_id', 'visitor_id', 'visitor', 'created_at'];
+
+            $common_manager = new CommonTableManager($table_name, $columns);
+
+            $data = $common_manager->get_data();
+            wp_send_json($data);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+    
+    public function wprm_changelog_table_data() {
+        try {
+            $table_name = $this->wpdb->prefix . 'wprm_changelog';
             $columns = ['id', 'type', 'meta', 'object_id', 'object_meta', 'user_id', 'user_meta', 'created_at'];
 
             $common_manager = new CommonTableManager($table_name, $columns);
