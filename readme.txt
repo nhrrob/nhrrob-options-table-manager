@@ -89,7 +89,7 @@ Not yet, but this feature is coming soon!
 - Added: Column search feature
 - Added: Filter by option type - option or transient
 - Added: Delete all expired transients button and functionality
-- Added: WP Recipe Make tables (ratings, analytics, changelog) added. Props @abidhasan112
+- Added: WP Recipe Maker tables (ratings, analytics, changelog) added. Props @abidhasan112
 - Revamped: Codebase updated for better performance
 - WordPress tested up to version is updated to 6.8
 - Few minor bug fixing & improvements
