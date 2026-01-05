@@ -32,6 +32,7 @@ class AjaxHandler {
             'nhrotm_add_option' => 'add_option',
             'nhrotm_edit_option' => 'edit_option',
             'nhrotm_delete_option' => 'delete_option',
+            'nhrotm_bulk_delete_options' => 'bulk_delete_options',
             'nhrotm_delete_expired_transients' => 'delete_expired_transients',
             'nhrotm_option_usage_analytics' => 'option_usage_analytics',
             //
@@ -103,6 +104,19 @@ class AjaxHandler {
                 wp_send_json_success('Option deleted successfully!');
             } else {
                 wp_send_json_error('Failed to delete option!');
+            }
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function bulk_delete_options() {
+        try {
+            $result = $this->options_manager->bulk_delete_records();
+            if ( $result ) {
+                wp_send_json_success('Options deleted successfully!');
+            } else {
+                wp_send_json_error('Failed to delete options!');
             }
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());

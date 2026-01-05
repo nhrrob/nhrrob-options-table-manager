@@ -39,8 +39,15 @@
                 "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_option_table_data&nonce="+nhrotmOptionsTableManager.nonce,
                 "data": function(d) {
                     // Add column search values to the request
-                    for (let i = 0; i < d.columns.length; i++) {                        
-                        d.columns[i].search.value = $('#nhrotm-data-table tfoot input').eq(i).val();
+                    // Remap inputs because Col 0 (checkbox) and Col 5 (Actions) have no inputs
+                    // Inputs are present for Col 1, 2, 3, 4
+                    d.columns[0].search.value = ''; // Checkbox
+                    if ($('#nhrotm-data-table tfoot input').length >= 4) {
+                        d.columns[1].search.value = $('#nhrotm-data-table tfoot input').eq(0).val();
+                        d.columns[2].search.value = $('#nhrotm-data-table tfoot input').eq(1).val();
+                        d.columns[3].search.value = $('#nhrotm-data-table tfoot input').eq(2).val();
+                        d.columns[4].search.value = $('#nhrotm-data-table tfoot input').eq(3).val();
+                        d.columns[5].search.value = '';
                     }
 
                     // Option type filter
@@ -50,14 +57,24 @@
                     if ( d.optionTypeFilter === 'all-transients' ) {
                         $('#delete-expired-transients').attr('disabled', false);
 
-                        let currentSearch = d.columns[1].search.value || '';
+                        // option_name is now at index 2 (0=cb, 1=id, 2=name)
+                        let currentSearch = d.columns[2].search.value || ''; 
                         if (!currentSearch.includes('transient_')) {
-                            d.columns[1].search.value = 'transient_' + currentSearch;
+                            d.columns[2].search.value = 'transient_' + currentSearch;
                         }
                     }
                 }
             },
             "columns": [
+                { 
+                    "data": null,
+                    "orderable": false,
+                    "visible": true,
+                    "searchable": false,
+                    "render": function(data, type, row) {
+                        return '<input type="checkbox" class="nhrotm-checkbox" value="' + row.option_name + '">';
+                    }
+                },
                 { "data": "option_id" },
                 { "data": "option_name" },
                 { "data": "option_value" },
@@ -68,11 +85,14 @@
             // "scrollY": "400px",     // Fixed height
             // "scrollCollapse": true,
             // "paging": true,
-            // "order": [[0, 'asc']], // Default order on the first column in ascending,
+            "order": [[1, 'asc']], // Default order on the first column in ascending,
             "initComplete": function () {
                 this.api()
                     .columns()
-                    .every(function () {
+                    .every(function (index) {
+                        // Skip checkbox column (index 0) and Actions column (index 5)
+                        if (index === 0 || index === 5) return;
+
                         let column = this;
                         let title = column.footer().textContent;
          
@@ -637,5 +657,70 @@
             }
         });
         
+        // Select All handler
+        $('#nhrotm-select-all, #nhrotm-select-all-footer').on('click', function() {
+            var rows = $('#nhrotm-data-table').DataTable().rows({ 'search': 'applied' }).nodes();
+            $('input[type="checkbox"]', rows).prop('checked', this.checked);
+            $('#nhrotm-select-all, #nhrotm-select-all-footer').prop('checked', this.checked);
+        });
+        
+        // Handle individual checkbox click to update Select All state
+        $('#nhrotm-data-table tbody').on('change', 'input[type="checkbox"]', function(){
+            if(!this.checked){
+                var el = $('#nhrotm-select-all, #nhrotm-select-all-footer').get(0);
+                if(el && el.checked && ('indeterminate' in el)){
+                    el.indeterminate = true;
+                }
+            }
+        });
+
+        // Bulk Actions
+        $('#nhrotm-do-bulk-action').on('click', function(e) {
+            e.preventDefault();
+            const action = $('#nhrotm-bulk-action-selector').val();
+            
+            if (action === '-1') {
+                showToast("Please select an action.", "error");
+                return;
+            }
+
+            const selectedOptions = [];
+            $('#nhrotm-data-table tbody input.nhrotm-checkbox:checked').each(function() {
+                selectedOptions.push($(this).val());
+            });
+
+            if (selectedOptions.length === 0) {
+                showToast("Please select at least one option.", "warning");
+                return;
+            }
+
+            if (action === 'delete') {
+                 if (confirm("Are you sure you want to delete selected options?")) {
+                     bulkDeleteOptions(selectedOptions);
+                 }
+            }
+        });
+
+        function bulkDeleteOptions(optionNames) {
+             $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: "POST",
+                data: {
+                    action: "nhrotm_bulk_delete_options",
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    option_names: optionNames
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast("Options deleted successfully!", "success");
+                        table.ajax.reload(null, false);
+                        $('#nhrotm-select-all, #nhrotm-select-all-footer').prop('checked', false);
+                    } else {
+                        showToast("Failed to delete options.", "error");
+                    }
+                }
+            });
+        }
+
     });
 })(jQuery);

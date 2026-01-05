@@ -27,6 +27,14 @@
         <!-- Filter starts -->
         <div class="nhrotm-filter-container">
             <div class="nhrotm-filter-row">
+                <div class="nhrotm-filter-group nhrotm-bulk-action-group">
+                    <select id="nhrotm-bulk-action-selector">
+                        <option value="-1"><?php esc_html_e('Bulk Actions', 'nhrrob-options-table-manager'); ?></option>
+                        <option value="delete"><?php esc_html_e('Delete', 'nhrrob-options-table-manager'); ?></option>
+                    </select>
+                    <button id="nhrotm-do-bulk-action" class="button action"><?php esc_html_e('Apply', 'nhrrob-options-table-manager'); ?></button>
+                </div>
+
                 <div class="nhrotm-filter-group">
                     <select id="option-type-filter">
                         <option value="all-options"><?php esc_html_e('All Options', 'nhrrob-options-table-manager'); ?></option>
@@ -39,10 +47,11 @@
             </div>
         </div> 
         <!-- Filter ends  -->
-         
+     
         <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
             <thead>
                 <tr>
+                    <td id="cb" class="manage-column column-cb check-column"><input type="checkbox" id="nhrotm-select-all"></td>
                     <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
@@ -53,6 +62,7 @@
 
             <tfoot>
                 <tr>
+                    <td class="manage-column column-cb check-column"><input type="checkbox" id="nhrotm-select-all-footer"></td>
                     <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
                     <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>

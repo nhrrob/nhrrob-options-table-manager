@@ -426,3 +426,27 @@
     color: white;
     border: none;
 }
+
+.nhrotm-filter-group.nhrotm-bulk-action-group {
+    position: absolute;
+    left: 10px;
+}
+
+#nhrotm-bulk-action-selector {
+    min-width: 160px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#nhrotm-do-bulk-action {
+    width: 60px;
+    padding: 4px 8px;
+    color: #000;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+tfoot td.manage-column.column-cb.check-column {
+    padding: 8px 10px;
+}
