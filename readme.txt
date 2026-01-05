@@ -2,9 +2,9 @@
 Contributors: nhrrob  
 Tags: wp options, wp_options, transients, usermeta, development  
 Requires at least: 6.0  
-Tested up to: 6.8  
+Tested up to: 6.9
 Requires PHP: 7.4  
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -82,6 +82,10 @@ Not yet, but this feature is coming soon!
 6. Options usage analytics
 
 == Changelog ==
+
+= 1.1.8 - 30/11/2025 =
+- WordPress tested up to version is updated to 6.9
+- Few minor bug fixing & improvements
 
 = 1.1.7 - 28/03/2025 =
 - Added: Column search feature
