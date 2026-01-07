@@ -42,9 +42,13 @@ class OptionsTableManager extends BaseTableManager {
         
         // Ensure order column is valid using whitelist approach
         if ($order_column_index < 0 || $order_column_index >= count($columns)) {
-            $order_column_index = 0; // Default to first column
+            $order_column_index = 1; // Default to 'option_id' (index 1)
         }
         $order_column = $columns[$order_column_index];
+
+        if (empty($order_column)) {
+            $order_column = 'option_id';
+        }
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_records = $this->wpdb->get_var(
@@ -82,35 +86,37 @@ class OptionsTableManager extends BaseTableManager {
         
         // Individual column searches
         if (!empty($column_search)) {
-            // option_id column (index 0)
-            if (!empty($column_search[0])) {
+            // checkbox column (index 0) - Ignore/Not searchable via specific field in this implementation
+            
+            // option_id column (index 1)
+            if (!empty($column_search[1])) {
                 // For numeric column, use exact match or range
-                if (is_numeric($column_search[0])) {
-                    $where_clauses[] = $this->wpdb->prepare("option_id = %d", intval($column_search[0]));
+                if (is_numeric($column_search[1])) {
+                    $where_clauses[] = $this->wpdb->prepare("option_id = %d", intval($column_search[1]));
                 }
             }
             
-            // option_name column (index 1)
-            if (!empty($column_search[1])) {
-                $where_clauses[] = $this->wpdb->prepare(
-                    "option_name LIKE %s",
-                    '%' . $this->wpdb->esc_like($column_search[1]) . '%'
-                );
-            }
-            
-            // option_value column (index 2)
+            // option_name column (index 2)
             if (!empty($column_search[2])) {
                 $where_clauses[] = $this->wpdb->prepare(
-                    "option_value LIKE %s",
+                    "option_name LIKE %s",
                     '%' . $this->wpdb->esc_like($column_search[2]) . '%'
                 );
             }
             
-            // autoload column (index 3)
+            // option_value column (index 3)
             if (!empty($column_search[3])) {
                 $where_clauses[] = $this->wpdb->prepare(
-                    "autoload LIKE %s",
+                    "option_value LIKE %s",
                     '%' . $this->wpdb->esc_like($column_search[3]) . '%'
+                );
+            }
+            
+            // autoload column (index 4)
+            if (!empty($column_search[4])) {
+                $where_clauses[] = $this->wpdb->prepare(
+                    "autoload LIKE %s",
+                    '%' . $this->wpdb->esc_like($column_search[4]) . '%'
                 );
             }
         }
@@ -334,6 +340,38 @@ class OptionsTableManager extends BaseTableManager {
     }
 
     /**
+     * Bulk delete options
+     * 
+     * @return bool Success status
+     */
+    public function bulk_delete_records() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
+
+        $this->validate_permissions();
+
+        $option_names = isset($_POST['option_names']) ? (array) $_POST['option_names'] : [];
+
+        if (empty($option_names)) {
+            throw new \Exception('No options selected');
+        }
+
+        foreach ($option_names as $option_name) {
+            $option_name = sanitize_text_field(wp_unslash($option_name));
+            
+            if ($this->is_protected_item($option_name)) {
+                continue; // Skip protected items
+            }
+
+            delete_option($option_name);
+        }
+
+        return true;
+    }
+
+    /**
      * Delete an expired transient
      * 
      * @param array $data Option data to delete
@@ -443,6 +481,6 @@ class OptionsTableManager extends BaseTableManager {
      * @return array
      */
     protected function get_searchable_columns() {
-        return ['option_id', 'option_name', 'option_value', 'autoload'];
+        return [null, 'option_id', 'option_name', 'option_value', 'autoload'];
     }
 }

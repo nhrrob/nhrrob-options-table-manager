@@ -4,7 +4,7 @@ Tags: wp options, wp_options, transients, usermeta, development
 Requires at least: 6.0  
 Tested up to: 6.9
 Requires PHP: 7.4  
-Stable tag: 1.1.8
+Stable tag: 1.1.9
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -37,8 +37,6 @@ Tired of an overloaded `wp_options` table slowing down your WordPress site? **NH
 ### 🚀 Coming Soon
 We're constantly improving NHR Options Table Manager! Here's what's on the way:
 - **Bulk Deletion** – Quickly remove multiple options and user meta entries at once.
-- **WP Recipe Maker Table Support** – Manage recipe-related data efficiently.
-- **Expired Transient Deletion** – Automatically clean up expired transients to free up database space.
 - **More Exciting Features** – Stay tuned for additional enhancements!
 
 ### ⚡ Easy Installation & Instant Setup
@@ -84,6 +82,9 @@ Not yet, but this feature is coming soon!
 6. Options usage analytics
 
 == Changelog ==
+
+= 1.1.9 - 05/01/2026 =
+- Added: Bulk delete options feature
 
 = 1.1.8 - 30/11/2025 =
 - WordPress tested up to version is updated to 6.9
