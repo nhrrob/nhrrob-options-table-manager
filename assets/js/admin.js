@@ -8,8 +8,8 @@
         let isWpRecipeMakerInstalled = nhrotmOptionsTableManager.is_wp_recipe_maker_installed;
 
         // Initial visibility setup
-        $('#nhrotm-autoload-optimizer-wrapper').hide();
-        $('#nhrotm-settings-wrapper').hide();
+        $('.nhrotm-tab-content').hide();
+        $('#nhrotm-options-tab').show(); // Show default tab
 
         function isProtected(optionName) {
             return protectedOptions.includes(optionName);
@@ -34,20 +34,7 @@
             });
         }
 
-        // Helper function for tabs
-        function openTab(evt, tabName) {
-            // Declare all variables
-            var i, tablinks;
 
-            // Get all elements with class="tablinks" and remove the class "active"
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-
-            // Show current tab, and add an "active" class to the button that opened the tab
-            evt.currentTarget.className += " active";
-        }
 
         // Datatable display
         var table = $('#nhrotm-data-table').DataTable({
@@ -842,58 +829,58 @@
         });
 
 
-        // --- Autoload Optimization Feature ---
+        // --- Unified Tab System ---
 
-        $('.tablinks.optimization-tab').on('click', function (e) {
-            openTab(e, 'optimization-tab');
+        $('.tablinks').on('click', function (e) {
+            e.preventDefault();
+            const tabId = $(this).data('tab');
+            if (!tabId) return;
 
-            // Hide table-related content completely
-            $('.dataTables_wrapper').hide();
-            $('.nhrotm-filter-container').hide();
-            $('#nhrotm-options-analytics-section').hide();
-            $('.nhrotm-add-option-button').hide();
-            $('.logged-user-id').hide();
-            $('#nhrotm-settings-wrapper').hide();
-            $('#nhrotm-data-table-usermeta_wrapper').hide();
-
-            // Show optimizer content
-            $('#nhrotm-autoload-optimizer-wrapper').show();
-
-            // Highlight tab
+            // Highlight tab button
             $('.tablinks').removeClass('active');
             $(this).addClass('active');
 
-            loadAutoloadData();
-        });
+            // Hide all tab content containers
+            $('.nhrotm-tab-content').hide();
 
-        // Hook into table tab clicks to hide feature tabs and show table elements
-        $('.tablinks:not(.optimization-tab):not(.settings-tab)').on('click', function () {
-            $('#nhrotm-autoload-optimizer-wrapper').hide();
-            $('#nhrotm-settings-wrapper').hide();
+            // Show target tab content
+            const $targetContainer = $('#' + tabId);
+            $targetContainer.show();
 
-            // Show table content
-            $('.dataTables_wrapper').show();
-            $('.nhrotm-filter-container').show();
-            $('.logged-user-id').show();
+            // Handle Global UI Elements visibility
+            // Feature tabs don't show filters or "Add Option"
+            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab');
 
-            // Re-adjust columns and draw to fix display issues
-            if ($.fn.DataTable.isDataTable('#nhrotm-data-table')) {
-                $('#nhrotm-data-table').DataTable().columns.adjust().draw();
-            }
-            if ($.fn.DataTable.isDataTable('#nhrotm-data-table-usermeta')) {
-                $('#nhrotm-data-table-usermeta').DataTable().columns.adjust().draw();
-            }
-
-            // Specific logic for Options vs Usermeta
-            if ($(this).hasClass('options-table')) {
-                $('#nhrotm-options-analytics-section').show();
-                $('.nhrotm-add-option-button').show();
-            } else {
-                // Other tables (Usermeta, etc.): Hide options-specific items
-                $('#nhrotm-options-analytics-section').hide();
+            if (isFeatureTab) {
+                $('.nhrotm-filter-container').hide();
                 $('.nhrotm-add-option-button').hide();
+                $('.logged-user-id').hide();
+            } else {
+                $('.nhrotm-filter-container').show();
+                $('.logged-user-id').show();
+
+                // "Add Option" is specifically for the main Options Table
+                if ($(this).hasClass('options-table')) {
+                    $('.nhrotm-add-option-button').show();
+                } else {
+                    $('.nhrotm-add-option-button').hide();
+                }
+
+                // Adjust DataTables inside this tab automatically
+                $targetContainer.find('table.nhrotm-data-table').each(function () {
+                    if ($.fn.DataTable.isDataTable(this)) {
+                        $(this).DataTable().columns.adjust().draw();
+                    }
+                });
+            }
+
+            // Trigger specific feature logic
+            if ($(this).hasClass('optimization-tab')) {
+                loadAutoloadData();
             }
         });
+
+
 
         function loadAutoloadData() {
             // Get Total Size
@@ -976,26 +963,7 @@
 
         // --- Settings / Auto Cleanup Feature ---
 
-        // Tab Handler
-        $('.tablinks.settings-tab').on('click', function (e) {
-            openTab(e, 'settings-tab');
 
-            // Hide table-related content completely
-            $('.dataTables_wrapper').hide();
-            $('.nhrotm-filter-container').hide();
-            $('#nhrotm-options-analytics-section').hide();
-            $('.nhrotm-add-option-button').hide();
-            $('.logged-user-id').hide();
-            $('#nhrotm-autoload-optimizer-wrapper').hide();
-            $('#nhrotm-data-table-usermeta_wrapper').hide();
-
-            // Show settings content
-            $('#nhrotm-settings-wrapper').show();
-
-            // Highlight tab
-            $('.tablinks').removeClass('active');
-            $(this).addClass('active');
-        });
 
 
 

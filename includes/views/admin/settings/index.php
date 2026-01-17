@@ -12,28 +12,36 @@
     <!-- Table  -->
     <div class="nhrotm-data-table-wrap">
         <div class="tab mt-5 mb-3">
-            <button
-                class="tablinks active options-table"><?php esc_html_e('Options Table', 'nhrrob-options-table-manager'); ?></button>
-            <button
-                class="tablinks usermeta-table"><?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?></button>
-            <button
-                class="tablinks optimization-tab"><?php esc_html_e('Autoload Optimizer', 'nhrrob-options-table-manager'); ?></button>
+            <button class="tablinks active options-table" data-tab="nhrotm-options-tab">
+                <?php esc_html_e('Options Table', 'nhrrob-options-table-manager'); ?>
+            </button>
+            <button class="tablinks usermeta-table" data-tab="nhrotm-usermeta-tab">
+                <?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?>
+            </button>
+            <button class="tablinks optimization-tab" data-tab="nhrotm-autoload-optimizer-tab">
+                <?php esc_html_e('Autoload Optimizer', 'nhrrob-options-table-manager'); ?>
+            </button>
 
             <?php if ($is_better_payment_installed): ?>
-                <button
-                    class="tablinks better_payment-table"><?php esc_html_e('Better Payment Table', 'nhrrob-options-table-manager'); ?></button>
+                <button class="tablinks better_payment-table" data-tab="nhrotm-better-payment-tab">
+                    <?php esc_html_e('Better Payment Table', 'nhrrob-options-table-manager'); ?>
+                </button>
             <?php endif; ?>
 
-            <button
-                class="tablinks settings-tab"><?php esc_html_e('Settings', 'nhrrob-options-table-manager'); ?></button>
+            <button class="tablinks settings-tab" data-tab="nhrotm-settings-tab">
+                <?php esc_html_e('Settings', 'nhrrob-options-table-manager'); ?>
+            </button>
 
             <?php if ($is_wp_recipe_maker_installed): ?>
-                <button
-                    class="tablinks wprm_ratings-table"><?php esc_html_e('WPRM Ratings Table', 'nhrrob-options-table-manager'); ?></button>
-                <button
-                    class="tablinks wprm_analytics-table"><?php esc_html_e('WPRM Analytics Table', 'nhrrob-options-table-manager'); ?></button>
-                <button
-                    class="tablinks wprm_changelog-table"><?php esc_html_e('WPRM Changelog Table', 'nhrrob-options-table-manager'); ?></button>
+                <button class="tablinks wprm_ratings-table" data-tab="nhrotm-wprm-ratings-tab">
+                    <?php esc_html_e('WPRM Ratings Table', 'nhrrob-options-table-manager'); ?>
+                </button>
+                <button class="tablinks wprm_analytics-table" data-tab="nhrotm-wprm-analytics-tab">
+                    <?php esc_html_e('WPRM Analytics Table', 'nhrrob-options-table-manager'); ?>
+                </button>
+                <button class="tablinks wprm_changelog-table" data-tab="nhrotm-wprm-changelog-tab">
+                    <?php esc_html_e('WPRM Changelog Table', 'nhrrob-options-table-manager'); ?>
+                </button>
             <?php endif; ?>
         </div>
 
@@ -66,144 +74,133 @@
         </div>
         <!-- Filter ends  -->
 
-        <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
-            <thead>
-                <tr>
-                    <td id="cb" class="manage-column column-cb check-column"><input type="checkbox"
-                            id="nhrotm-select-all"></td>
-                    <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
-                </tr>
-            </thead>
-
-            <tfoot>
-                <tr>
-                    <td class="manage-column column-cb check-column"><input type="checkbox"
-                            id="nhrotm-select-all-footer"></td>
-                    <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
-                </tr>
-            </tfoot>
-
-            <tbody>
-
-            </tbody>
-        </table>
-
-        <span class="logged-user-id is-hidden">Logged User ID: <?php echo esc_html(get_current_user_id()); ?></span>
-
-        <table id="nhrotm-data-table-usermeta" class="nhrotm-data-table wp-list-table widefat fixed striped">
-            <thead>
-                <tr>
-                    <th><?php esc_html_e('User Meta ID', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Meta Key', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Meta Value', 'nhrrob-options-table-manager'); ?></th>
-                    <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-            </tbody>
-        </table>
-
-        <?php if ($is_better_payment_installed): ?>
-            <table id="nhrotm-data-table-better_payment" class="nhrotm-data-table wp-list-table widefat fixed striped">
+        <!-- Tabs Content Start -->
+        <div id="nhrotm-options-tab" class="nhrotm-tab-content">
+            <table id="nhrotm-data-table" class="nhrotm-data-table wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Transaction ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Email', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Amount', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Form Fields', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Source', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Status', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
+                        <td id="cb" class="manage-column column-cb check-column"><input type="checkbox" id="nhrotm-select-all"></td>
+                        <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
                     </tr>
                 </thead>
-
-                <tbody>
-
-                </tbody>
+                <tfoot>
+                    <tr>
+                        <td class="manage-column column-cb check-column"><input type="checkbox" id="nhrotm-select-all-footer"></td>
+                        <th><?php esc_html_e('Option ID', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Option Value', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Autoload', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                    </tr>
+                </tfoot>
+                <tbody></tbody>
             </table>
+
+            <div id="nhrotm-options-analytics-section" class="mt-5">
+                <h2 id="nhrotm-options-analytics-title" class="text-center mt-5 pt-5">Options Table Analytics</h2>
+                <div id="nhrotm-usage-analytics-results" class="nhrotm-usage-analytics-results m-auto">
+                    <!-- Data will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="nhrotm-usermeta-tab" class="nhrotm-tab-content" style="display:none;">
+            <table id="nhrotm-data-table-usermeta" class="nhrotm-data-table wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('User Meta ID', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Meta Key', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Meta Value', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <?php if ($is_better_payment_installed): ?>
+            <div id="nhrotm-better-payment-tab" class="nhrotm-tab-content" style="display:none;">
+                <table id="nhrotm-data-table-better_payment" class="nhrotm-data-table wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Transaction ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Email', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Amount', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Form Fields', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Source', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Status', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         <?php endif; ?>
 
         <?php if ($is_wp_recipe_maker_installed): ?>
-            <table id="nhrotm-data-table-wprm_ratings" class="nhrotm-data-table wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Recipe ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Post ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Comment ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Approved', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Has Comment', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('IP', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Rating', 'nhrrob-options-table-manager'); ?></th>
-                    </tr>
-                </thead>
+            <div id="nhrotm-wprm-ratings-tab" class="nhrotm-tab-content" style="display:none;">
+                <table id="nhrotm-data-table-wprm_ratings" class="nhrotm-data-table wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Recipe ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Post ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Comment ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Approved', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Has Comment', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('IP', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Rating', 'nhrrob-options-table-manager'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
 
-                <tbody>
+            <div id="nhrotm-wprm-analytics-tab" class="nhrotm-tab-content" style="display:none;">
+                <table id="nhrotm-data-table-wprm_analytics" class="nhrotm-data-table wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Type', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Meta', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Post ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Recipe ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Visitor ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Visitor', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Created At', 'nhrrob-options-table-manager'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
 
-                </tbody>
-            </table>
-
-            <table id="nhrotm-data-table-wprm_analytics" class="nhrotm-data-table wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Type', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Meta', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Post ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Recipe ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Visitor ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Visitor', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Created At', 'nhrrob-options-table-manager'); ?></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                </tbody>
-            </table>
-
-            <table id="nhrotm-data-table-wprm_changelog" class="nhrotm-data-table wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Type', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Meta', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Object ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Object Meta', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('User Meta', 'nhrrob-options-table-manager'); ?></th>
-                        <th><?php esc_html_e('Created At', 'nhrrob-options-table-manager'); ?></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                </tbody>
-            </table>
+            <div id="nhrotm-wprm-changelog-tab" class="nhrotm-tab-content" style="display:none;">
+                <table id="nhrotm-data-table-wprm_changelog" class="nhrotm-data-table wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Type', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Meta', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Object ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Object Meta', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('User ID', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('User Meta', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Created At', 'nhrrob-options-table-manager'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         <?php endif; ?>
-    </div>
-
-    <div id="nhrotm-options-analytics-section">
-        <h2 id="nhrotm-options-analytics-title" class="text-center mt-5 pt-5">Options Table Analytics</h2>
-
-        <div id="nhrotm-usage-analytics-results" class="nhrotm-usage-analytics-results m-auto">
-            <!-- Data will be loaded here -->
-        </div>
     </div>
 </div>
 
@@ -330,55 +327,53 @@
     </div>
 </div>
 
-<!-- Autoload Optimizer Content -->
-<div id="nhrotm-autoload-optimizer-wrapper" style="display:none;">
-    <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
-        <h2>Autoload Health Check</h2>
-        <div class="nhrotm-autoload-stats">
-            <p>Total Autoload Size: <strong id="nhrotm-total-autoload-size">Loading...</strong></p>
-            <p><em>Recommended limit is usually < 1MB. High autoload size slows down every page load on your site.</em>
-            </p>
+    <div id="nhrotm-autoload-optimizer-tab" class="nhrotm-tab-content" style="display:none;">
+        <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
+            <h2>Autoload Health Check</h2>
+            <div class="nhrotm-autoload-stats">
+                <p>Total Autoload Size: <strong id="nhrotm-total-autoload-size">Loading...</strong></p>
+                <p><em>Recommended limit is usually < 1MB. High autoload size slows down every page load on your site.</em>
+                </p>
+            </div>
+
+            <h3>Heaviest Autoloaded Options</h3>
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th>Option Name</th>
+                        <th>Size</th>
+                        <th>Value Snippet</th>
+                        <th>Autoload</th>
+                    </tr>
+                </thead>
+                <tbody id="nhrotm-autoload-list-body">
+                    <!-- Rows -->
+                </tbody>
+            </table>
         </div>
-
-        <h3>Heaviest Autoloaded Options</h3>
-        <table class="wp-list-table widefat fixed striped">
-            <thead>
-                <tr>
-                    <th>Option Name</th>
-                    <th>Size</th>
-                    <th>Value Snippet</th>
-                    <th>Autoload</th>
-                </tr>
-            </thead>
-            <tbody id="nhrotm-autoload-list-body">
-                <!-- Rows -->
-            </tbody>
-        </table>
     </div>
-</div>
 
-<!-- Settings Content -->
-<div id="nhrotm-settings-wrapper" style="display:none;">
-    <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
-        <h2>Settings</h2>
-        <table class="form-table">
-            <tbody>
-                <tr>
-                    <th scope="row">
-                        <label
-                            for="nhrotm_auto_cleanup_toggle"><?php esc_html_e('Automated Daily Cleanup', 'nhrrob-options-table-manager'); ?></label>
-                    </th>
-                    <td>
-                        <label class="switch">
-                            <input type="checkbox" id="nhrotm_auto_cleanup_toggle">
-                            <span class="slider round"></span>
-                        </label>
-                        <p class="description">
-                            <?php esc_html_e('Automatically delete expired transients once daily using WP Cron.', 'nhrrob-options-table-manager'); ?>
-                        </p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <div id="nhrotm-settings-tab" class="nhrotm-tab-content" style="display:none;">
+        <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
+            <h2>Settings</h2>
+            <table class="form-table">
+                <tbody>
+                    <tr>
+                        <th scope="row">
+                            <label
+                                for="nhrotm_auto_cleanup_toggle"><?php esc_html_e('Automated Daily Cleanup', 'nhrrob-options-table-manager'); ?></label>
+                        </th>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" id="nhrotm_auto_cleanup_toggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <p class="description">
+                                <?php esc_html_e('Automatically delete expired transients once daily using WP Cron.', 'nhrrob-options-table-manager'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
