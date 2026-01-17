@@ -233,7 +233,8 @@
 /* Modal design  */
 .nhrotm-add-option-modal,
 .nhrotm-edit-option-modal,
-.nhrotm-edit-usermeta-modal {
+.nhrotm-edit-usermeta-modal,
+.nhrotm-history-modal {
     display: none;
     position: fixed; /* Stay in place */
     z-index: 1000; /* Sit on top */

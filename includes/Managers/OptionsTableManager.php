@@ -3,13 +3,19 @@ namespace Nhrotm\OptionsTableManager\Managers;
 
 use Exception;
 
-class OptionsTableManager extends BaseTableManager {
+class OptionsTableManager extends BaseTableManager
+{
 
-    public function __construct() {
+    private $history_manager;
+
+    public function __construct()
+    {
         parent::__construct();
-        $this->table_name = ($this->wpdb && property_exists($this->wpdb, 'prefix')) 
-            ? $this->wpdb->prefix . 'options' 
+        $this->table_name = ($this->wpdb && property_exists($this->wpdb, 'prefix'))
+            ? $this->wpdb->prefix . 'options'
             : 'wp_options';
+
+        $this->history_manager = new HistoryManager();
     }
 
     /**
@@ -17,7 +23,8 @@ class OptionsTableManager extends BaseTableManager {
      * 
      * @return array Options data
      */
-    public function get_data() {
+    public function get_data()
+    {
         // Verify nonce
         if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
@@ -29,17 +36,17 @@ class OptionsTableManager extends BaseTableManager {
 
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
-        
+
         // Search parameter
         $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
         $option_type_filter = isset($_GET['optionTypeFilter']) && in_array($_GET['optionTypeFilter'], ['all-options', 'all-transients', 'active-transients', 'expired-transients']) ? sanitize_text_field(wp_unslash($_GET['optionTypeFilter'])) : 'all-options';
 
         // Sorting parameters
         $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
-    
+        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower(sanitize_text_field(wp_unslash($_GET['order'][0]['dir']))) : 'asc';
+
         $columns = $this->get_searchable_columns();
-        
+
         // Ensure order column is valid using whitelist approach
         if ($order_column_index < 0 || $order_column_index >= count($columns)) {
             $order_column_index = 1; // Default to 'option_id' (index 1)
@@ -57,9 +64,9 @@ class OptionsTableManager extends BaseTableManager {
 
         // Get column search values
         $column_search = [];
-        if (isset($_GET['columns']) && is_array( $_GET['columns'] )) {
+        if (isset($_GET['columns']) && is_array($_GET['columns'])) {
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $columns = $this->validation_service->sanitize_recursive( wp_unslash( $_GET['columns'] ) );
+            $columns = $this->validation_service->sanitize_recursive(wp_unslash($_GET['columns']));
 
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             foreach ($_GET['columns'] as $column) {
@@ -73,7 +80,7 @@ class OptionsTableManager extends BaseTableManager {
 
         // Build WHERE clause for search conditions
         $where_clauses = [];
-        
+
         // Global search
         if (!empty($search)) {
             $search_like = '%' . $this->wpdb->esc_like($search) . '%';
@@ -83,11 +90,11 @@ class OptionsTableManager extends BaseTableManager {
                 $search_like
             );
         }
-        
+
         // Individual column searches
         if (!empty($column_search)) {
             // checkbox column (index 0) - Ignore/Not searchable via specific field in this implementation
-            
+
             // option_id column (index 1)
             if (!empty($column_search[1])) {
                 // For numeric column, use exact match or range
@@ -95,7 +102,7 @@ class OptionsTableManager extends BaseTableManager {
                     $where_clauses[] = $this->wpdb->prepare("option_id = %d", intval($column_search[1]));
                 }
             }
-            
+
             // option_name column (index 2)
             if (!empty($column_search[2])) {
                 $where_clauses[] = $this->wpdb->prepare(
@@ -103,7 +110,7 @@ class OptionsTableManager extends BaseTableManager {
                     '%' . $this->wpdb->esc_like($column_search[2]) . '%'
                 );
             }
-            
+
             // option_value column (index 3)
             if (!empty($column_search[3])) {
                 $where_clauses[] = $this->wpdb->prepare(
@@ -111,7 +118,7 @@ class OptionsTableManager extends BaseTableManager {
                     '%' . $this->wpdb->esc_like($column_search[3]) . '%'
                 );
             }
-            
+
             // autoload column (index 4)
             if (!empty($column_search[4])) {
                 $where_clauses[] = $this->wpdb->prepare(
@@ -120,21 +127,21 @@ class OptionsTableManager extends BaseTableManager {
                 );
             }
         }
-        
+
         // Combine WHERE clauses
         $where_sql = '';
         if (!empty($where_clauses)) {
             $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
         }
-        
+
         // Count filtered records
         $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}options {$where_sql}";
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         $filtered_records = $this->wpdb->get_var($filtered_records_sql);
-        
+
         // SQL for ordering
         $order_sql = "ORDER BY {$order_column} {$order_direction}";
-        
+
         // Get data with search, order, and pagination
         $data_sql = "SELECT * FROM {$this->wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -143,13 +150,13 @@ class OptionsTableManager extends BaseTableManager {
             $this->wpdb->prepare($data_sql, $start, $length),
             ARRAY_A
         );
-        
+
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
             $is_protected = in_array($row['option_name'], $this->get_protected_options());
             $protected_attr = $is_protected ? sprintf('title="%s" disabled', esc_attr__('Protected', 'nhrrob-options-table-manager')) : '';
-        
-            if ( 'all-transients' === $option_type_filter ) {
+
+            if ('all-transients' === $option_type_filter) {
                 // all options are transients
                 $transient_name = str_replace('_transient_', '', $row['option_name']);
                 $transient_value = get_transient($transient_name);
@@ -159,17 +166,19 @@ class OptionsTableManager extends BaseTableManager {
             }
 
             $row['option_value'] = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
-            
+
             $row['actions'] = sprintf(
                 '<button class="nhrotm-edit-button" data-id="%s" %s>Edit</button>
+                <button class="nhrotm-history-button" data-option-name="%s">History</button>
                 <button class="nhrotm-delete-button" data-id="%s" %s>Delete</button>',
                 esc_attr($row['option_id']),
                 $protected_attr,
+                esc_attr($row['option_name']),
                 esc_attr($row['option_id']),
                 $protected_attr,
             );
-        }        
-        
+        }
+
         // Prepare response for DataTables
         $response = array(
             "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
@@ -177,20 +186,21 @@ class OptionsTableManager extends BaseTableManager {
             "recordsFiltered" => $filtered_records,
             "data" => $data
         );
-        
+
         return $response;
     }
 
-    public function get_option() {
+    public function get_option()
+    {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
         }
-        
+
         $this->validate_permissions();
 
         // Sanitize and validate input data
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field(wp_unslash($_POST['option_name'])) : '';
 
         if (empty($option_name)) {
             throw new \Exception('Option name is required');
@@ -199,11 +209,11 @@ class OptionsTableManager extends BaseTableManager {
         // Add the option
         $option_value = get_option($option_name);
 
-        $option_value = ! empty( $option_value ) && is_serialized($option_value) ? unserialize($option_value, ['allowed_classes' => false]) : $option_value;
+        $option_value = !empty($option_value) && is_serialized($option_value) ? unserialize($option_value, ['allowed_classes' => false]) : $option_value;
 
         $response = [];
 
-        if ( false !== $option_value ) {
+        if (false !== $option_value) {
             $response['option_name'] = $option_name;
             $response['option_value'] = $option_value;
             $response['message'] = 'Option found successfully';
@@ -215,7 +225,8 @@ class OptionsTableManager extends BaseTableManager {
         return $response;
     }
 
-    public function add_option() {
+    public function add_option()
+    {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
@@ -224,14 +235,14 @@ class OptionsTableManager extends BaseTableManager {
         $this->validate_permissions();
 
         // Sanitize and validate input data
-        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field( wp_unslash( $_POST['new_option_name'] ) ) : '';
-        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field( wp_unslash( $_POST['new_option_value'] ) )) : '';
-        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field( wp_unslash( $_POST['new_option_autoload'] ) ) : 'no';
+        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field(wp_unslash($_POST['new_option_name'])) : '';
+        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field(wp_unslash($_POST['new_option_value']))) : '';
+        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field(wp_unslash($_POST['new_option_autoload'])) : 'no';
 
         if (empty($option_name)) {
             throw new \Exception('Option name is required');
         }
-        
+
         if (empty($option_value)) {
             throw new \Exception('Option value is required');
         }
@@ -248,7 +259,8 @@ class OptionsTableManager extends BaseTableManager {
      * 
      * @return bool Success status
      */
-    public function edit_record() {
+    public function edit_record()
+    {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
@@ -256,10 +268,16 @@ class OptionsTableManager extends BaseTableManager {
 
         $this->validate_permissions();
 
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field(wp_unslash($_POST['option_name'])) : '';
 
         if (empty($option_name)) {
             throw new \Exception('Option name is required');
+        }
+
+        // BACKUP OLD VALUE BEFORE EDIT
+        $old_value = get_option($option_name);
+        if ($old_value !== false) {
+            $this->history_manager->log_change($option_name, $old_value, 'update');
         }
 
         if (!isset($_POST['option_value'])) {
@@ -270,46 +288,47 @@ class OptionsTableManager extends BaseTableManager {
             throw new \Exception('This option is protected and cannot be edited');
         }
 
-        $raw_option_value = sanitize_text_field( wp_unslash($_POST['option_value']) );
-        
+        $raw_option_value = sanitize_text_field(wp_unslash($_POST['option_value']));
+
         try {
             $decoded_value = json_decode($raw_option_value, true);
         } catch (Exception $e) {
-            throw new \Exception('Error processing serialized data: ' . esc_html( $e->getMessage() ));
+            throw new \Exception('Error processing serialized data: ' . esc_html($e->getMessage()));
         }
 
         $sanitized_value = '';
-        
+
         if ($decoded_value !== null && json_last_error() === JSON_ERROR_NONE) {
             $sanitized_value = $this->validation_service->sanitize_recursive($decoded_value);
         } else if (is_serialized($raw_option_value)) {
             try {
                 $unserialized = unserialize($raw_option_value, ['allowed_classes' => false]);
-                    
+
                 if ($unserialized === false) {
                     throw new \Exception('Invalid serialized data format');
                 }
-                
-                if (is_array($unserialized)
-                 || is_object($unserialized)
+
+                if (
+                    is_array($unserialized)
+                    || is_object($unserialized)
                 ) {
-                    $sanitized_value = $this->validation_service->sanitize_recursive((array)$unserialized);
+                    $sanitized_value = $this->validation_service->sanitize_recursive((array) $unserialized);
                 } else {
                     $sanitized_value = sanitize_text_field($unserialized);
                 }
 
             } catch (\Exception $e) {
                 // parent method has check for thrown exception
-                throw new \Exception('Error processing serialized data: ' . esc_html( $e->getMessage() ));
+                throw new \Exception('Error processing serialized data: ' . esc_html($e->getMessage()));
             }
         } else {
             // Plain string/value
             $sanitized_value = sanitize_text_field($raw_option_value);
         }
 
-        $autoload = isset($_POST['autoload']) ? sanitize_text_field( wp_unslash( $_POST['autoload'] ) ) : null;
-        
-        return \update_option($option_name, $sanitized_value, $autoload);        
+        $autoload = isset($_POST['autoload']) ? sanitize_text_field(wp_unslash($_POST['autoload'])) : null;
+
+        return \update_option($option_name, $sanitized_value, $autoload);
     }
 
     /**
@@ -318,7 +337,8 @@ class OptionsTableManager extends BaseTableManager {
      * @param array $data Option data to delete
      * @return bool Success status
      */
-    public function delete_record() {
+    public function delete_record()
+    {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
@@ -326,10 +346,16 @@ class OptionsTableManager extends BaseTableManager {
 
         $this->validate_permissions();
 
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
+        $option_name = isset($_POST['option_name']) ? sanitize_text_field(wp_unslash($_POST['option_name'])) : '';
 
         if (empty($option_name)) {
             throw new \Exception('Option name is required');
+        }
+
+        // BACKUP OLD VALUE BEFORE DELETE
+        $old_value = get_option($option_name);
+        if ($old_value !== false) {
+            $this->history_manager->log_change($option_name, $old_value, 'delete');
         }
 
         if ($this->is_protected_item($option_name)) {
@@ -344,7 +370,8 @@ class OptionsTableManager extends BaseTableManager {
      * 
      * @return bool Success status
      */
-    public function bulk_delete_records() {
+    public function bulk_delete_records()
+    {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
@@ -360,7 +387,7 @@ class OptionsTableManager extends BaseTableManager {
 
         foreach ($option_names as $option_name) {
             $option_name = sanitize_text_field(wp_unslash($option_name));
-            
+
             if ($this->is_protected_item($option_name)) {
                 continue; // Skip protected items
             }
@@ -375,9 +402,10 @@ class OptionsTableManager extends BaseTableManager {
      * Delete an expired transient
      * 
      * @param array $data Option data to delete
-     * @return bool Success status
+     * @return array Success status and count
      */
-    public function delete_expired_transients() {
+    public function delete_expired_transients()
+    {
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
@@ -385,6 +413,14 @@ class OptionsTableManager extends BaseTableManager {
 
         $this->validate_permissions();
 
+        return $this->perform_cleanup();
+    }
+
+    /**
+     * Perform the actual cleanup logic (safe for Cron)
+     */
+    public function perform_cleanup()
+    {
         global $wpdb;
 
         // Get all transient options
@@ -407,11 +443,11 @@ class OptionsTableManager extends BaseTableManager {
                 if (false === get_transient($transient_name)) {
                     // Transient has expired, delete it
                     $deleted_transients[] = $transient_name;
-                    delete_transient(esc_sql( $transient_name ) ); // #ToDo do we need to add _transient_?
+                    delete_transient(esc_sql($transient_name)); // #ToDo do we need to add _transient_?
                 }
             }
 
-            $response= [
+            $response = [
                 'message' => 'Expired transients deleted successfully',
                 'count' => count($deleted_transients),
                 'deleted_transients' => $deleted_transients,
@@ -419,33 +455,34 @@ class OptionsTableManager extends BaseTableManager {
 
             return $response;
         } catch (\Exception $e) {
-            throw new \Exception('Database error: ' . esc_html( $e->getMessage() )); // parent method has catch.
+            throw new \Exception('Database error: ' . esc_html($e->getMessage())); // parent method has catch.
         }
     }
 
-    public function option_usage_analytics() {
+    public function option_usage_analytics()
+    {
         // Verify nonce
         if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
             throw new \Exception('Invalid nonce');
         }
 
         $this->validate_permissions();
-    
+
         global $wpdb;
-        
+
         // Query to get all option names
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $results = $this->wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
-        
+
         $prefix_count = [];
-    
+
         foreach ($results as $row) {
             $option_name = $row['option_name'];
-    
+
             // Remove '_transient' and '_timeout' and take the next part as the prefix
             $modified_option_name = preg_replace('/^_transient(?:_timeout)?_/', '', $option_name); // Remove _transient and _timeout
             $parts = explode('_', $modified_option_name);
-    
+
             if (count($parts) > 0) {
                 $prefix = $parts[0]; // Take the first part as the prefix
                 if (!isset($prefix_count[$prefix])) {
@@ -460,19 +497,61 @@ class OptionsTableManager extends BaseTableManager {
                 $prefix_count['others']++;
             }
         }
-    
+
         // Prepare results for response
         $data = [];
         foreach ($prefix_count as $prefix => $count) {
             $data[] = ['prefix' => $prefix, 'count' => $count];
         }
-    
+
         // Sort the data by count in descending order
-        usort($data, function($a, $b) {
+        usort($data, function ($a, $b) {
             return $b['count'] <=> $a['count'];
         });
-        
+
         return $data;
+    }
+
+    /**
+     * Get option history
+     */
+    public function get_option_history()
+    {
+        // Verify nonce
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
+
+        $this->validate_permissions();
+
+        $option_name = isset($_GET['option_name']) ? sanitize_text_field(wp_unslash($_GET['option_name'])) : '';
+
+        if (empty($option_name)) {
+            throw new \Exception('Option name is required');
+        }
+
+        return $this->history_manager->get_history($option_name);
+    }
+
+    /**
+     * Restore option version
+     */
+    public function restore_option_version()
+    {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            throw new \Exception('Invalid nonce');
+        }
+
+        $this->validate_permissions();
+
+        $history_id = isset($_POST['history_id']) ? intval($_POST['history_id']) : 0;
+
+        if (empty($history_id)) {
+            throw new \Exception('History ID is required');
+        }
+
+        return $this->history_manager->restore_version($history_id);
     }
 
     /**
@@ -480,7 +559,8 @@ class OptionsTableManager extends BaseTableManager {
      * 
      * @return array
      */
-    protected function get_searchable_columns() {
+    protected function get_searchable_columns()
+    {
         return [null, 'option_id', 'option_name', 'option_value', 'autoload'];
     }
 }
