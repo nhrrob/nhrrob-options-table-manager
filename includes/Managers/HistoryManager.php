@@ -1,6 +1,10 @@
 <?php
 namespace Nhrotm\OptionsTableManager\Managers;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 /**
  * Class HistoryManager
  * 
@@ -59,14 +63,16 @@ class HistoryManager
     public function log_change($option_name, $old_value, $action = 'update')
     {
         global $wpdb;
+        $table = $this->table_name;
 
         // If value is array or object, serialize it
         if (is_array($old_value) || is_object($old_value)) {
             $old_value = maybe_serialize($old_value);
         }
 
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return $wpdb->insert(
-            $this->table_name,
+            $table,
             [
                 'option_name' => $option_name,
                 'option_value' => $old_value,
@@ -76,6 +82,7 @@ class HistoryManager
             ],
             ['%s', '%s', '%s', '%d', '%s']
         );
+        // phpcs:enable
     }
 
     /**
@@ -87,14 +94,39 @@ class HistoryManager
     public function get_history($option_name)
     {
         global $wpdb;
+        $table = $this->table_name;
 
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM $this->table_name WHERE option_name = %s ORDER BY performed_at DESC",
+                "SELECT * FROM $table WHERE option_name = %s ORDER BY performed_at DESC",
                 sanitize_text_field(wp_unslash($option_name))
             ),
             ARRAY_A
         );
+        // phpcs:enable
+    }
+
+    /**
+     * Delete history older than a specified number of days.
+     * 
+     * @param int $days The number of days to keep history for. Defaults to 30.
+     * @return int|false The number of rows deleted, or false on error.
+     */
+    public function delete_old_history($days = 30)
+    {
+        global $wpdb;
+        $table = $this->table_name;
+        $days = intval($days);
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        return $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM $table WHERE performed_at < %s",
+                gmdate('Y-m-d H:i:s', strtotime("-$days days"))
+            )
+        );
+        // phpcs:enable
     }
 
     /**
@@ -106,11 +138,17 @@ class HistoryManager
     public function restore_version($history_id)
     {
         global $wpdb;
+        $table = $this->table_name;
 
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $record = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM $this->table_name WHERE id = %d", $history_id),
+            $wpdb->prepare(
+                "SELECT * FROM $table WHERE id = %d",
+                $history_id
+            ),
             ARRAY_A
         );
+        // phpcs:enable
 
         if (!$record) {
             return 'Record not found';

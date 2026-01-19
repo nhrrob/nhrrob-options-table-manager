@@ -1,6 +1,6 @@
-=== NHR Options Table Manager ===
+=== NHR Advanced Options Table Manager & Autoload Optimizer ===
 Contributors: nhrrob  
-Tags: wp options, wp_options, transients, usermeta, development  
+Tags: wp options, transients, usermeta, autoload-optimizer, database-optimization 
 Requires at least: 6.0  
 Tested up to: 6.9
 Requires PHP: 7.4  
@@ -8,7 +8,7 @@ Stable tag: 1.2.0
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
-Manage the wp_options table and get analytics on options usage.
+Optimize WordPress with Advanced Option History, Autoload Health Checks, and Automated Cleanup. Boost performance by reducing database bloat.
 
 == Description ==
 

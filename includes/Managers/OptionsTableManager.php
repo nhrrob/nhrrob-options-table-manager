@@ -1,6 +1,10 @@
 <?php
 namespace Nhrotm\OptionsTableManager\Managers;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Exception;
 
 class OptionsTableManager extends BaseTableManager
@@ -57,10 +61,11 @@ class OptionsTableManager extends BaseTableManager
             $order_column = 'option_id';
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $total_records = $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}options"
-        );
+        $table = $this->table_name;
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+        // phpcs:enable
 
         // Get column search values
         $column_search = [];
@@ -129,27 +134,28 @@ class OptionsTableManager extends BaseTableManager
         }
 
         // Combine WHERE clauses
-        $where_sql = '';
+        $where_sql = ' WHERE 1=1';
         if (!empty($where_clauses)) {
-            $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+            $where_sql .= ' AND ' . implode(' AND ', $where_clauses);
         }
 
         // Count filtered records
-        $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}options {$where_sql}";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-        $filtered_records = $this->wpdb->get_var($filtered_records_sql);
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM $table $where_sql");
 
         // SQL for ordering
-        $order_sql = "ORDER BY {$order_column} {$order_direction}";
+        $order_sql = " ORDER BY $order_column $order_direction";
 
         // Get data with search, order, and pagination
-        $data_sql = "SELECT * FROM {$this->wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $data = $this->wpdb->get_results(
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-            $this->wpdb->prepare($data_sql, $start, $length),
+        $data = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM $table $where_sql $order_sql LIMIT %d, %d",
+                $start,
+                $length
+            ),
             ARRAY_A
         );
+        // phpcs:enable
 
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
@@ -251,7 +257,7 @@ class OptionsTableManager extends BaseTableManager
             throw new \Exception('Option name already exists');
         }
 
-        return update_option($option_name, $option_value, $autoload);
+        return update_option($option_name, $option_value, $autoload === 'yes');
     }
 
     /**
@@ -379,7 +385,7 @@ class OptionsTableManager extends BaseTableManager
 
         $this->validate_permissions();
 
-        $option_names = isset($_POST['option_names']) ? (array) $_POST['option_names'] : [];
+        $option_names = isset($_POST['option_names']) ? array_map('sanitize_text_field', (array) wp_unslash($_POST['option_names'])) : [];
 
         if (empty($option_names)) {
             throw new \Exception('No options selected');
@@ -423,39 +429,34 @@ class OptionsTableManager extends BaseTableManager
     {
         global $wpdb;
 
-        // Get all transient options
-        // phpcs:ignore:WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $transients = $this->wpdb->get_results(
-            "SELECT option_name, option_value 
-            FROM {$wpdb->options} 
-            WHERE option_name LIKE '%_transient_%' 
-            AND option_name NOT LIKE '%_transient_timeout_%'",
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $transients = $wpdb->get_results(
+            "SELECT option_name FROM {$wpdb->prefix}options WHERE option_name LIKE '_transient_timeout_%'",
             ARRAY_A
         );
+        // phpcs:enable
 
         try {
             $deleted_transients = [];
 
             foreach ($transients as $transient) {
+                $timeout_name = $transient['option_name'];
+                $transient_name = str_replace('_transient_timeout_', '', $timeout_name);
 
-                $transient_name = str_replace('_transient_', '', $transient['option_name']);
-
+                // Check if the transient itself exists and is expired
                 if (false === get_transient($transient_name)) {
-                    // Transient has expired, delete it
                     $deleted_transients[] = $transient_name;
-                    delete_transient(esc_sql($transient_name)); // #ToDo do we need to add _transient_?
+                    delete_transient($transient_name);
                 }
             }
 
-            $response = [
+            return [
                 'message' => 'Expired transients deleted successfully',
                 'count' => count($deleted_transients),
                 'deleted_transients' => $deleted_transients,
             ];
-
-            return $response;
         } catch (\Exception $e) {
-            throw new \Exception('Database error: ' . esc_html($e->getMessage())); // parent method has catch.
+            throw new \Exception('Database error: ' . esc_html($e->getMessage()));
         }
     }
 
@@ -471,8 +472,9 @@ class OptionsTableManager extends BaseTableManager
         global $wpdb;
 
         // Query to get all option names
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $results = $this->wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $results = $wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
+        // phpcs:enable
 
         $prefix_count = [];
 

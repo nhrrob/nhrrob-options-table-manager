@@ -2,6 +2,10 @@
 
 namespace Nhrotm\OptionsTableManager\Admin;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Nhrotm\OptionsTableManager\App;
 
 /**
@@ -29,7 +33,7 @@ class Menu extends App
 
         // $hook = add_menu_page(__('Options Table', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
         // add_submenu_page( $parent_slug, __( 'Settings', 'nhrrob-options-table-manager' ), __( 'Settings', 'nhrrob-options-table-manager' ), $capability, 'nhrotm-options-table-manager-settings', [ $this, 'settings_page' ] );
-        $hook = add_submenu_page( 'tools.php', __( 'Manage Options', 'nhrrob-options-table-manager' ), __( 'Options Table', 'nhrrob-options-table-manager' ), $capability, $parent_slug, [ $this, 'settings_page' ] );
+        $hook = add_submenu_page('tools.php', __('Manage Options', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page']);
 
         add_action('admin_head-' . $hook, [$this, 'enqueue_assets']);
     }
@@ -42,12 +46,12 @@ class Menu extends App
     public function settings_page()
     {
         $settings_page = new SettingsPage();
-        
+
         ob_start();
         $settings_page->view();
         $content = ob_get_clean();
-        
-        echo wp_kses( $content, $this->allowed_html() );
+
+        echo wp_kses($content, $this->allowed_html());
     }
 
     /**

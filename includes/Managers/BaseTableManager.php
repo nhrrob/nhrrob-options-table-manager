@@ -1,11 +1,16 @@
 <?php
 namespace Nhrotm\OptionsTableManager\Managers;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Nhrotm\OptionsTableManager\Interfaces\TableManagerInterface;
 use Nhrotm\OptionsTableManager\Services\ValidationService;
 use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
-abstract class BaseTableManager implements TableManagerInterface {
+abstract class BaseTableManager implements TableManagerInterface
+{
     use GlobalTrait;
 
     protected $wpdb;
@@ -14,7 +19,8 @@ abstract class BaseTableManager implements TableManagerInterface {
     protected $protected_items_usermetas = [];
     protected $validation_service;
 
-    public function __construct() {
+    public function __construct()
+    {
         global $wpdb;
         $this->wpdb = $wpdb;
         $this->protected_items = $this->get_protected_options();
@@ -24,10 +30,11 @@ abstract class BaseTableManager implements TableManagerInterface {
 
     /**
      * Validate user permissions
-     * 
+     *
      * @throws \Exception If user lacks required permissions
      */
-    protected function validate_permissions() {
+    protected function validate_permissions()
+    {
         if (!current_user_can('manage_options')) {
             throw new \Exception('Insufficient permissions');
         }
@@ -35,12 +42,13 @@ abstract class BaseTableManager implements TableManagerInterface {
 
     /**
      * Validate nonce
-     * 
+     *
      * @param string $nonce Nonce to verify
      * @param string $action Nonce action
      * @throws \Exception If nonce is invalid
      */
-    protected function validate_nonce($nonce, $action = 'nhrotm-admin-nonce') {
+    protected function validate_nonce($nonce, $action = 'nhrotm-admin-nonce')
+    {
         if (!isset($nonce) || !wp_verify_nonce(sanitize_text_field(wp_unslash($nonce)), $action)) {
             throw new \Exception('Invalid nonce');
         }
@@ -48,18 +56,19 @@ abstract class BaseTableManager implements TableManagerInterface {
 
     /**
      * Check if an item is protected
-     * 
+     *
      * @param string $key Item key to check
      * @return bool
      */
-    protected function is_protected_item($key, $table_name = '') {
+    protected function is_protected_item($key, $table_name = '')
+    {
         $protected_items_array = $this->wpdb->prefix . 'usermeta' === $table_name ? $this->protected_items_usermetas : $this->protected_items;
         return in_array($key, $protected_items_array);
     }
 
     /**
      * Get columns that can be searched
-     * 
+     *
      * @return array
      */
     abstract protected function get_searchable_columns();

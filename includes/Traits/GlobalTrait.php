@@ -2,6 +2,10 @@
 
 namespace Nhrotm\OptionsTableManager\Traits;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 trait GlobalTrait
 {
     public function dd($var)
@@ -12,7 +16,8 @@ trait GlobalTrait
         wp_die('ok');
     }
 
-    public function allowed_html(){
+    public function allowed_html()
+    {
         $allowed_tags = wp_kses_allowed_html('post');
 
         $allowed_tags_extra = array(
@@ -20,10 +25,10 @@ trait GlobalTrait
             // 'div'  => array( 'class' => 1 ),
             // 'span' => array( 'class' => 1 ),
             'a' => array(
-                'href'            => 1,
-                'class'           => 1,
-                'id'              => 1,
-                'target'          => 1,
+                'href' => 1,
+                'class' => 1,
+                'id' => 1,
+                'target' => 1,
             ),
             // 'img'  => array(
             //     'src'     => 1,
@@ -84,12 +89,13 @@ trait GlobalTrait
             ),
         );
 
-        $allowed_tags = array_merge( $allowed_tags, $allowed_tags_extra );
+        $allowed_tags = array_merge($allowed_tags, $allowed_tags_extra);
 
         return $allowed_tags;
     }
 
-    public function get_protected_options() {
+    public function get_protected_options()
+    {
         $core_options = array(
             'siteurl',
             'home',
@@ -229,7 +235,7 @@ trait GlobalTrait
             'initial_db_version',
             'theme_switched'
         );
-    
+
         $default_options = array(
             '_site_transient_timeout_theme_roots',
             '_site_transient_theme_roots',
@@ -244,11 +250,12 @@ trait GlobalTrait
             'widget_recent-posts',
             'widget_recent-comments'
         );
-    
+
         return array_merge($core_options, $default_options);
     }
-    
-    public function get_protected_usermetas() {
+
+    public function get_protected_usermetas()
+    {
         $core_usermetas = array(
             'nickname',
             'first_name',
@@ -269,28 +276,31 @@ trait GlobalTrait
             'wp_user-settings-time',
             'wp_persisted_preferences',
         );
-    
+
         $default_usermetas = array(
             '_last_login',
             'last_update',
             'wc_last_active',
             '_woocommerce_tracks_anon_id',
         );
-    
+
         return array_merge($core_usermetas, $default_usermetas);
     }
 
-    public function exceptional_option_names() {
+    public function exceptional_option_names()
+    {
         return [
             'betterlinks_notices',
         ];
     }
 
-    public function is_better_payment_installed() {
+    public function is_better_payment_installed()
+    {
         return class_exists('\Better_Payment');
     }
-    
-    public function is_plugin_installed( $class_name = '\WP_Recipe_Maker' ) {
+
+    public function is_plugin_installed($class_name = '\WP_Recipe_Maker')
+    {
         return class_exists($class_name);
     }
 

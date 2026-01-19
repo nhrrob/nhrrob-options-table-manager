@@ -1,6 +1,10 @@
 <?php
 namespace Nhrotm\OptionsTableManager\Ajax;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Nhrotm\OptionsTableManager\Managers\BetterPaymentTableManager;
 use Nhrotm\OptionsTableManager\Managers\CommonTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptionsTableManager;
@@ -279,6 +283,14 @@ class AjaxHandler
 
     public function get_heavy_autoload_options()
     {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
         try {
             $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
             $data = $this->optimization_manager->get_heavy_autoload_options($limit);
@@ -290,6 +302,14 @@ class AjaxHandler
 
     public function toggle_autoload()
     {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
         try {
             $result = $this->optimization_manager->toggle_autoload();
             if ($result) {
@@ -304,6 +324,14 @@ class AjaxHandler
 
     public function get_total_autoload_size()
     {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+            wp_send_json_error('Invalid nonce');
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
         try {
             $size = $this->optimization_manager->get_total_autoload_size();
             wp_send_json_success(['size' => $size]);

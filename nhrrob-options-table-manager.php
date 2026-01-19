@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: NHR Options Table Manager
+ * Plugin Name: NHR Advanced Options Table Manager & Autoload Optimizer
  * Plugin URI: http://wordpress.org/plugins/nhrrob-options-table-manager/
- * Description: Clean DataTable view of wp-options table to make decisions and boost your site performance!
+ * Description: Optimize WordPress with Advanced Option History, Autoload Health Checks, and Automated Cleanup. Boost performance by reducing database bloat.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
  * Version: 1.2.0
