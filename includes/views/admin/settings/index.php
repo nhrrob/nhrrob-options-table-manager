@@ -18,19 +18,12 @@
             <button class="tablinks usermeta-table" data-tab="nhrotm-usermeta-tab">
                 <?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?>
             </button>
-            <button class="tablinks optimization-tab" data-tab="nhrotm-autoload-optimizer-tab">
-                <?php esc_html_e('Autoload Optimizer', 'nhrrob-options-table-manager'); ?>
-            </button>
 
             <?php if ($is_better_payment_installed): ?>
                 <button class="tablinks better_payment-table" data-tab="nhrotm-better-payment-tab">
                     <?php esc_html_e('Better Payment Table', 'nhrrob-options-table-manager'); ?>
                 </button>
             <?php endif; ?>
-
-            <button class="tablinks settings-tab" data-tab="nhrotm-settings-tab">
-                <?php esc_html_e('Settings', 'nhrrob-options-table-manager'); ?>
-            </button>
 
             <?php if ($is_wp_recipe_maker_installed): ?>
                 <button class="tablinks wprm_ratings-table" data-tab="nhrotm-wprm-ratings-tab">
@@ -43,6 +36,14 @@
                     <?php esc_html_e('WPRM Changelog Table', 'nhrrob-options-table-manager'); ?>
                 </button>
             <?php endif; ?>
+
+            <button class="tablinks optimization-tab" data-tab="nhrotm-autoload-optimizer-tab">
+                <?php esc_html_e('Autoload Optimizer', 'nhrrob-options-table-manager'); ?>
+            </button>
+
+            <button class="tablinks settings-tab" data-tab="nhrotm-settings-tab">
+                <?php esc_html_e('Settings', 'nhrrob-options-table-manager'); ?>
+            </button>
         </div>
 
         <!-- Filter starts -->
