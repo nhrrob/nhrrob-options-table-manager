@@ -894,7 +894,12 @@
                 success: function (response) {
                     if (response.success) {
                         $('#nhrotm-total-autoload-size').text(response.data.size);
+                    } else {
+                        $('#nhrotm-total-autoload-size').text('Error');
                     }
+                },
+                error: function () {
+                    $('#nhrotm-total-autoload-size').text('Error');
                 }
             });
 
@@ -915,22 +920,28 @@
                             html = '<tr><td colspan="4">No autoloaded options found.</td></tr>';
                         } else {
                             rows.forEach(row => {
-                                const isChecked = row.autoload === 'yes' ? 'checked' : '';
+                                // Broad check for autoload truthiness
+                                const isChecked = ['yes', '1', 'true', 'on'].includes(String(row.autoload).toLowerCase()) ? 'checked' : '';
                                 html += `<tr>
                                     <td>${row.option_name}</td>
                                     <td>${row.size_formatted}</td>
                                     <td><code>${row.value_snippet}</code></td>
                                     <td>
-                                        <label class="switch">
+                                        <label class="nhrotm-switch">
                                             <input type="checkbox" class="nhrotm-toggle-autoload" data-option="${row.option_name}" ${isChecked}>
-                                            <span class="slider round"></span>
+                                            <span class="nhrotm-slider nhrotm-round"></span>
                                         </label>
                                     </td>
                                 </tr>`;
                             });
                         }
                         $('#nhrotm-autoload-list-body').html(html);
+                    } else {
+                        $('#nhrotm-autoload-list-body').html('<tr><td colspan="4">Error loading data: ' + (response.data || 'Unknown error') + '</td></tr>');
                     }
+                },
+                error: function () {
+                    $('#nhrotm-autoload-list-body').html('<tr><td colspan="4">Connection error while loading data.</td></tr>');
                 }
             });
         }

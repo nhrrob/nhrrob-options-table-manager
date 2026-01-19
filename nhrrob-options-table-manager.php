@@ -5,7 +5,7 @@
  * Description: Clean DataTable view of wp-options table to make decisions and boost your site performance!
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.1.9
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-options-table-manager

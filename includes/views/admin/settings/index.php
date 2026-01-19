@@ -365,9 +365,9 @@
                                 for="nhrotm_auto_cleanup_toggle"><?php esc_html_e('Automated Daily Cleanup', 'nhrrob-options-table-manager'); ?></label>
                         </th>
                         <td>
-                            <label class="switch">
+                            <label class="nhrotm-switch">
                                 <input type="checkbox" id="nhrotm_auto_cleanup_toggle">
-                                <span class="slider round"></span>
+                                <span class="nhrotm-slider nhrotm-round"></span>
                             </label>
                             <p class="description">
                                 <?php esc_html_e('Automatically delete expired transients once daily using WP Cron.', 'nhrrob-options-table-manager'); ?>
