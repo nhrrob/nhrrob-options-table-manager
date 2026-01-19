@@ -18,8 +18,10 @@ global $wpdb;
 /**
  * Cleanup database table
  */
-$table_name = $wpdb->prefix . 'nhrotm_option_history';
-$wpdb->query("DROP TABLE IF EXISTS $table_name");
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+$nhrotm_history_table = $wpdb->prefix . 'nhrotm_option_history';
+$wpdb->query("DROP TABLE IF EXISTS $nhrotm_history_table");
+// phpcs:enable
 
 /**
  * Cleanup settings/options
@@ -27,4 +29,4 @@ $wpdb->query("DROP TABLE IF EXISTS $table_name");
 delete_option('nhrotm_auto_cleanup_enabled');
 
 // Add any other options to be deleted here
-// delete_option( 'nhrotm_version' ); 
+// delete_option( 'nhrotm_version' );
