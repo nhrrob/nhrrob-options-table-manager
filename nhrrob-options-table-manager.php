@@ -13,14 +13,16 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if (!defined('ABSPATH'))
+    exit; // Exit if accessed directly
 
 require_once __DIR__ . '/vendor/autoload.php';
 
 /**
  * The main plugin class
  */
-final class Nhrotm_Options_Table_Manager {
+final class Nhrotm_Options_Table_Manager
+{
 
     /**
      * Plugin version
@@ -32,10 +34,34 @@ final class Nhrotm_Options_Table_Manager {
     /**
      * Class construcotr
      */
-    private function __construct() {
+    private function __construct()
+    {
         $this->define_constants();
 
-        add_action( 'plugins_loaded', [ $this, 'init_plugin' ] );
+        add_action('plugins_loaded', [$this, 'init_plugin']);
+        register_activation_hook(__FILE__, [$this, 'activate_plugin']);
+        register_deactivation_hook(__FILE__, [$this, 'deactivate_plugin']);
+    }
+
+    /**
+     * Plugin activation hook
+     */
+    public function activate_plugin()
+    {
+        $history_manager = new \Nhrotm\OptionsTableManager\Managers\HistoryManager();
+        $history_manager->create_table();
+
+        if (!wp_next_scheduled('nhrotm_daily_cleanup')) {
+            wp_schedule_event(time(), 'daily', 'nhrotm_daily_cleanup');
+        }
+    }
+
+    /**
+     * Plugin deactivation hook
+     */
+    public function deactivate_plugin()
+    {
+        wp_clear_scheduled_hook('nhrotm_daily_cleanup');
     }
 
     /**
@@ -43,10 +69,11 @@ final class Nhrotm_Options_Table_Manager {
      *
      * @return \Nhrotm_Options_Table_Manager
      */
-    public static function init() {
+    public static function init()
+    {
         static $instance = false;
 
-        if ( ! $instance ) {
+        if (!$instance) {
             $instance = new self();
         }
 
@@ -58,15 +85,16 @@ final class Nhrotm_Options_Table_Manager {
      *
      * @return void
      */
-    public function define_constants() {
-        define( 'NHROTM_VERSION', self::nhrotm_version );
-        define( 'NHROTM_FILE', __FILE__ );
-        define( 'NHROTM_PATH', __DIR__ );
-        define( 'NHROTM_PLUGIN_DIR', plugin_dir_path( NHROTM_FILE ) );
-        define( 'NHROTM_URL', plugins_url('', NHROTM_FILE) );
-        define( 'NHROTM_ASSETS', NHROTM_URL . '/assets' );
-        define( 'NHROTM_INCLUDES_PATH', NHROTM_PATH . '/includes' );
-        define( 'NHROTM_VIEWS_PATH', NHROTM_INCLUDES_PATH . '/views' );
+    public function define_constants()
+    {
+        define('NHROTM_VERSION', self::nhrotm_version);
+        define('NHROTM_FILE', __FILE__);
+        define('NHROTM_PATH', __DIR__);
+        define('NHROTM_PLUGIN_DIR', plugin_dir_path(NHROTM_FILE));
+        define('NHROTM_URL', plugins_url('', NHROTM_FILE));
+        define('NHROTM_ASSETS', NHROTM_URL . '/assets');
+        define('NHROTM_INCLUDES_PATH', NHROTM_PATH . '/includes');
+        define('NHROTM_VIEWS_PATH', NHROTM_INCLUDES_PATH . '/views');
     }
 
     /**
@@ -74,16 +102,31 @@ final class Nhrotm_Options_Table_Manager {
      *
      * @return void
      */
-    public function init_plugin() {
+    public function init_plugin()
+    {
+        // Cron Handler
+        add_action('nhrotm_daily_cleanup', [$this, 'run_cleanup']);
 
         new Nhrotm\OptionsTableManager\Assets();
 
-        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+        if (defined('DOING_AJAX') && DOING_AJAX) {
             new Nhrotm\OptionsTableManager\Ajax\AjaxHandler();
         }
 
-        if ( is_admin() ) {
+        if (is_admin()) {
             new Nhrotm\OptionsTableManager\Admin();
+        }
+    }
+
+    /**
+     * Run daily cleanup
+     */
+    public function run_cleanup()
+    {
+        // Check if enabled
+        if (get_option('nhrotm_auto_cleanup_enabled', 'false') === 'true') {
+            $manager = new \Nhrotm\OptionsTableManager\Managers\OptionsTableManager();
+            $manager->perform_cleanup();
         }
     }
 }
@@ -93,7 +136,8 @@ final class Nhrotm_Options_Table_Manager {
  *
  * @return \Nhrotm_Options_Table_Manager
  */
-function nhrotm_options_table_manager() {
+function nhrotm_options_table_manager()
+{
     return Nhrotm_Options_Table_Manager::init();
 }
 
