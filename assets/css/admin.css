@@ -233,7 +233,8 @@
 /* Modal design  */
 .nhrotm-add-option-modal,
 .nhrotm-edit-option-modal,
-.nhrotm-edit-usermeta-modal {
+.nhrotm-edit-usermeta-modal,
+.nhrotm-history-modal {
     display: none;
     position: fixed; /* Stay in place */
     z-index: 1000; /* Sit on top */
@@ -297,8 +298,8 @@
     margin: 10px auto;
 }
 
-.nhrotm-usage-analytics-results table, 
-.nhrotm-usage-analytics-results th, 
+.nhrotm-usage-analytics-results table,
+.nhrotm-usage-analytics-results th,
 .nhrotm-usage-analytics-results td {
     border: 1px solid #ddd;
     padding: 8px;
@@ -326,7 +327,7 @@
     border: 1px solid #ccc;
     background-color: #f1f1f1;
 }
-  
+
 .tab button {
     background-color: inherit;
     float: left;
@@ -363,19 +364,19 @@
     color: white;
     font-weight: 500;
     z-index: 9999;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
     border: none !important;
     display: none;
 }
-  
+
 .nhrotm-toast.success {
     background-color: #4CAF50;
 }
-  
+
 .nhrotm-toast.error {
     background-color: #F44336;
 }
-  
+
 .nhrotm-toast.warning {
     background-color: #FF9800;
 }
@@ -395,7 +396,7 @@
     padding: 15px;
     background: #fff;
     border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .nhrotm-filter-row {
@@ -449,4 +450,76 @@
 
 tfoot td.manage-column.column-cb.check-column {
     padding: 8px 10px;
+}
+
+/* Toggle Switch Styling */
+.nhrotm-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+
+.nhrotm-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.nhrotm-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.nhrotm-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.nhrotm-slider {
+    background-color: #2271b1;
+}
+
+input:focus+.nhrotm-slider {
+    box-shadow: 0 0 1px #2271b1;
+}
+
+input:checked+.nhrotm-slider:before {
+    transform: translateX(22px);
+}
+
+/* Card Styling Refinement */
+.nhrotm-tab-content .card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+}
+
+.nhrotm-tab-content .card h2 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.nhrotm-autoload-stats {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2271b1;
 }

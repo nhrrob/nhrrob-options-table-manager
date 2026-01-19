@@ -1,4 +1,8 @@
 <?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 // First, load Composer's autoloader
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 

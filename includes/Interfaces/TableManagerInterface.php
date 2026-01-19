@@ -1,7 +1,12 @@
 <?php
 namespace Nhrotm\OptionsTableManager\Interfaces;
 
-interface TableManagerInterface {
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+interface TableManagerInterface
+{
     /**
      * Retrieve table data with optional filtering and pagination
      * 
