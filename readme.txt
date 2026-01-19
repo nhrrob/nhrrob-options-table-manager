@@ -4,7 +4,7 @@ Tags: wp options, wp_options, transients, usermeta, development
 Requires at least: 6.0  
 Tested up to: 6.9
 Requires PHP: 7.4  
-Stable tag: 1.1.9
+Stable tag: 1.2.0
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -26,18 +26,21 @@ Install this plugin and get a fine view of the table and analytics.
 Tired of an overloaded `wp_options` table slowing down your WordPress site? **NHR Options Table Manager** provides a clean, organized, and optimized way to view and manage your options table efficiently. Get detailed analytics, edit and delete options, and keep your database lean and performant.
 
 ### ✨ Key Features
+- **Option History & Rollback** – Track all changes to individual options and restore previous versions instantly.
+- **Autoload Health Check** – Analyze total autoloaded data size and identify heavy options that slow down your site.
+- **Automated Daily Cleanup** – Schedule automated daily deletion of expired transients via WP Cron.
+- **Scalable Tab Architecture** – Unified interface that seamlessly supports third-party tables like Better Payment and WP Recipe Maker.
 - **Manage Options** – Add, edit, and delete options easily using a secure, optimized modal system.
 - **Usermeta Table Support** – Edit and delete user meta entries just like options.
-- **Better Payment Table Support** – View and manage custom Better Payment data.
-- **Serialized Data Handling** – Edit serialized data seamlessly; it appears as a structured object or array for easy modifications.
-- **Options Usage Analytics** – Get insights into which prefixes dominate your options table.
-- **Live Search & Pagination** – Search without reloading and navigate large datasets efficiently.
-- **Security & Optimization** – Core options are protected, ensuring safe management of critical data.
+- **Serialized Data Handling** – Edit serialized data seamlessly; it appears as a structured object or array.
+- **Options Usage Analytics** – Get visual insights into which prefixes dominate your options table.
+- **Live Search & Pagination** – High-performance DataTables with server-side processing.
+- **Security & Optimization** – Protection for core WordPress options to prevent accidental data loss.
 
 ### 🚀 Coming Soon
 We're constantly improving NHR Options Table Manager! Here's what's on the way:
-- **Bulk Deletion** – Quickly remove multiple options and user meta entries at once.
-- **More Exciting Features** – Stay tuned for additional enhancements!
+- **Export Data** – Export your options and analytics to CSV or JSON formats.
+- **Scheduled Backups** – Automatically backup your `wp_options` table before major changes.
 
 ### ⚡ Easy Installation & Instant Setup
 No complex configurations needed! Just install, activate, and head to **Tools → Options Table** for a detailed DataTable view of your options.
@@ -82,6 +85,16 @@ Not yet, but this feature is coming soon!
 6. Options usage analytics
 
 == Changelog ==
+
+= 1.2.0 - 19/01/2026 =
+- Added: Option History & Rollback system with change tracking
+- Added: Autoload Health Check (Optimizer) with size analysis
+- Added: Automated Daily Cleanup for expired transients (via settings)
+- Rebuilt: Scalable Tab Architecture for robust third-party integration
+- Improved: Modern UI with toggle switches and polished card layouts
+- Fixed: Resolved empty results bug in Autoload Optimizer
+- Performance: Enhanced server-side DataTables processing
+
 
 = 1.1.9 - 05/01/2026 =
 - Added: Bulk delete options feature

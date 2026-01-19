@@ -12,9 +12,8 @@ class OptimizationManager extends BaseTableManager
     public function __construct()
     {
         parent::__construct();
-        $this->table_name = ($this->wpdb && property_exists($this->wpdb, 'prefix'))
-            ? $this->wpdb->prefix . 'options'
-            : 'wp_options';
+        // Use standard wpdb property if available
+        $this->table_name = !empty($this->wpdb->options) ? $this->wpdb->options : $this->wpdb->prefix . 'options';
     }
 
     /**
@@ -53,11 +52,10 @@ class OptimizationManager extends BaseTableManager
         $limit = intval($limit);
 
         // Query to get autoloaded options
-        // We select name and length of value
-        // Note: LENGTH() gives bytes in MySQL
-        $sql = "SELECT option_name, option_value, LENGTH(option_value) as size_bytes 
+        // Broaden the search to catch 'yes', 'true', '1', 'on' by excluding known 'no' values
+        $sql = "SELECT option_name, option_value, autoload, LENGTH(option_value) as size_bytes 
                 FROM $this->table_name 
-                WHERE autoload = 'yes' 
+                WHERE autoload NOT IN ('off', 'no', 'false', '0', '')
                 ORDER BY size_bytes DESC 
                 LIMIT %d";
 
@@ -132,7 +130,7 @@ class OptimizationManager extends BaseTableManager
      */
     public function get_total_autoload_size()
     {
-        $sql = "SELECT SUM(LENGTH(option_value)) FROM $this->table_name WHERE autoload = 'yes'";
+        $sql = "SELECT SUM(LENGTH(option_value)) FROM $this->table_name WHERE autoload NOT IN ('no', 'false', '0', '')";
         $bytes = $this->wpdb->get_var($sql);
         return size_format($bytes ? $bytes : 0);
     }
