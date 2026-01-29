@@ -44,6 +44,9 @@
             <button class="tablinks settings-tab" data-tab="nhrotm-settings-tab">
                 <?php esc_html_e('Settings', 'nhrrob-options-table-manager'); ?>
             </button>
+            <button class="tablinks scanner-tab" data-tab="nhrotm-scanner-tab">
+                <?php esc_html_e('Orphan Scanner', 'nhrrob-options-table-manager'); ?>
+            </button>
         </div>
 
         <!-- Filter starts -->
@@ -351,6 +354,43 @@
                     <!-- Rows -->
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div id="nhrotm-scanner-tab" class="nhrotm-tab-content" style="display:none;">
+        <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
+            <h2>Orphaned Options Scanner</h2>
+            <p class="description">Scan your database for options left behind by uninstalled or inactive plugins. Identifying these helps reduce database bloat.</p>
+            
+            <div class="nhrotm-scanner-actions" style="margin: 20px 0;">
+                <button id="nhrotm-start-scan" class="button button-primary">Start Deep Scan</button>
+            </div>
+
+            <div class="nhrotm-scanner-loading" style="display:none; text-align: center; padding: 40px;">
+                <span class="spinner is-active" style="float: none; margin-bottom: 10px;"></span>
+                <p>Analyzing database prefixes and cross-referencing with plugin directories...</p>
+            </div>
+
+            <div id="nhrotm-scanner-results" style="display:none;">
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>Prefix Candidate</th>
+                            <th>Option Count</th>
+                            <th>Likely Source</th>
+                            <th>Risk Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nhrotm-scanner-list-body">
+                        <!-- Scan results -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="nhrotm-scanner-empty" style="display:none; text-align: center; padding: 40px;">
+                <p>No significant orphaned options detected. Your database looks clean!</p>
+            </div>
         </div>
     </div>
 

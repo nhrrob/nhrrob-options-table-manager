@@ -849,7 +849,7 @@
 
             // Handle Global UI Elements visibility
             // Feature tabs don't show filters or "Add Option"
-            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab');
+            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab') || $(this).hasClass('scanner-tab');
 
             if (isFeatureTab) {
                 $('.nhrotm-filter-container').hide();
@@ -877,6 +877,8 @@
             // Trigger specific feature logic
             if ($(this).hasClass('optimization-tab')) {
                 loadAutoloadData();
+            } else if ($(this).hasClass('scanner-tab')) {
+                // Potential initial load or reset view
             }
         });
 
@@ -1011,6 +1013,85 @@
                     $(this).prop('checked', !isEnabled);
                 }
             });
+        });
+
+        // --- Orphan Scanner Feature ---
+
+        $('#nhrotm-start-scan').on('click', function () {
+            $('.nhrotm-scanner-actions').hide();
+            $('.nhrotm-scanner-loading').show();
+            $('#nhrotm-scanner-results').hide();
+            $('#nhrotm-scanner-empty').hide();
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: "GET",
+                data: {
+                    action: "nhrotm_scan_orphans",
+                    nonce: nhrotmOptionsTableManager.nonce
+                },
+                success: function (response) {
+                    $('.nhrotm-scanner-loading').hide();
+                    $('.nhrotm-scanner-actions').show();
+
+                    if (response.success) {
+                        const orphans = response.data;
+                        if (orphans.length === 0) {
+                            $('#nhrotm-scanner-empty').show();
+                        } else {
+                            let html = '';
+                            orphans.forEach(item => {
+                                html += `<tr>
+                                    <td><strong>${item.prefix}</strong></td>
+                                    <td>${item.count}</td>
+                                    <td>${item.possible_source}</td>
+                                    <td><span class="nhrotm-risk-${item.risk.toLowerCase()}">${item.risk}</span></td>
+                                    <td>
+                                        <button class="button button-danger nhrotm-delete-orphans" data-prefix="${item.prefix}">Delete All</button>
+                                    </td>
+                                </tr>`;
+                            });
+                            $('#nhrotm-scanner-list-body').html(html);
+                            $('#nhrotm-scanner-results').show();
+                        }
+                    } else {
+                        showToast("Scan failed: " + response.data, "error");
+                    }
+                }
+            });
+        });
+
+        $(document).on('click', '.nhrotm-delete-orphans', function () {
+            const prefix = $(this).data('prefix');
+
+            if (confirm(`Are you sure you want to delete all options starting with "${prefix}"? This action cannot be undone.`)) {
+                const $btn = $(this);
+                $btn.prop('disabled', true).text('Deleting...');
+
+                $.ajax({
+                    url: nhrotmOptionsTableManager.ajaxUrl,
+                    method: "POST",
+                    data: {
+                        action: "nhrotm_delete_orphaned_prefix",
+                        nonce: nhrotmOptionsTableManager.nonce,
+                        prefix: prefix
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            showToast(response.data.message, "success");
+                            // Refresh scan
+                            $('#nhrotm-start-scan').trigger('click');
+                            // Also reload main table if it's there
+                            if ($.fn.DataTable.isDataTable('#nhrotm-data-table')) {
+                                $('#nhrotm-data-table').DataTable().ajax.reload(null, false);
+                            }
+                        } else {
+                            showToast("Delete failed: " + response.data, "error");
+                            $btn.prop('disabled', false).text('Delete All');
+                        }
+                    }
+                });
+            }
         });
 
     });

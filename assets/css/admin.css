@@ -236,24 +236,34 @@
 .nhrotm-edit-usermeta-modal,
 .nhrotm-history-modal {
     display: none;
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1000;
+    /* Sit on top */
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0, 0, 0, 0.5); /* Black w/ opacity */
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Black w/ opacity */
 }
 
 .nhrotm-modal-content {
     background-color: #fefefe;
-    margin: 15% auto; /* 15% from the top and centered */
+    margin: 15% auto;
+    /* 15% from the top and centered */
     padding: 20px;
     border: 1px solid #888;
-    width: 80%; /* Could be more or less, depending on screen size */
-    max-width: 500px; /* Set a max width for larger screens */
-    border-radius: 8px; /* Rounded corners */
+    width: 80%;
+    /* Could be more or less, depending on screen size */
+    max-width: 500px;
+    /* Set a max width for larger screens */
+    border-radius: 8px;
+    /* Rounded corners */
 }
 
 .nhrotm-modal-content h2 {
@@ -522,4 +532,50 @@ input:checked+.nhrotm-slider:before {
     border-radius: 4px;
     margin-bottom: 20px;
     border-left: 4px solid #2271b1;
+}
+
+/* Orphan Scanner Styles */
+.nhrotm-risk-low {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-risk-medium {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-risk-high {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-scanner-actions {
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+#nhrotm-scanner-results .wp-list-table {
+    margin-top: 20px;
+}
+
+#nhrotm-scanner-results td {
+    vertical-align: middle;
 }

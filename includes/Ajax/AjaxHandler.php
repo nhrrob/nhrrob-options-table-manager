@@ -7,6 +7,7 @@ use Nhrotm\OptionsTableManager\Managers\OptionsTableManager;
 use Nhrotm\OptionsTableManager\Managers\UsermetaTableManager;
 use Nhrotm\OptionsTableManager\Managers\WprmRatingsTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptimizationManager;
+use Nhrotm\OptionsTableManager\Managers\ScannerManager;
 
 class AjaxHandler
 {
@@ -15,6 +16,7 @@ class AjaxHandler
     private $better_payment_manager;
     private $wprm_ratings_manager;
     private $optimization_manager;
+    private $scanner_manager;
     protected $wpdb;
 
     public function __construct()
@@ -24,6 +26,7 @@ class AjaxHandler
         $this->better_payment_manager = new BetterPaymentTableManager();
         $this->wprm_ratings_manager = new WprmRatingsTableManager();
         $this->optimization_manager = new OptimizationManager();
+        $this->scanner_manager = new ScannerManager();
 
         global $wpdb;
         $this->wpdb = $wpdb;
@@ -60,6 +63,9 @@ class AjaxHandler
             'nhrotm_get_total_autoload_size' => 'get_total_autoload_size',
             // Auto Cleanup
             'nhrotm_update_auto_cleanup_setting' => 'update_auto_cleanup_setting',
+            // Orphan Scanner
+            'nhrotm_scan_orphans' => 'scan_orphans',
+            'nhrotm_delete_orphaned_prefix' => 'delete_orphaned_prefix',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -326,5 +332,39 @@ class AjaxHandler
         update_option('nhrotm_auto_cleanup_enabled', $enabled);
 
         wp_send_json_success('Settings updated');
+    }
+
+    public function scan_orphans()
+    {
+        try {
+            $data = $this->scanner_manager->scan_orphans();
+            wp_send_json_success($data);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function delete_orphaned_prefix()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+
+            // check if user has permission to delete options
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+
+            $prefix = isset($_POST['prefix']) ? sanitize_text_field(wp_unslash($_POST['prefix'])) : '';
+            if (empty($prefix)) {
+                throw new \Exception('Prefix is required');
+            }
+
+            $count = $this->scanner_manager->delete_by_prefix($prefix);
+            wp_send_json_success(['message' => sprintf('%d options deleted successfully', $count)]);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
     }
 }
