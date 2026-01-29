@@ -8,6 +8,7 @@ use Nhrotm\OptionsTableManager\Managers\UsermetaTableManager;
 use Nhrotm\OptionsTableManager\Managers\WprmRatingsTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptimizationManager;
 use Nhrotm\OptionsTableManager\Managers\ScannerManager;
+use Nhrotm\OptionsTableManager\Managers\SearchReplaceManager;
 
 class AjaxHandler
 {
@@ -17,6 +18,7 @@ class AjaxHandler
     private $wprm_ratings_manager;
     private $optimization_manager;
     private $scanner_manager;
+    private $search_replace_manager;
     protected $wpdb;
 
     public function __construct()
@@ -27,6 +29,7 @@ class AjaxHandler
         $this->wprm_ratings_manager = new WprmRatingsTableManager();
         $this->optimization_manager = new OptimizationManager();
         $this->scanner_manager = new ScannerManager();
+        $this->search_replace_manager = new SearchReplaceManager();
 
         global $wpdb;
         $this->wpdb = $wpdb;
@@ -66,6 +69,9 @@ class AjaxHandler
             // Orphan Scanner
             'nhrotm_scan_orphans' => 'scan_orphans',
             'nhrotm_delete_orphaned_prefix' => 'delete_orphaned_prefix',
+            // Search & Replace
+            'nhrotm_search_replace_preview' => 'search_replace_preview',
+            'nhrotm_search_replace_execute' => 'search_replace_execute',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -363,6 +369,56 @@ class AjaxHandler
 
             $count = $this->scanner_manager->delete_by_prefix($prefix);
             wp_send_json_success(['message' => sprintf('%d options deleted successfully', $count)]);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function search_replace_preview()
+    {
+        try {
+            if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+
+            // permission check
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+
+            $search = isset($_GET['search']) ? sanitize_text_field(wp_unslash($_GET['search'])) : '';
+            if (empty($search)) {
+                throw new \Exception('Search string is required');
+            }
+
+            $data = $this->search_replace_manager->preview_search($search);
+            wp_send_json_success($data);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function search_replace_execute()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+
+            $search = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
+            $replace = isset($_POST['replace']) ? sanitize_text_field(wp_unslash($_POST['replace'])) : '';
+            $dry_run = isset($_POST['dry_run']) && $_POST['dry_run'] === 'true';
+
+            if (empty($search)) {
+                throw new \Exception('Search string is required');
+            }
+
+            $result = $this->search_replace_manager->execute_replace($search, $replace, $dry_run);
+            wp_send_json_success($result);
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }

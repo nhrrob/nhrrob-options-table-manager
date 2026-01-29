@@ -849,21 +849,21 @@
 
             // Handle Global UI Elements visibility
             // Feature tabs don't show filters or "Add Option"
-            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab') || $(this).hasClass('scanner-tab');
+            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab') || $(this).hasClass('scanner-tab') || $(this).hasClass('search-replace-tab');
 
             if (isFeatureTab) {
-                $('.nhrotm-filter-container').hide();
-                $('.nhrotm-add-option-button').hide();
-                $('.logged-user-id').hide();
+                $('.nhrotm-filter-container').addClass('d-none');
+                $('.nhrotm-add-option-button').addClass('d-none');
+                $('.logged-user-id').addClass('d-none');
             } else {
-                $('.nhrotm-filter-container').show();
-                $('.logged-user-id').show();
+                $('.nhrotm-filter-container').removeClass('d-none');
+                $('.logged-user-id').removeClass('d-none');
 
                 // "Add Option" is specifically for the main Options Table
                 if ($(this).hasClass('options-table')) {
-                    $('.nhrotm-add-option-button').show();
+                    $('.nhrotm-add-option-button').removeClass('d-none');
                 } else {
-                    $('.nhrotm-add-option-button').hide();
+                    $('.nhrotm-add-option-button').addClass('d-none');
                 }
 
                 // Adjust DataTables inside this tab automatically
@@ -879,6 +879,10 @@
                 loadAutoloadData();
             } else if ($(this).hasClass('scanner-tab')) {
                 // Potential initial load or reset view
+            } else if ($(this).hasClass('search-replace-tab')) {
+                // Potential reset view
+                $('#nhrotm-search-replace-results').addClass('d-none');
+                $('.nhrotm-search-replace-form').removeClass('d-none');
             }
         });
 
@@ -1018,10 +1022,10 @@
         // --- Orphan Scanner Feature ---
 
         $('#nhrotm-start-scan').on('click', function () {
-            $('.nhrotm-scanner-actions').hide();
-            $('.nhrotm-scanner-loading').show();
-            $('#nhrotm-scanner-results').hide();
-            $('#nhrotm-scanner-empty').hide();
+            $('.nhrotm-scanner-actions').addClass('d-none');
+            $('.nhrotm-scanner-loading').removeClass('d-none');
+            $('#nhrotm-scanner-results').addClass('d-none');
+            $('#nhrotm-scanner-empty').addClass('d-none');
 
             $.ajax({
                 url: nhrotmOptionsTableManager.ajaxUrl,
@@ -1031,13 +1035,13 @@
                     nonce: nhrotmOptionsTableManager.nonce
                 },
                 success: function (response) {
-                    $('.nhrotm-scanner-loading').hide();
-                    $('.nhrotm-scanner-actions').show();
+                    $('.nhrotm-scanner-loading').addClass('d-none');
+                    $('.nhrotm-scanner-actions').removeClass('d-none');
 
                     if (response.success) {
                         const orphans = response.data;
                         if (orphans.length === 0) {
-                            $('#nhrotm-scanner-empty').show();
+                            $('#nhrotm-scanner-empty').removeClass('d-none');
                         } else {
                             let html = '';
                             orphans.forEach(item => {
@@ -1052,7 +1056,7 @@
                                 </tr>`;
                             });
                             $('#nhrotm-scanner-list-body').html(html);
-                            $('#nhrotm-scanner-results').show();
+                            $('#nhrotm-scanner-results').removeClass('d-none');
                         }
                     } else {
                         showToast("Scan failed: " + response.data, "error");
@@ -1092,6 +1096,79 @@
                     }
                 });
             }
+        });
+
+        // --- Search & Replace Feature ---
+
+        $('#nhrotm-search-replace-btn').on('click', function () {
+            const search = $('#nhrotm-search-string').val();
+            const replace = $('#nhrotm-replace-string').val();
+            const dryRun = $('#nhrotm-dry-run-toggle').is(':checked');
+
+            if (!search) {
+                showToast("Search string is required", "error");
+                return;
+            }
+
+            if (!dryRun && !confirm("WARNING: This will permanently modify your database records. Are you sure you want to proceed?")) {
+                return;
+            }
+
+            $('.nhrotm-search-replace-form').addClass('d-none');
+            $('.nhrotm-search-replace-loading').removeClass('d-none');
+            $('#nhrotm-search-replace-results').addClass('d-none');
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: "POST",
+                data: {
+                    action: "nhrotm_search_replace_execute",
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    search: search,
+                    replace: replace,
+                    dry_run: dryRun
+                },
+                success: function (response) {
+                    $('.nhrotm-search-replace-loading').addClass('d-none');
+                    $('.nhrotm-search-replace-form').removeClass('d-none');
+
+                    if (response.success) {
+                        const data = response.data;
+                        const summary = `Found ${data.total_occurrences} occurrences in ${data.total_updated} options.` + 
+                                       (data.dry_run ? " (Preview Mode - No changes saved)" : " (Changes Saved)");
+                        
+                        $('#nhrotm-sr-summary-text').text(summary);
+                        
+                        let html = '';
+                        if (data.details.length === 0) {
+                            html = '<tr><td colspan="2">No matches found.</td></tr>';
+                        } else {
+                            data.details.forEach(item => {
+                                html += `<tr>
+                                    <td>${item.option_name}</td>
+                                    <td>${item.occurrences}</td>
+                                </tr>`;
+                            });
+                        }
+                        $('#nhrotm-sr-list-body').html(html);
+                        $('#nhrotm-search-replace-results').removeClass('d-none');
+
+                        showToast(data.dry_run ? "Search complete (Preview)" : "Search and replace complete!", "success");
+                        
+                        // Reload main table if changes were made
+                        if (!data.dry_run && $.fn.DataTable.isDataTable('#nhrotm-data-table')) {
+                            $('#nhrotm-data-table').DataTable().ajax.reload(null, false);
+                        }
+                    } else {
+                        showToast("Operation failed: " + response.data, "error");
+                    }
+                },
+                error: function () {
+                    $('.nhrotm-search-replace-loading').addClass('d-none');
+                    $('.nhrotm-search-replace-form').removeClass('d-none');
+                    showToast("Connection error", "error");
+                }
+            });
         });
 
     });

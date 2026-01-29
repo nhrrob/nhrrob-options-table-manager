@@ -47,6 +47,9 @@
             <button class="tablinks scanner-tab" data-tab="nhrotm-scanner-tab">
                 <?php esc_html_e('Orphan Scanner', 'nhrrob-options-table-manager'); ?>
             </button>
+            <button class="tablinks search-replace-tab" data-tab="nhrotm-search-replace-tab">
+                <?php esc_html_e('Search & Replace', 'nhrrob-options-table-manager'); ?>
+            </button>
         </div>
 
         <!-- Filter starts -->
@@ -357,21 +360,21 @@
         </div>
     </div>
 
-    <div id="nhrotm-scanner-tab" class="nhrotm-tab-content" style="display:none;">
-        <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
+    <div id="nhrotm-scanner-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
             <h2>Orphaned Options Scanner</h2>
             <p class="description">Scan your database for options left behind by uninstalled or inactive plugins. Identifying these helps reduce database bloat.</p>
             
-            <div class="nhrotm-scanner-actions" style="margin: 20px 0;">
+            <div class="nhrotm-scanner-actions mb-4">
                 <button id="nhrotm-start-scan" class="button button-primary">Start Deep Scan</button>
             </div>
 
-            <div class="nhrotm-scanner-loading" style="display:none; text-align: center; padding: 40px;">
-                <span class="spinner is-active" style="float: none; margin-bottom: 10px;"></span>
+            <div class="nhrotm-scanner-loading loader-container d-none">
+                <span class="spinner is-active nhrotm-spinner-centered"></span>
                 <p>Analyzing database prefixes and cross-referencing with plugin directories...</p>
             </div>
 
-            <div id="nhrotm-scanner-results" style="display:none;">
+            <div id="nhrotm-scanner-results" class="d-none">
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
@@ -388,14 +391,65 @@
                 </table>
             </div>
 
-            <div id="nhrotm-scanner-empty" style="display:none; text-align: center; padding: 40px;">
+            <div id="nhrotm-scanner-empty" class="loader-container d-none">
                 <p>No significant orphaned options detected. Your database looks clean!</p>
             </div>
         </div>
     </div>
 
-    <div id="nhrotm-settings-tab" class="nhrotm-tab-content" style="display:none;">
-        <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
+    <div id="nhrotm-search-replace-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
+            <h2>Global Search & Replace</h2>
+            <p class="description">Find and replace strings across your entire options table. Supports serialized data and JSON safely.</p>
+            
+            <div class="nhrotm-search-replace-form mb-4 max-w-600">
+                <div class="nhrotm-form-field mb-3">
+                    <label class="font-semibold d-block mb-1">Search for:</label>
+                    <input type="text" id="nhrotm-search-string" class="regular-text" placeholder="e.g. old-domain.com">
+                </div>
+                <div class="nhrotm-form-field mb-3">
+                    <label class="font-semibold d-block mb-1">Replace with:</label>
+                    <input type="text" id="nhrotm-replace-string" class="regular-text" placeholder="e.g. new-domain.com">
+                </div>
+                <div class="nhrotm-form-field mb-4">
+                    <label class="nhrotm-switch-label d-flex items-center gap-10 pointer">
+                        <input type="checkbox" id="nhrotm-dry-run-toggle" checked>
+                        <span>Dry Run (Preview changes without saving)</span>
+                    </label>
+                </div>
+                
+                <div class="nhrotm-form-actions">
+                    <button id="nhrotm-search-replace-btn" class="button button-primary">Execute Replacement</button>
+                </div>
+            </div>
+
+            <div class="nhrotm-search-replace-loading loader-container d-none">
+                <span class="spinner is-active nhrotm-spinner-centered"></span>
+                <p>Processing database records... This may take a moment.</p>
+            </div>
+
+            <div id="nhrotm-search-replace-results" class="mt-5 d-none">
+                <div class="nhrotm-sr-summary nhrotm-summary-box">
+                    <p id="nhrotm-sr-summary-text" class="m-0 font-semibold"></p>
+                </div>
+
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>Option Name</th>
+                            <th>Occurrences Found</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nhrotm-sr-list-body">
+                        <!-- Results -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="nhrotm-settings-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
             <h2>Settings</h2>
             <table class="form-table">
                 <tbody>
