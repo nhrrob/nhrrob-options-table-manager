@@ -1,6 +1,6 @@
 === NHR Advanced Options Table Manager & Autoload Optimizer ===
 Contributors: nhrrob  
-Tags: wp_options, transients, usermeta, autoload-optimizer, database-optimization 
+Tags: wp_options, transients, usermeta, optimize, database-optimization 
 Requires at least: 6.0  
 Tested up to: 6.9
 Requires PHP: 7.4  
