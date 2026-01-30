@@ -2,6 +2,10 @@
 
 namespace Nhrotm\OptionsTableManager;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * The admin class
  */

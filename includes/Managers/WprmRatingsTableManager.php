@@ -74,16 +74,14 @@ class WprmRatingsTableManager extends BaseTableManager {
         }
         
         // Count filtered records
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}wprm_ratings {$where_sql}";
         
         if (!empty($search)) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $filtered_records = $this->wpdb->get_var(
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
                 $this->wpdb->prepare($filtered_records_sql, ...$search_params_final)
             );
         } else {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
             $filtered_records = $this->wpdb->get_var($filtered_records_sql);
         }
         
@@ -95,20 +93,17 @@ class WprmRatingsTableManager extends BaseTableManager {
         
         if (!empty($search)) {
             $query_params = array_merge($search_params_final, [$start, $length]);
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $data = $this->wpdb->get_results(
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
                 $this->wpdb->prepare($data_sql, ...$query_params),
                 ARRAY_A
             );
         } else {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $data = $this->wpdb->get_results(
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
                 $this->wpdb->prepare($data_sql, $start, $length),
                 ARRAY_A
             );
         }
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {

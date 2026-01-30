@@ -1,6 +1,10 @@
 <?php
 namespace Nhrotm\OptionsTableManager\Ajax;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Nhrotm\OptionsTableManager\Managers\BetterPaymentTableManager;
 use Nhrotm\OptionsTableManager\Managers\CommonTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptionsTableManager;
@@ -80,6 +84,10 @@ class AjaxHandler
             'nhrotm_export_options' => 'export_options',
             'nhrotm_preview_import' => 'preview_import',
             'nhrotm_execute_import' => 'execute_import',
+
+            // History & Optimization
+            'nhrotm_save_history_settings' => 'save_history_settings',
+            'nhrotm_prune_history' => 'prune_history',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -300,6 +308,9 @@ class AjaxHandler
     public function get_heavy_autoload_options()
     {
         try {
+            if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
             $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
             $data = $this->optimization_manager->get_heavy_autoload_options($limit);
             wp_send_json_success($data);
@@ -311,6 +322,9 @@ class AjaxHandler
     public function toggle_autoload()
     {
         try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
             $result = $this->optimization_manager->toggle_autoload();
             if ($result) {
                 wp_send_json_success('Autoload status updated!');
@@ -435,6 +449,9 @@ class AjaxHandler
     public function search_options_for_export()
     {
         try {
+            if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
             if (!current_user_can('manage_options')) {
                 throw new \Exception('Unauthorized');
             }
@@ -478,7 +495,14 @@ class AjaxHandler
                 throw new \Exception('Unauthorized');
             }
             
-            $file_content = file_get_contents( sanitize_text_field(wp_unslash($_FILES['import_file']['tmp_name'])) );
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- File path validated via is_uploaded_file
+            $tmp_name = isset($_FILES['import_file']['tmp_name']) ? $_FILES['import_file']['tmp_name'] : '';
+            if (empty($tmp_name) || !is_uploaded_file($tmp_name)) {
+                throw new \Exception('Invalid file upload');
+            }
+            
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- File path validated via is_uploaded_file
+            $file_content = file_get_contents(wp_unslash($_FILES['import_file']['tmp_name']));
             if (!$file_content) throw new \Exception('Failed to read file');
 
             $json_data = json_decode($file_content, true);
@@ -504,13 +528,54 @@ class AjaxHandler
                 throw new \Exception('Unauthorized');
             }
 
-            $raw_data = isset($_POST['raw_data']) ? json_decode(stripslashes($_POST['raw_data']), true) : null;
+            $raw_data = isset($_POST['raw_data']) ? json_decode(stripslashes(sanitize_text_field(wp_unslash($_POST['raw_data']))), true) : null;
             $selected = isset($_POST['selected_options']) ? array_map('sanitize_text_field', wp_unslash($_POST['selected_options'])) : [];
 
             if (!$raw_data) throw new \Exception('Missing import data');
 
             $count = $this->import_export_manager->execute_import($raw_data, $selected);
-            wp_send_json_success(['count' => $count]);
+                wp_send_json_success(['count' => $count]);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function save_history_settings()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+
+            $days = isset($_POST['days']) ? intval($_POST['days']) : 30;
+            if ($days < 1) $days = 30;
+
+            update_option('nhrotm_history_retention_days', $days);
+            wp_send_json_success('Settings saved');
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function prune_history()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+
+            $days = get_option('nhrotm_history_retention_days', 30);
+            
+            $history_manager = new \Nhrotm\OptionsTableManager\Managers\HistoryManager();
+            $deleted = $history_manager->prune_history($days);
+            
+            wp_send_json_success(['deleted' => $deleted]);
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }

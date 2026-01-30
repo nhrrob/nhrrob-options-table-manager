@@ -68,8 +68,8 @@ class UsermetaTableManager extends BaseTableManager {
         }
         
         // Count filtered records
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}usermeta {$where_sql}";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         $filtered_records = $this->wpdb->get_var($filtered_records_sql);
         
         // SQL for ordering
@@ -77,12 +77,11 @@ class UsermetaTableManager extends BaseTableManager {
         
         // Get data with search, order, and pagination
         $data_sql = "SELECT * FROM {$this->wpdb->prefix}usermeta {$where_sql} {$order_sql} LIMIT %d, %d";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $data = $this->wpdb->get_results(
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
             $this->wpdb->prepare($data_sql, $start, $length),
             ARRAY_A
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {

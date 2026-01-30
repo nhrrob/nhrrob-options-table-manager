@@ -135,8 +135,8 @@ class OptionsTableManager extends BaseTableManager
         }
 
         // Count filtered records
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}options {$where_sql}";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         $filtered_records = $this->wpdb->get_var($filtered_records_sql);
 
         // SQL for ordering
@@ -144,12 +144,11 @@ class OptionsTableManager extends BaseTableManager
 
         // Get data with search, order, and pagination
         $data_sql = "SELECT * FROM {$this->wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $data = $this->wpdb->get_results(
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
             $this->wpdb->prepare($data_sql, $start, $length),
             ARRAY_A
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
 
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
@@ -379,7 +378,9 @@ class OptionsTableManager extends BaseTableManager
 
         $this->validate_permissions();
 
-        $option_names = isset($_POST['option_names']) ? (array) $_POST['option_names'] : [];
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in array_map below
+        $option_names = isset($_POST['option_names']) ? wp_unslash((array) $_POST['option_names']) : [];
+        $option_names = array_map('sanitize_text_field', $option_names);
 
         if (empty($option_names)) {
             throw new \Exception('No options selected');

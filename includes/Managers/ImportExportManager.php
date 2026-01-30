@@ -40,13 +40,15 @@ class ImportExportManager extends BaseTableManager
             throw new \Exception('No options selected for export');
         }
 
+        global $wpdb;
         $placeholders = implode(',', array_fill(0, count($option_names), '%s'));
-        $query = "SELECT option_name, option_value, autoload FROM $this->table_name WHERE option_name IN ($placeholders)";
         
-        $results = $this->wpdb->get_results(
-            $this->wpdb->prepare($query, $option_names),
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $results = $wpdb->get_results(
+            $wpdb->prepare("SELECT option_name, option_value, autoload FROM {$wpdb->options} WHERE option_name IN ($placeholders)", ...$option_names),
             ARRAY_A
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
         $export_data = [
             'meta' => [
@@ -100,8 +102,10 @@ class ImportExportManager extends BaseTableManager
             $name = $item['name'];
             $new_value = $item['value'];
             
-            $existing_row = $this->wpdb->get_row(
-                $this->wpdb->prepare("SELECT option_value, autoload FROM $this->table_name WHERE option_name = %s", $name),
+            global $wpdb;
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+            $existing_row = $wpdb->get_row(
+                $wpdb->prepare("SELECT option_value, autoload FROM {$wpdb->options} WHERE option_name = %s", $name),
                 ARRAY_A
             );
 
@@ -155,9 +159,11 @@ class ImportExportManager extends BaseTableManager
 
             $option_data = $options_map[$option_name];
             
+            global $wpdb;
             // Allow raw SQL replace to handle exact value restoration including serialization
             // using wpdb->replace handles INSERT OR UPDATE
-            $result = $this->wpdb->replace(
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific import operation
+            $result = $wpdb->replace(
                 $this->table_name,
                 [
                     'option_name' => sanitize_text_field($option_data['name']),
@@ -185,9 +191,11 @@ class ImportExportManager extends BaseTableManager
     {
         $this->validate_permissions();
         
-        $term = '%' . $this->wpdb->esc_like($term) . '%';
-        $results = $this->wpdb->get_results(
-            $this->wpdb->prepare("SELECT option_name FROM $this->table_name WHERE option_name LIKE %s LIMIT 20", sanitize_text_field($term)),
+        global $wpdb;
+        $term = '%' . $wpdb->esc_like($term) . '%';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        $results = $wpdb->get_results(
+            $wpdb->prepare("SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s LIMIT 20", sanitize_text_field($term)),
             ARRAY_A
         );
 

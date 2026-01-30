@@ -1100,7 +1100,8 @@
 
         // --- Search & Replace Feature ---
 
-        $('#nhrotm-search-replace-btn').on('click', function () {
+        $('#nhrotm-search-replace-btn').on('click', function (e) {
+            e.preventDefault();
             const search = $('#nhrotm-search-string').val();
             const replace = $('#nhrotm-replace-string').val();
             const dryRun = $('#nhrotm-dry-run-toggle').is(':checked');
@@ -1144,14 +1145,16 @@
                             html = '<tr><td colspan="2">No matches found.</td></tr>';
                         } else {
                             data.details.forEach(item => {
+                                const safeName = $('<div>').text(item.option_name).html();
                                 html += `<tr>
-                                    <td>${item.option_name}</td>
+                                    <td>${safeName}</td>
                                     <td>${item.occurrences}</td>
                                 </tr>`;
                             });
                         }
                         $('#nhrotm-sr-list-body').html(html);
-                        $('#nhrotm-search-replace-results').removeClass('d-none');
+                        $('#nhrotm-search-replace-results').show();
+                        $('#nhrotm-search-replace-results').removeClass('d-none'); // Ensure class doesn't interfere
 
                         showToast(data.dry_run ? "Search complete (Preview)" : "Search and replace complete!", "success");
                         
@@ -1382,6 +1385,67 @@
                     }
                 }
             });
+        });
+
+        // Save History Settings
+        $('#nhrotm-history-settings-form').on('submit', function(e) {
+            e.preventDefault();
+            const days = $('#nhrotm_history_retention_days').val();
+            const $btn = $('#nhrotm-save-history-settings');
+            
+            $btn.prop('disabled', true).val('Saving...');
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'nhrotm_save_history_settings',
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    days: days
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).val('Save Changes');
+                    if (response.success) {
+                        showToast(response.data, "success");
+                    } else {
+                        showToast("Failed to save: " + response.data, "error");
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).val('Save Changes');
+                    showToast("Request failed.", "error");
+                }
+            });
+        });
+
+        // Prune History Now
+        $('#nhrotm-prune-history-now').on('click', function() {
+           if(!confirm('Are you sure you want to delete old history logs immediately?')) return;
+           
+           const $btn = $(this);
+           $btn.prop('disabled', true).text('Pruning...');
+           
+           $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'nhrotm_prune_history',
+                    nonce: nhrotmOptionsTableManager.nonce
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Prune Now');
+                    if (response.success) {
+                        const count = response.data.deleted !== false ? response.data.deleted : 0;
+                        showToast(`Pruned ${count} old entries.`, "success");
+                    } else {
+                        showToast("Prune failed: " + response.data, "error");
+                    }
+                },
+                error: function() {
+                     $btn.prop('disabled', false).text('Prune Now');
+                     showToast("Request failed.", "error");
+                }
+           });
         });
 
 

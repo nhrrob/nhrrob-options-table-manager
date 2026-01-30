@@ -53,19 +53,23 @@ class OptimizationManager extends BaseTableManager
 
         // Query to get autoloaded options
         // Broaden the search to catch 'yes', 'true', '1', 'on' by excluding known 'no' values
-        $sql = "SELECT option_name, option_value, autoload, LENGTH(option_value) as size_bytes 
-                FROM $this->table_name 
-                WHERE autoload NOT IN ('off', 'no', 'false', '0', '')
-                ORDER BY size_bytes DESC 
-                LIMIT %d";
-
-        $results = $this->wpdb->get_results($this->wpdb->prepare($sql, $limit), ARRAY_A);
+        global $wpdb;
+        
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT option_name, option_value, autoload, LENGTH(option_value) as size_bytes 
+            FROM {$wpdb->options} 
+            WHERE autoload NOT IN ('off', 'no', 'false', '0', '')
+            ORDER BY size_bytes DESC 
+            LIMIT %d",
+            $limit
+        ), ARRAY_A);
 
         return array_map(function ($row) {
             // Format size for display
             $row['size_formatted'] = size_format($row['size_bytes']);
             // Don't send full value, maybe just a snippet or nothing to save bandwidth
-            $row['value_snippet'] = substr(strip_tags($row['option_value']), 0, 100);
+            $row['value_snippet'] = substr(wp_strip_all_tags($row['option_value']), 0, 100);
             unset($row['option_value']);
             return $row;
         }, $results);
@@ -130,8 +134,9 @@ class OptimizationManager extends BaseTableManager
      */
     public function get_total_autoload_size()
     {
-        $sql = "SELECT SUM(LENGTH(option_value)) FROM $this->table_name WHERE autoload NOT IN ('no', 'false', '0', '')";
-        $bytes = $this->wpdb->get_var($sql);
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        $bytes = $wpdb->get_var("SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload NOT IN ('no', 'false', '0', '')");
         return size_format($bytes ? $bytes : 0);
     }
 }

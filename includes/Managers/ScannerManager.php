@@ -61,7 +61,9 @@ class ScannerManager extends BaseTableManager
 
         // 1. Get all unique prefixes from wp_options
         // We'll look for anything followed by an underscore as a prefix candidate
-        $results = $this->wpdb->get_results("SELECT option_name FROM $this->table_name", ARRAY_A);
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        $results = $wpdb->get_results("SELECT option_name FROM {$wpdb->options}", ARRAY_A);
         
         $prefixes = [];
         foreach ($results as $row) {
@@ -158,13 +160,15 @@ class ScannerManager extends BaseTableManager
         $transient_pattern = '_transient_' . $pattern;
         $timeout_pattern = '_transient_timeout_' . $pattern;
 
-        $query = $this->wpdb->prepare(
-            "DELETE FROM $this->table_name WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
-            $pattern,
-            $transient_pattern,
-            $timeout_pattern
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific deletion
+        return $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+                $pattern,
+                $transient_pattern,
+                $timeout_pattern
+            )
         );
-
-        return $this->wpdb->query($query);
     }
 }

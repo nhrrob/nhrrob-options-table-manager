@@ -71,48 +71,53 @@ class CommonTableManager extends BaseTableManager {
             $search_params_final = $search_params;
         }
         
-        // Combine WHERE clauses
-        $where_sql = '';
-        if (!empty($where_clauses)) {
-            $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+        // Build WHERE clause parts
+        $where_parts = [];
+        if (!empty($search)) {
+            $search_like = '%' . $this->wpdb->esc_like($search) . '%';
+            $search_sql_parts = [];
+            foreach ($columns as $column) {
+                $search_sql_parts[] = "{$column} LIKE %s";
+            }
+            $where_parts[] = "(" . implode(' OR ', $search_sql_parts) . ")";
         }
         
         // Count filtered records
-        $filtered_records_sql = "SELECT COUNT(*) FROM {$this->table_name} {$where_sql}";
-        
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         if (!empty($search)) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $where_clause = 'WHERE ' . implode(' AND ', $where_parts);
             $filtered_records = $this->wpdb->get_var(
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-                $this->wpdb->prepare($filtered_records_sql, ...$search_params_final)
+                $this->wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$this->table_name} $where_clause",
+                    ...$search_params_final
+                )
             );
         } else {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-            $filtered_records = $this->wpdb->get_var($filtered_records_sql);
+            $filtered_records = $this->wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name}");
         }
-        
-        // SQL for ordering
-        $order_sql = "ORDER BY {$order_column} {$order_direction}";
         
         // Get data with search, order, and pagination
-        $data_sql = "SELECT * FROM {$this->table_name} {$where_sql} {$order_sql} LIMIT %d, %d";
-        
         if (!empty($search)) {
+            $where_clause = 'WHERE ' . implode(' AND ', $where_parts);
             $query_params = array_merge($search_params_final, [$start, $length]);
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $data = $this->wpdb->get_results(
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-                $this->wpdb->prepare($data_sql, ...$query_params),
+                $this->wpdb->prepare(
+                    "SELECT * FROM {$this->table_name} $where_clause ORDER BY {$order_column} {$order_direction} LIMIT %d, %d",
+                    ...$query_params
+                ),
                 ARRAY_A
             );
         } else {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $data = $this->wpdb->get_results(
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-                $this->wpdb->prepare($data_sql, $start, $length),
+                $this->wpdb->prepare(
+                    "SELECT * FROM {$this->table_name} ORDER BY {$order_column} {$order_direction} LIMIT %d, %d",
+                    $start,
+                    $length
+                ),
                 ARRAY_A
             );
         }
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
         
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {

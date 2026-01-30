@@ -38,10 +38,12 @@ class SearchReplaceManager extends BaseTableManager
             throw new \Exception('Search string cannot be empty');
         }
 
-        $results = $this->wpdb->get_results(
-            $this->wpdb->prepare(
-                "SELECT option_name, option_value FROM $this->table_name WHERE option_value LIKE %s",
-                '%' . $this->wpdb->esc_like($search) . '%'
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific search operation
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_value LIKE %s",
+                '%' . $wpdb->esc_like($search) . '%'
             ),
             ARRAY_A
         );
@@ -78,10 +80,14 @@ class SearchReplaceManager extends BaseTableManager
 
         $this->validate_permissions();
 
-        $results = $this->wpdb->get_results(
-            $this->wpdb->prepare(
-                "SELECT option_name, option_value FROM $this->table_name WHERE option_value LIKE %s",
-                '%' . $this->wpdb->esc_like($search) . '%'
+        global $wpdb;
+        $search_like = '%' . $wpdb->esc_like($search) . '%';
+        
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_value LIKE %s LIMIT 100",
+                $search_like
             ),
             ARRAY_A
         );
@@ -116,7 +122,8 @@ class SearchReplaceManager extends BaseTableManager
 
             if ($occurrences > 0) {
                 if (!$dry_run) {
-                    $this->wpdb->update(
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific replace operation
+                    $wpdb->update(
                         $this->table_name,
                         ['option_value' => $processed_value],
                         ['option_name' => $option_name]

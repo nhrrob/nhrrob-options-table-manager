@@ -65,6 +65,7 @@ class HistoryManager
             $old_value = maybe_serialize($old_value);
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific history tracking
         return $wpdb->insert(
             $this->table_name,
             [
@@ -87,10 +88,10 @@ class HistoryManager
     public function get_history($option_name)
     {
         global $wpdb;
-
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM $this->table_name WHERE option_name = %s ORDER BY performed_at DESC",
+                "SELECT * FROM {$wpdb->prefix}nhrotm_option_history WHERE option_name = %s ORDER BY performed_at DESC",
                 sanitize_text_field(wp_unslash($option_name))
             ),
             ARRAY_A
@@ -107,8 +108,9 @@ class HistoryManager
     {
         global $wpdb;
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
         $record = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM $this->table_name WHERE id = %d", $history_id),
+            $wpdb->prepare("SELECT * FROM {$wpdb->prefix}nhrotm_option_history WHERE id = %d", $history_id),
             ARRAY_A
         );
 
@@ -159,5 +161,26 @@ class HistoryManager
         }
 
         return 'Failed to restore option';
+    }
+
+    /**
+     * Prune history logs older than X days
+     * 
+     * @param int $days Number of days to retain
+     * @return int|false Number of rows deleted or false on error
+     */
+    public function prune_history($days = 30)
+    {
+        global $wpdb;
+        $days = intval($days);
+        if ($days < 1) $days = 30;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific deletion
+        return $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}nhrotm_option_history WHERE performed_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+                $days
+            )
+        );
     }
 }
