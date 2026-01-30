@@ -138,18 +138,9 @@ class HistoryManager
         global $wpdb;
         $table = $this->table_name;
 
-<<<<<<< HEAD
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $record = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT * FROM $table WHERE id = %d",
-                $history_id
-            ),
-=======
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
         $record = $wpdb->get_row(
             $wpdb->prepare("SELECT * FROM {$wpdb->prefix}nhrotm_option_history WHERE id = %d", $history_id),
->>>>>>> staging
             ARRAY_A
         );
         // phpcs:enable
