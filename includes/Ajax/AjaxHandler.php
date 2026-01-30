@@ -9,6 +9,7 @@ use Nhrotm\OptionsTableManager\Managers\WprmRatingsTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptimizationManager;
 use Nhrotm\OptionsTableManager\Managers\ScannerManager;
 use Nhrotm\OptionsTableManager\Managers\SearchReplaceManager;
+use Nhrotm\OptionsTableManager\Managers\ImportExportManager;
 
 class AjaxHandler
 {
@@ -19,6 +20,7 @@ class AjaxHandler
     private $optimization_manager;
     private $scanner_manager;
     private $search_replace_manager;
+    private $import_export_manager;
     protected $wpdb;
 
     public function __construct()
@@ -30,6 +32,7 @@ class AjaxHandler
         $this->optimization_manager = new OptimizationManager();
         $this->scanner_manager = new ScannerManager();
         $this->search_replace_manager = new SearchReplaceManager();
+        $this->import_export_manager = new ImportExportManager();
 
         global $wpdb;
         $this->wpdb = $wpdb;
@@ -72,6 +75,11 @@ class AjaxHandler
             // Search & Replace
             'nhrotm_search_replace_preview' => 'search_replace_preview',
             'nhrotm_search_replace_execute' => 'search_replace_execute',
+            // Import / Export
+            'nhrotm_search_options_for_export' => 'search_options_for_export',
+            'nhrotm_export_options' => 'export_options',
+            'nhrotm_preview_import' => 'preview_import',
+            'nhrotm_execute_import' => 'execute_import',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -419,6 +427,90 @@ class AjaxHandler
 
             $result = $this->search_replace_manager->execute_replace($search, $replace, $dry_run);
             wp_send_json_success($result);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function search_options_for_export()
+    {
+        try {
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            $term = isset($_GET['term']) ? sanitize_text_field(wp_unslash($_GET['term'])) : '';
+            $results = $this->import_export_manager->search_options_for_export($term);
+            wp_send_json_success($results);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function export_options()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            $options = isset($_POST['options']) ? array_map('sanitize_text_field', wp_unslash($_POST['options'])) : [];
+            $data = $this->import_export_manager->export_options($options);
+            wp_send_json_success($data);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function preview_import()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (empty($_FILES['import_file'])) {
+                throw new \Exception('No file uploaded');
+            }
+            
+            // check if user has permission to import options
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            
+            $file_content = file_get_contents( sanitize_text_field(wp_unslash($_FILES['import_file']['tmp_name'])) );
+            if (!$file_content) throw new \Exception('Failed to read file');
+
+            $json_data = json_decode($file_content, true);
+            if (!$json_data) throw new \Exception('Invalid JSON format');
+
+            $preview = $this->import_export_manager->preview_import($json_data);
+            
+            // Return preview + pass full JSON back to client (or stash in transient) for diffing
+            // For simplicity in this step, we return the parsed JSON structure to client to hold in memory
+            wp_send_json_success(['preview' => $preview, 'raw_data' => $json_data]); 
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function execute_import()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+
+            $raw_data = isset($_POST['raw_data']) ? json_decode(stripslashes($_POST['raw_data']), true) : null;
+            $selected = isset($_POST['selected_options']) ? array_map('sanitize_text_field', wp_unslash($_POST['selected_options'])) : [];
+
+            if (!$raw_data) throw new \Exception('Missing import data');
+
+            $count = $this->import_export_manager->execute_import($raw_data, $selected);
+            wp_send_json_success(['count' => $count]);
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }

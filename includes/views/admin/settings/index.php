@@ -50,6 +50,9 @@
             <button class="tablinks search-replace-tab" data-tab="nhrotm-search-replace-tab">
                 <?php esc_html_e('Search & Replace', 'nhrrob-options-table-manager'); ?>
             </button>
+            <button class="tablinks import-export-tab" data-tab="nhrotm-import-export-tab">
+                <?php esc_html_e('Import / Export', 'nhrrob-options-table-manager'); ?>
+            </button>
         </div>
 
         <!-- Filter starts -->
@@ -445,6 +448,69 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div id="nhrotm-import-export-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
+            <h2>Import / Export Options</h2>
+            <p class="description">Selectively export options or import a configuration file from another site.</p>
+
+            <div class="nhrotm-ie-columns d-flex gap-20" style="gap: 40px; margin-top: 30px;">
+                <!-- Export Section -->
+                <div class="nhrotm-ie-column" style="flex: 1;">
+                    <h3>Export Options</h3>
+                    <p>Search and select options to add to your export basket.</p>
+                    
+                    <div class="nhrotm-form-field mb-3">
+                        <input type="text" id="nhrotm-export-search" class="regular-text" placeholder="Search option names..." style="width: 100%;">
+                        <div id="nhrotm-export-suggestions" class="nhrotm-suggestions-box d-none"></div>
+                    </div>
+
+                    <div class="nhrotm-export-basket">
+                        <h4>Selected Options (<span id="nhrotm-basket-count">0</span>)</h4>
+                        <ul id="nhrotm-basket-list">
+                            <li class="empty-basket">No options selected.</li>
+                        </ul>
+                    </div>
+
+                    <button id="nhrotm-do-export" class="button button-primary mt-3" disabled>Export to JSON</button>
+                </div>
+
+                <!-- Import Section -->
+                <div class="nhrotm-ie-column" style="flex: 1; border-left: 1px solid #ddd; padding-left: 40px;">
+                    <h3>Import Options</h3>
+                    <p>Upload a previously exported JSON file.</p>
+
+                    <div class="nhrotm-form-field mb-3">
+                        <input type="file" id="nhrotm-import-file" accept=".json">
+                    </div>
+
+                    <div id="nhrotm-import-preview-area" class="d-none">
+                        <h4>Import Preview</h4>
+                        <div class="nhrotm-import-stats mb-2">
+                             Found <span id="nhrotm-import-total">0</span> options.
+                        </div>
+                        
+                        <div class="nhrotm-scrollable-table" style="max-height: 300px; overflow-y: auto;">
+                            <table class="wp-list-table widefat fixed striped">
+                                <thead>
+                                    <tr>
+                                        <td class="check-column"><input type="checkbox" id="nhrotm-import-select-all" checked></td>
+                                        <th>Option Name</th>
+                                        <th>Status</th>
+                                        <th>Current Val (Snippet)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="nhrotm-import-preview-body"></tbody>
+                            </table>
+                        </div>
+
+                        <button id="nhrotm-execute-import" class="button button-primary mt-3">Execute Import</button>
+                    </div>
+                </div>
+            </div>
+            
         </div>
     </div>
 

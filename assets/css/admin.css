@@ -640,3 +640,119 @@ input:checked+.nhrotm-slider:before {
 .nhrotm-sr-list-body td {
     vertical-align: middle;
 }
+
+/* Import / Export Styles */
+.nhrotm-ie-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+}
+
+.nhrotm-ie-column {
+    min-width: 300px;
+}
+
+/* Export Suggestions */
+.nhrotm-suggestions-box {
+    border: 1px solid #ccd0d4;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    position: absolute;
+    width: 95%;
+    /* Approximate relative width */
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.nhrotm-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.nhrotm-suggestion-item:hover {
+    background: #f0f0f1;
+    color: #2271b1;
+}
+
+/* Export Basket */
+.nhrotm-export-basket {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    padding: 15px;
+    border-radius: 4px;
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.nhrotm-export-basket ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nhrotm-export-basket li {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    margin-bottom: 5px;
+    padding: 6px 10px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nhrotm-basket-remove {
+    cursor: pointer;
+    color: #d63638;
+}
+
+.nhrotm-basket-remove:hover {
+    color: #b32d2e;
+}
+
+.empty-basket {
+    color: #646970;
+    font-style: italic;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* Import Preview */
+.nhrotm-status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-status-badge.new {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.nhrotm-status-badge.modified,
+.nhrotm-status-badge.changed {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.nhrotm-status-badge.unchanged,
+.nhrotm-status-badge.none {
+    background-color: #e2e4e7;
+    color: #646970;
+}
+
+.nhrotm-scrollable-table {
+    border: 1px solid #c3c4c7;
+}
+
+.nhrotm-scrollable-table .wp-list-table {
+    margin: 0;
+    border: none;
+    box-shadow: none;
+}
