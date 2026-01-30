@@ -53,21 +53,23 @@ class UsermetaTableManager extends BaseTableManager
             // Build WHERE clause separately to satisfy literal requirements
             $where_sql = $wpdb->prepare(" WHERE (meta_key LIKE %s OR meta_value LIKE %s)", $search_like, $search_like);
         }
-
-        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM $table $where_sql");
-
-        $order_sql = " ORDER BY $order_column $order_direction";
-        $data = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM $table $where_sql $order_sql LIMIT %d, %d",
-                $start,
-                $length
-            ),
+        
+        // Count filtered records
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
+        $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}usermeta {$where_sql}";
+        $filtered_records = $this->wpdb->get_var($filtered_records_sql);
+        
+        // SQL for ordering
+        $order_sql = "ORDER BY {$order_column} {$order_direction}";
+        
+        // Get data with search, order, and pagination
+        $data_sql = "SELECT * FROM {$this->wpdb->prefix}usermeta {$where_sql} {$order_sql} LIMIT %d, %d";
+        $data = $this->wpdb->get_results(
+            $this->wpdb->prepare($data_sql, $start, $length),
             ARRAY_A
         );
-        // phpcs:enable
-
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
+        
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
             $is_protected = in_array($row['meta_key'], $this->get_protected_usermetas());

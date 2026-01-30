@@ -44,6 +44,15 @@
             <button class="tablinks settings-tab" data-tab="nhrotm-settings-tab">
                 <?php esc_html_e('Settings', 'nhrrob-options-table-manager'); ?>
             </button>
+            <button class="tablinks scanner-tab" data-tab="nhrotm-scanner-tab">
+                <?php esc_html_e('Orphan Scanner', 'nhrrob-options-table-manager'); ?>
+            </button>
+            <button class="tablinks search-replace-tab" data-tab="nhrotm-search-replace-tab">
+                <?php esc_html_e('Search & Replace', 'nhrrob-options-table-manager'); ?>
+            </button>
+            <button class="tablinks import-export-tab" data-tab="nhrotm-import-export-tab">
+                <?php esc_html_e('Import / Export', 'nhrrob-options-table-manager'); ?>
+            </button>
         </div>
 
         <!-- Filter starts -->
@@ -109,7 +118,7 @@
             </div>
         </div>
 
-        <div id="nhrotm-usermeta-tab" class="nhrotm-tab-content" style="display:none;">
+        <div id="nhrotm-usermeta-tab" class="nhrotm-tab-content d-none">
             <table id="nhrotm-data-table-usermeta" class="nhrotm-data-table wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
@@ -125,7 +134,7 @@
         </div>
 
         <?php if ($is_better_payment_installed): ?>
-            <div id="nhrotm-better-payment-tab" class="nhrotm-tab-content" style="display:none;">
+            <div id="nhrotm-better-payment-tab" class="nhrotm-tab-content d-none">
                 <table id="nhrotm-data-table-better_payment" class="nhrotm-data-table wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
@@ -145,7 +154,7 @@
         <?php endif; ?>
 
         <?php if ($is_wp_recipe_maker_installed): ?>
-            <div id="nhrotm-wprm-ratings-tab" class="nhrotm-tab-content" style="display:none;">
+            <div id="nhrotm-wprm-ratings-tab" class="nhrotm-tab-content d-none">
                 <table id="nhrotm-data-table-wprm_ratings" class="nhrotm-data-table wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
@@ -165,7 +174,7 @@
                 </table>
             </div>
 
-            <div id="nhrotm-wprm-analytics-tab" class="nhrotm-tab-content" style="display:none;">
+            <div id="nhrotm-wprm-analytics-tab" class="nhrotm-tab-content d-none">
                 <table id="nhrotm-data-table-wprm_analytics" class="nhrotm-data-table wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
@@ -184,7 +193,7 @@
                 </table>
             </div>
 
-            <div id="nhrotm-wprm-changelog-tab" class="nhrotm-tab-content" style="display:none;">
+            <div id="nhrotm-wprm-changelog-tab" class="nhrotm-tab-content d-none">
                 <table id="nhrotm-data-table-wprm_changelog" class="nhrotm-data-table wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
@@ -299,16 +308,16 @@
 
 <!-- History Modal -->
 <div class="nhrotm-history-modal is-hidden">
-    <div class="nhrotm-modal-content" style="max-width: 800px; width: 90%;">
+    <div class="nhrotm-modal-content nhrotm-modal-lg">
         <h2><?php esc_html_e('Option History', 'nhrrob-options-table-manager'); ?>: <span
                 class="nhrotm-history-option-name"></span></h2>
 
-        <div class="nhrotm-history-loading" style="display:none; text-align: center; padding: 20px;">
+        <div class="nhrotm-history-loading nhrotm-loader-box d-none">
             Loading...
         </div>
 
-        <div class="nhrotm-history-list-container" style="max-height: 500px; overflow-y: auto;">
-            <table class="wp-list-table widefat fixed striped" style="width:100%">
+        <div class="nhrotm-history-list-container nhrotm-scrollable-vh-50">
+            <table class="wp-list-table widefat fixed striped w-full">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -324,12 +333,12 @@
             </table>
         </div>
 
-        <button class="button nhrotm-close-history-modal" style="margin-top: 15px;">Close</button>
+        <button class="button nhrotm-close-history-modal mt-3">Close</button>
     </div>
 </div>
 
-    <div id="nhrotm-autoload-optimizer-tab" class="nhrotm-tab-content" style="display:none;">
-        <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
+    <div id="nhrotm-autoload-optimizer-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-card-full">
             <h2>Autoload Health Check</h2>
             <div class="nhrotm-autoload-stats">
                 <p>Total Autoload Size: <strong id="nhrotm-total-autoload-size">Loading...</strong></p>
@@ -351,11 +360,182 @@
                     <!-- Rows -->
                 </tbody>
             </table>
+
+            <div class="nhrotm-history-retention-settings mt-5 nhrotm-section-divider">
+                <h3><?php esc_html_e('History Retention', 'nhrrob-options-table-manager'); ?></h3>
+                <p><?php esc_html_e('To prevent the history log from growing too large, you can automatically delete old logs.', 'nhrrob-options-table-manager'); ?></p>
+                <form id="nhrotm-history-settings-form">
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row"><label for="nhrotm_history_retention_days"><?php esc_html_e('Keep logs for (days)', 'nhrrob-options-table-manager'); ?></label></th>
+                            <td>
+                                <input name="nhrotm_history_retention_days" type="number" id="nhrotm_history_retention_days" value="<?php echo esc_attr(get_option('nhrotm_history_retention_days', 30)); ?>" class="small-text" min="1">
+                                <p class="description"><?php esc_html_e('Logs older than this will be automatically deleted daily.', 'nhrrob-options-table-manager'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <input type="submit" name="submit" id="nhrotm-save-history-settings" class="button button-primary" value="<?php esc_attr_e('Save Changes', 'nhrrob-options-table-manager'); ?>">
+                        <button type="button" id="nhrotm-prune-history-now" class="button button-secondary"><?php esc_html_e('Prune Now', 'nhrrob-options-table-manager'); ?></button>
+                    </p>
+                </form>
+            </div>
         </div>
     </div>
 
-    <div id="nhrotm-settings-tab" class="nhrotm-tab-content" style="display:none;">
-        <div class="card" style="max-width: 100%; margin-top: 20px; padding: 20px;">
+    <div id="nhrotm-scanner-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
+            <h2>Orphaned Options Scanner</h2>
+            <p class="description">Scan your database for options left behind by uninstalled or inactive plugins. Identifying these helps reduce database bloat.</p>
+            
+            <div class="nhrotm-scanner-actions mb-4">
+                <button id="nhrotm-start-scan" class="button button-primary">Start Deep Scan</button>
+            </div>
+
+            <div class="nhrotm-scanner-loading loader-container d-none">
+                <span class="spinner is-active nhrotm-spinner-centered"></span>
+                <p>Analyzing database prefixes and cross-referencing with plugin directories...</p>
+            </div>
+
+            <div id="nhrotm-scanner-results" class="d-none">
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>Prefix Candidate</th>
+                            <th>Option Count</th>
+                            <th>Likely Source</th>
+                            <th>Risk Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nhrotm-scanner-list-body">
+                        <!-- Scan results -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="nhrotm-scanner-empty" class="loader-container d-none">
+                <p>No significant orphaned options detected. Your database looks clean!</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="nhrotm-search-replace-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
+            <h2>Global Search & Replace</h2>
+            <p class="description">Find and replace strings across your entire options table. Supports serialized data and JSON safely.</p>
+            
+            <div class="nhrotm-search-replace-form mb-4 max-w-600">
+                <div class="nhrotm-form-field mb-3">
+                    <label class="font-semibold d-block mb-1">Search for:</label>
+                    <input type="text" id="nhrotm-search-string" class="regular-text" placeholder="e.g. old-domain.com">
+                </div>
+                <div class="nhrotm-form-field mb-3">
+                    <label class="font-semibold d-block mb-1">Replace with:</label>
+                    <input type="text" id="nhrotm-replace-string" class="regular-text" placeholder="e.g. new-domain.com">
+                </div>
+                <div class="nhrotm-form-field mb-4">
+                    <label class="nhrotm-switch-label d-flex items-center gap-10 pointer">
+                        <input type="checkbox" id="nhrotm-dry-run-toggle" checked>
+                        <span>Dry Run (Preview changes without saving)</span>
+                    </label>
+                </div>
+                
+                <div class="nhrotm-form-actions">
+                    <button type="button" id="nhrotm-search-replace-btn" class="button button-primary">Execute Replacement</button>
+                </div>
+            </div>
+
+            <div class="nhrotm-search-replace-loading loader-container d-none">
+                <span class="spinner is-active nhrotm-spinner-centered"></span>
+                <p>Processing database records... This may take a moment.</p>
+            </div>
+
+            <div id="nhrotm-search-replace-results" class="mt-5 d-none">
+                <div class="nhrotm-sr-summary nhrotm-summary-box">
+                    <p id="nhrotm-sr-summary-text" class="m-0 font-semibold"></p>
+                </div>
+
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>Option Name</th>
+                            <th>Occurrences Found</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nhrotm-sr-list-body">
+                        <!-- Results -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="nhrotm-import-export-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
+            <h2>Import / Export Options</h2>
+            <p class="description">Selectively export options or import a configuration file from another site.</p>
+
+            <div class="nhrotm-ie-columns d-flex gap-40 mt-30">
+                <!-- Export Section -->
+                <div class="nhrotm-ie-column flex-1">
+                    <h3>Export Options</h3>
+                    <p>Search and select options to add to your export basket.</p>
+                    
+                    <div class="nhrotm-form-field mb-3">
+                        <input type="text" id="nhrotm-export-search" class="regular-text w-full" placeholder="Search option names...">
+                        <div id="nhrotm-export-suggestions" class="nhrotm-suggestions-box d-none"></div>
+                    </div>
+
+                    <div class="nhrotm-export-basket">
+                        <h4>Selected Options (<span id="nhrotm-basket-count">0</span>)</h4>
+                        <ul id="nhrotm-basket-list">
+                            <li class="empty-basket">No options selected.</li>
+                        </ul>
+                    </div>
+
+                    <button id="nhrotm-do-export" class="button button-primary mt-3" disabled>Export to JSON</button>
+                </div>
+
+                <!-- Import Section -->
+                <div class="nhrotm-ie-column flex-1 nhrotm-ie-border-left">
+                    <h3>Import Options</h3>
+                    <p>Upload a previously exported JSON file.</p>
+
+                    <div class="nhrotm-form-field mb-3">
+                        <input type="file" id="nhrotm-import-file" accept=".json">
+                    </div>
+
+                    <div id="nhrotm-import-preview-area" class="d-none">
+                        <h4>Import Preview</h4>
+                        <div class="nhrotm-import-stats mb-2">
+                             Found <span id="nhrotm-import-total">0</span> options.
+                        </div>
+                        
+                        <div class="nhrotm-scrollable-table nhrotm-scrollable-vh-30">
+                            <table class="wp-list-table widefat fixed striped">
+                                <thead>
+                                    <tr>
+                                        <td class="check-column"><input type="checkbox" id="nhrotm-import-select-all" checked></td>
+                                        <th>Option Name</th>
+                                        <th>Status</th>
+                                        <th>Current Val (Snippet)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="nhrotm-import-preview-body"></tbody>
+                            </table>
+                        </div>
+
+                        <button id="nhrotm-execute-import" class="button button-primary mt-3">Execute Import</button>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="nhrotm-settings-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
             <h2>Settings</h2>
             <table class="form-table">
                 <tbody>

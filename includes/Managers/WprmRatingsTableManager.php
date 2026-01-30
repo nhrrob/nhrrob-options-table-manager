@@ -48,30 +48,42 @@ class WprmRatingsTableManager extends BaseTableManager
         $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table");
 
         $where_sql = '';
-        if (!empty($search)) {
-            $search_like = '%' . $wpdb->esc_like($search) . '%';
-            $where_parts = [];
-            foreach ($columns as $column) {
-                // Prepare each part individually to avoid spread operator and keep SQL literal-ish
-                $where_parts[] = $wpdb->prepare("$column LIKE %s", $search_like);
-            }
-            $where_sql = ' WHERE (' . implode(' OR ', $where_parts) . ')';
+        if (!empty($where_clauses)) {
+            $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
         }
-
-        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM $table $where_sql");
-
-        $order_sql = " ORDER BY $order_column $order_direction";
-        $data = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM $table $where_sql $order_sql LIMIT %d, %d",
-                $start,
-                $length
-            ),
-            ARRAY_A
-        );
-        // phpcs:enable
-
+        
+        // Count filtered records
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
+        $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}wprm_ratings {$where_sql}";
+        
+        if (!empty($search)) {
+            $filtered_records = $this->wpdb->get_var(
+                $this->wpdb->prepare($filtered_records_sql, ...$search_params_final)
+            );
+        } else {
+            $filtered_records = $this->wpdb->get_var($filtered_records_sql);
+        }
+        
+        // SQL for ordering
+        $order_sql = "ORDER BY {$order_column} {$order_direction}";
+        
+        // Get data with search, order, and pagination
+        $data_sql = "SELECT * FROM {$this->wpdb->prefix}wprm_ratings {$where_sql} {$order_sql} LIMIT %d, %d";
+        
+        if (!empty($search)) {
+            $query_params = array_merge($search_params_final, [$start, $length]);
+            $data = $this->wpdb->get_results(
+                $this->wpdb->prepare($data_sql, ...$query_params),
+                ARRAY_A
+            );
+        } else {
+            $data = $this->wpdb->get_results(
+                $this->wpdb->prepare($data_sql, $start, $length),
+                ARRAY_A
+            );
+        }
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
+        
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
             $row['date'] = esc_html(wp_date(get_option('date_format'), strtotime($row['date'])));

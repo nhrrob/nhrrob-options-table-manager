@@ -848,23 +848,23 @@
             $targetContainer.show();
 
             // Handle Global UI Elements visibility
-            // Feature tabs don't show filters or "Add Option"
-            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab');
+            
+            // "Add New Option" button - Visible ONLY for "Options Table"
+            if ($(this).hasClass('options-table')) {
+                $('.nhrotm-add-option-button').show();
+            } else {
+                $('.nhrotm-add-option-button').hide();
+            }
 
+            // Filters and User ID - Hidden for Feature tabs
+            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab') || $(this).hasClass('scanner-tab') || $(this).hasClass('search-replace-tab') || $(this).hasClass('import-export-tab');
+            
             if (isFeatureTab) {
                 $('.nhrotm-filter-container').hide();
-                $('.nhrotm-add-option-button').hide();
                 $('.logged-user-id').hide();
             } else {
                 $('.nhrotm-filter-container').show();
                 $('.logged-user-id').show();
-
-                // "Add Option" is specifically for the main Options Table
-                if ($(this).hasClass('options-table')) {
-                    $('.nhrotm-add-option-button').show();
-                } else {
-                    $('.nhrotm-add-option-button').hide();
-                }
 
                 // Adjust DataTables inside this tab automatically
                 $targetContainer.find('table.nhrotm-data-table').each(function () {
@@ -877,6 +877,12 @@
             // Trigger specific feature logic
             if ($(this).hasClass('optimization-tab')) {
                 loadAutoloadData();
+            } else if ($(this).hasClass('scanner-tab')) {
+                // Potential initial load or reset view
+            } else if ($(this).hasClass('search-replace-tab')) {
+                // Potential reset view
+                $('#nhrotm-search-replace-results').hide();
+                $('.nhrotm-search-replace-form').show();
             }
         });
 
@@ -1012,6 +1018,436 @@
                 }
             });
         });
+
+        // --- Orphan Scanner Feature ---
+
+        $('#nhrotm-start-scan').on('click', function () {
+            $('.nhrotm-scanner-actions').addClass('d-none');
+            $('.nhrotm-scanner-loading').removeClass('d-none');
+            $('#nhrotm-scanner-results').addClass('d-none');
+            $('#nhrotm-scanner-empty').addClass('d-none');
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: "GET",
+                data: {
+                    action: "nhrotm_scan_orphans",
+                    nonce: nhrotmOptionsTableManager.nonce
+                },
+                success: function (response) {
+                    $('.nhrotm-scanner-loading').addClass('d-none');
+                    $('.nhrotm-scanner-actions').removeClass('d-none');
+
+                    if (response.success) {
+                        const orphans = response.data;
+                        if (orphans.length === 0) {
+                            $('#nhrotm-scanner-empty').removeClass('d-none');
+                        } else {
+                            let html = '';
+                            orphans.forEach(item => {
+                                html += `<tr>
+                                    <td><strong>${item.prefix}</strong></td>
+                                    <td>${item.count}</td>
+                                    <td>${item.possible_source}</td>
+                                    <td><span class="nhrotm-risk-${item.risk.toLowerCase()}">${item.risk}</span></td>
+                                    <td>
+                                        <button class="button button-danger nhrotm-delete-orphans" data-prefix="${item.prefix}">Delete All</button>
+                                    </td>
+                                </tr>`;
+                            });
+                            $('#nhrotm-scanner-list-body').html(html);
+                            $('#nhrotm-scanner-results').removeClass('d-none');
+                        }
+                    } else {
+                        showToast("Scan failed: " + response.data, "error");
+                    }
+                }
+            });
+        });
+
+        $(document).on('click', '.nhrotm-delete-orphans', function () {
+            const prefix = $(this).data('prefix');
+
+            if (confirm(`Are you sure you want to delete all options starting with "${prefix}"? This action cannot be undone.`)) {
+                const $btn = $(this);
+                $btn.prop('disabled', true).text('Deleting...');
+
+                $.ajax({
+                    url: nhrotmOptionsTableManager.ajaxUrl,
+                    method: "POST",
+                    data: {
+                        action: "nhrotm_delete_orphaned_prefix",
+                        nonce: nhrotmOptionsTableManager.nonce,
+                        prefix: prefix
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            showToast(response.data.message, "success");
+                            // Refresh scan
+                            $('#nhrotm-start-scan').trigger('click');
+                            // Also reload main table if it's there
+                            if ($.fn.DataTable.isDataTable('#nhrotm-data-table')) {
+                                $('#nhrotm-data-table').DataTable().ajax.reload(null, false);
+                            }
+                        } else {
+                            showToast("Delete failed: " + response.data, "error");
+                            $btn.prop('disabled', false).text('Delete All');
+                        }
+                    }
+                });
+            }
+        });
+
+        // --- Search & Replace Feature ---
+
+        $('#nhrotm-search-replace-btn').on('click', function (e) {
+            e.preventDefault();
+            const search = $('#nhrotm-search-string').val();
+            const replace = $('#nhrotm-replace-string').val();
+            const dryRun = $('#nhrotm-dry-run-toggle').is(':checked');
+
+            if (!search) {
+                showToast("Search string is required", "error");
+                return;
+            }
+
+            if (!dryRun && !confirm("WARNING: This will permanently modify your database records. Are you sure you want to proceed?")) {
+                return;
+            }
+
+            $('.nhrotm-search-replace-form').addClass('d-none');
+            $('.nhrotm-search-replace-loading').removeClass('d-none');
+            $('#nhrotm-search-replace-results').addClass('d-none');
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: "POST",
+                data: {
+                    action: "nhrotm_search_replace_execute",
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    search: search,
+                    replace: replace,
+                    dry_run: dryRun
+                },
+                success: function (response) {
+                    $('.nhrotm-search-replace-loading').addClass('d-none');
+                    $('.nhrotm-search-replace-form').removeClass('d-none');
+
+                    if (response.success) {
+                        const data = response.data;
+                        const summary = `Found ${data.total_occurrences} occurrences in ${data.total_updated} options.` + 
+                                       (data.dry_run ? " (Preview Mode - No changes saved)" : " (Changes Saved)");
+                        
+                        $('#nhrotm-sr-summary-text').text(summary);
+                        
+                        let html = '';
+                        if (data.details.length === 0) {
+                            html = '<tr><td colspan="2">No matches found.</td></tr>';
+                        } else {
+                            data.details.forEach(item => {
+                                const safeName = $('<div>').text(item.option_name).html();
+                                html += `<tr>
+                                    <td>${safeName}</td>
+                                    <td>${item.occurrences}</td>
+                                </tr>`;
+                            });
+                        }
+                        $('#nhrotm-sr-list-body').html(html);
+                        $('#nhrotm-search-replace-results').show();
+                        $('#nhrotm-search-replace-results').removeClass('d-none'); // Ensure class doesn't interfere
+
+                        showToast(data.dry_run ? "Search complete (Preview)" : "Search and replace complete!", "success");
+                        
+                        // Reload main table if changes were made
+                        if (!data.dry_run && $.fn.DataTable.isDataTable('#nhrotm-data-table')) {
+                            $('#nhrotm-data-table').DataTable().ajax.reload(null, false);
+                        }
+                    } else {
+                        showToast("Operation failed: " + response.data, "error");
+                    }
+                },
+                error: function () {
+                    $('.nhrotm-search-replace-loading').addClass('d-none');
+                    $('.nhrotm-search-replace-form').removeClass('d-none');
+                    showToast("Connection error", "error");
+                }
+            });
+        });
+
+        // --- Import / Export Feature ---
+
+        // Export Basket
+        let exportBasket = new Set();
+        
+        // Search for options to export
+        let searchTimeout;
+        $('#nhrotm-export-search').on('input', function() {
+            const term = $(this).val();
+            const $suggestions = $('#nhrotm-export-suggestions');
+            
+            clearTimeout(searchTimeout);
+            
+            if (term.length < 2) {
+                $suggestions.addClass('d-none').html('');
+                return;
+            }
+
+            searchTimeout = setTimeout(function() {
+                $.ajax({
+                    url: nhrotmOptionsTableManager.ajaxUrl,
+                    method: 'GET',
+                    data: {
+                        action: 'nhrotm_search_options_for_export',
+                        nonce: nhrotmOptionsTableManager.nonce,
+                        term: term
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.length > 0) {
+                            let html = '';
+                            response.data.forEach(opt => {
+                                html += `<div class="nhrotm-suggestion-item" data-option="${opt}">${opt}</div>`;
+                            });
+                            $suggestions.html(html).removeClass('d-none');
+                        } else {
+                            $suggestions.addClass('d-none');
+                        }
+                    }
+                });
+            }, 300);
+        });
+
+        // Add option to basket
+        $(document).on('click', '.nhrotm-suggestion-item', function() {
+            const option = $(this).data('option');
+            if (exportBasket.has(option)) return;
+
+            exportBasket.add(option);
+            updateExportBasketUI();
+            
+            $('#nhrotm-export-search').val('');
+            $('#nhrotm-export-suggestions').addClass('d-none');
+        });
+
+        // Remove from basket
+        $(document).on('click', '.nhrotm-basket-remove', function() {
+            const option = $(this).data('option');
+            exportBasket.delete(option);
+            updateExportBasketUI();
+        });
+
+        function updateExportBasketUI() {
+            const $list = $('#nhrotm-basket-list');
+            const $count = $('#nhrotm-basket-count');
+            const $btn = $('#nhrotm-do-export');
+            
+            $count.text(exportBasket.size);
+            
+            if (exportBasket.size === 0) {
+                $list.html('<li class="empty-basket">No options selected.</li>');
+                $btn.prop('disabled', true);
+            } else {
+                let html = '';
+                exportBasket.forEach(opt => {
+                    html += `<li>
+                        ${opt} 
+                        <span class="nhrotm-basket-remove dashicons dashicons-trash" data-option="${opt}" title="Remove"></span>
+                    </li>`;
+                });
+                $list.html(html);
+                $btn.prop('disabled', false);
+            }
+        }
+
+        // Execute Export
+        $('#nhrotm-do-export').on('click', function() {
+            const options = Array.from(exportBasket);
+            const $btn = $(this);
+            $btn.prop('disabled', true).text('Generating...');
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'nhrotm_export_options',
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    options: options
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Export to JSON');
+                    if (response.success) {
+                        // Download File
+                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(response.data, null, 2));
+                        const downloadAnchorNode = document.createElement('a');
+                        const date = new Date().toISOString().slice(0, 10);
+                        downloadAnchorNode.setAttribute("href", dataStr);
+                        downloadAnchorNode.setAttribute("download", `wp-options-export-${date}.json`);
+                        document.body.appendChild(downloadAnchorNode); // required for firefox
+                        downloadAnchorNode.click();
+                        downloadAnchorNode.remove();
+                        showToast("Export generated successfully!", "success");
+                    } else {
+                        showToast("Export failed: " + response.data, "error");
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Export to JSON');
+                    showToast("Export request failed.", "error");
+                }
+            });
+        });
+
+        // Import Preview
+        $('#nhrotm-import-file').on('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('action', 'nhrotm_preview_import');
+            formData.append('nonce', nhrotmOptionsTableManager.nonce);
+            formData.append('import_file', file);
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    if (response.success) {
+                        const preview = response.data.preview;
+                        const rawData = response.data.raw_data; // Store this for final import
+                        
+                        $('#nhrotm-import-total').text(preview.length);
+                        
+                        let html = '';
+                        preview.forEach(item => {
+                            const statusClass = item.status === 'modified' ? 'update' : (item.status === 'new' ? 'install-now' : 'none');
+                            html += `<tr>
+                                <td class="check-column"><input type="checkbox" class="nhrotm-import-item-checkbox" value="${item.name}" checked></td>
+                                <td><strong>${item.name}</strong></td>
+                                <td><span class="nhrotm-status-badge ${item.status}">${item.status}</span></td>
+                                <td><code>${item.current_snippet || '-'}</code></td>
+                            </tr>`;
+                        });
+
+                        $('#nhrotm-import-preview-body').html(html);
+                        $('#nhrotm-import-preview-area').removeClass('d-none');
+                        
+                        // Store raw data in a hidden way for next step (or re-send file, but storing JSON is easier for now)
+                        $('#nhrotm-execute-import').data('rawData', JSON.stringify(rawData));
+                    } else {
+                        showToast("Preview failed: " + response.data, "error");
+                        $('#nhrotm-import-file').val('');
+                    }
+                }
+            });
+        });
+
+        // Execute Import
+        $('#nhrotm-execute-import').on('click', function() {
+            const rawData = $(this).data('rawData');
+            if (!rawData) return;
+
+            const selected = [];
+            $('.nhrotm-import-item-checkbox:checked').each(function() {
+                selected.push($(this).val());
+            });
+
+            if (selected.length === 0) {
+                showToast("No options selected for import.", "error");
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to import ${selected.length} options? This will overwrite existing values.`)) {
+                return;
+            }
+
+            const $btn = $(this);
+            $btn.prop('disabled', true).text('Importing...');
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'nhrotm_execute_import',
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    raw_data: rawData,
+                    selected_options: selected
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Execute Import');
+                    if (response.success) {
+                        showToast(`Successfully imported ${response.data.count} options!`, "success");
+                        $('#nhrotm-import-preview-area').addClass('d-none');
+                        $('#nhrotm-import-file').val('');
+                    } else {
+                        showToast("Import failed: " + response.data, "error");
+                    }
+                }
+            });
+        });
+
+        // Save History Settings
+        $('#nhrotm-history-settings-form').on('submit', function(e) {
+            e.preventDefault();
+            const days = $('#nhrotm_history_retention_days').val();
+            const $btn = $('#nhrotm-save-history-settings');
+            
+            $btn.prop('disabled', true).val('Saving...');
+
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'nhrotm_save_history_settings',
+                    nonce: nhrotmOptionsTableManager.nonce,
+                    days: days
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).val('Save Changes');
+                    if (response.success) {
+                        showToast(response.data, "success");
+                    } else {
+                        showToast("Failed to save: " + response.data, "error");
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).val('Save Changes');
+                    showToast("Request failed.", "error");
+                }
+            });
+        });
+
+        // Prune History Now
+        $('#nhrotm-prune-history-now').on('click', function() {
+           if(!confirm('Are you sure you want to delete old history logs immediately?')) return;
+           
+           const $btn = $(this);
+           $btn.prop('disabled', true).text('Pruning...');
+           
+           $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'nhrotm_prune_history',
+                    nonce: nhrotmOptionsTableManager.nonce
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Prune Now');
+                    if (response.success) {
+                        const count = response.data.deleted !== false ? response.data.deleted : 0;
+                        showToast(`Pruned ${count} old entries.`, "success");
+                    } else {
+                        showToast("Prune failed: " + response.data, "error");
+                    }
+                },
+                error: function() {
+                     $btn.prop('disabled', false).text('Prune Now');
+                     showToast("Request failed.", "error");
+                }
+           });
+        });
+
 
     });
 })(jQuery);
