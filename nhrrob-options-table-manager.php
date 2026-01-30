@@ -5,7 +5,7 @@
  * Description: Optimize WordPress with Advanced Option History, Autoload Health Checks, and Automated Cleanup. Boost performance by reducing database bloat.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.2.0
+ * Version: 1.3.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-options-table-manager
@@ -29,7 +29,7 @@ final class Nhrotm_Options_Table_Manager
      *
      * @var string
      */
-    const nhrotm_version = '1.1.9';
+    const nhrotm_version = '1.3.0';
 
     /**
      * Class construcotr
@@ -54,6 +54,10 @@ final class Nhrotm_Options_Table_Manager
         if (!wp_next_scheduled('nhrotm_daily_cleanup')) {
             wp_schedule_event(time(), 'daily', 'nhrotm_daily_cleanup');
         }
+
+        if (!wp_next_scheduled('nhrotm_daily_history_prune')) {
+            wp_schedule_event(time(), 'daily', 'nhrotm_daily_history_prune');
+        }
     }
 
     /**
@@ -62,6 +66,7 @@ final class Nhrotm_Options_Table_Manager
     public function deactivate_plugin()
     {
         wp_clear_scheduled_hook('nhrotm_daily_cleanup');
+        wp_clear_scheduled_hook('nhrotm_daily_history_prune');
     }
 
     /**
@@ -106,11 +111,16 @@ final class Nhrotm_Options_Table_Manager
     {
         // Cron Handler
         add_action('nhrotm_daily_cleanup', [$this, 'run_cleanup']);
+        add_action('nhrotm_daily_history_prune', [$this, 'run_history_prune']);
 
         new Nhrotm\OptionsTableManager\Assets();
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             new Nhrotm\OptionsTableManager\Ajax\AjaxHandler();
+        }
+
+        if (defined('WP_CLI') && WP_CLI) {
+            \WP_CLI::add_command('nhr-options', '\Nhrotm\OptionsTableManager\Cli\CliCommands');
         }
 
         if (is_admin()) {
@@ -128,6 +138,16 @@ final class Nhrotm_Options_Table_Manager
             $manager = new \Nhrotm\OptionsTableManager\Managers\OptionsTableManager();
             $manager->perform_cleanup();
         }
+    }
+
+    /**
+     * Run history pruning
+     */
+    public function run_history_prune()
+    {
+        $days = get_option('nhrotm_history_retention_days', 30);
+        $history_manager = new \Nhrotm\OptionsTableManager\Managers\HistoryManager();
+        $history_manager->prune_history($days);
     }
 }
 

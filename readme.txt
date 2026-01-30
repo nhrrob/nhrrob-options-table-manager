@@ -1,10 +1,10 @@
 === NHR Advanced Options Table Manager & Autoload Optimizer ===
 Contributors: nhrrob  
-Tags: wp_options, transients, usermeta, autoload-optimizer, database-optimization 
+Tags: wp_options, transients, usermeta, optimize, database-optimization 
 Requires at least: 6.0  
 Tested up to: 6.9
 Requires PHP: 7.4  
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -36,10 +36,13 @@ Tired of an overloaded `wp_options` table slowing down your WordPress site? **NH
 - **Options Usage Analytics** – Get visual insights into which prefixes dominate your options table.
 - **Live Search & Pagination** – High-performance DataTables with server-side processing.
 - **Security & Optimization** – Protection for core WordPress options to prevent accidental data loss.
+- **Import / Export** – Move settings between sites easily with JSON support.
+- **Global Search & Replace** – Safely replace strings across the database with dry-run preview.
+- **Orphan Scanner** – Find and clean up leftovers from uninstalled plugins.
+- **WP-CLI Support** – Manage options (wp nhr-options list, wp nhr-options delete) from the command line.
 
 ### 🚀 Coming Soon
 We're constantly improving NHR Options Table Manager! Here's what's on the way:
-- **Export Data** – Export your options and analytics to CSV or JSON formats.
 - **Scheduled Backups** – Automatically backup your `wp_options` table before major changes.
 
 ### ⚡ Easy Installation & Instant Setup
@@ -73,7 +76,7 @@ Absolutely! Everything is managed through a user-friendly UI with modals.
 Yes! Serialized data is automatically formatted for easy editing and saved back in a structured format.
 
 **Can I delete expired transients?**  
-Not yet, but this feature is coming soon!
+Yes! We have an automated daily cleanup feature and a manual delete button.
 
 == Screenshots ==
 
@@ -85,6 +88,13 @@ Not yet, but this feature is coming soon!
 6. Options usage analytics
 
 == Changelog ==
+
+= 1.3.0 - 30/01/2026 =
+- Added: Export/Import feature allowing JSON configuration portability
+- Added: Global Search & Replace utility with safe serialization handling and Dry Run mode
+- Added: Orphaned Options Scanner to identifying bloat from uninstalled plugins
+- Added: Option History Pruning (Automated via Cron & Manual control)
+- Added: WP-CLI Support (`nhr-options list`, `nhr-options delete`)
 
 = 1.2.0 - 19/01/2026 =
 - Added: Option History & Rollback system with change tracking

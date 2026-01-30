@@ -140,22 +140,20 @@ class OptionsTableManager extends BaseTableManager
         }
 
         // Count filtered records
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-        $filtered_records = $wpdb->get_var("SELECT COUNT(*) FROM $table $where_sql");
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
+        $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}options {$where_sql}";
+        $filtered_records = $this->wpdb->get_var($filtered_records_sql);
 
         // SQL for ordering
         $order_sql = " ORDER BY $order_column $order_direction";
 
         // Get data with search, order, and pagination
-        $data = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM $table $where_sql $order_sql LIMIT %d, %d",
-                $start,
-                $length
-            ),
+        $data_sql = "SELECT * FROM {$this->wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
+        $data = $this->wpdb->get_results(
+            $this->wpdb->prepare($data_sql, $start, $length),
             ARRAY_A
         );
-        // phpcs:enable
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
 
         // Wrap the option_value in the scrollable-cell div
         foreach ($data as &$row) {
@@ -385,7 +383,9 @@ class OptionsTableManager extends BaseTableManager
 
         $this->validate_permissions();
 
-        $option_names = isset($_POST['option_names']) ? array_map('sanitize_text_field', (array) wp_unslash($_POST['option_names'])) : [];
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in array_map below
+        $option_names = isset($_POST['option_names']) ? wp_unslash((array) $_POST['option_names']) : [];
+        $option_names = array_map('sanitize_text_field', $option_names);
 
         if (empty($option_names)) {
             throw new \Exception('No options selected');

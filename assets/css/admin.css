@@ -8,8 +8,57 @@
     display: none;
 }
 
+.d-block {
+    display: block;
+}
+
 .m-auto {
     margin: auto;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.cursor-pointer,
+.pointer {
+    cursor: pointer;
+}
+
+.max-w-600 {
+    max-width: 600px;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.gap-10 {
+    gap: 10px;
+}
+
+.gap-20 {
+    gap: 20px;
+}
+
+.gap-40 {
+    gap: 40px;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.m-0 {
+    margin: 0;
 }
 
 .m-1 {
@@ -50,6 +99,10 @@
 
 .mt-5 {
     margin-top: 25px;
+}
+
+.mt-30 {
+    margin-top: 30px;
 }
 
 .mb-1 {
@@ -216,6 +269,41 @@
     text-align: center;
 }
 
+.loader-container {
+    text-align: center;
+    padding: 40px;
+}
+
+.nhrotm-loader-box {
+    text-align: center;
+    padding: 20px;
+}
+
+.nhrotm-tab-card {
+    max-width: 100%;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.nhrotm-card-full {
+    max-width: 100%;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.nhrotm-section-divider {
+    border-top: 1px solid #ddd;
+    padding-top: 20px;
+    margin-top: 30px;
+}
+
+.nhrotm-sr-summary {
+    background: #f0f0f1;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
 /* Data table  */
 .nhrotm-data-table-wrap select[name="nhrotm-data-table_length"],
 .nhrotm-data-table-wrap select[name="nhrotm-data-table-usermeta_length"] {
@@ -230,30 +318,55 @@
     padding-right: 5px;
 }
 
+.nhrotm-scrollable-vh-50 {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.nhrotm-scrollable-vh-30 {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
 /* Modal design  */
 .nhrotm-add-option-modal,
 .nhrotm-edit-option-modal,
 .nhrotm-edit-usermeta-modal,
 .nhrotm-history-modal {
     display: none;
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1000;
+    /* Sit on top */
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0, 0, 0, 0.5); /* Black w/ opacity */
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Black w/ opacity */
 }
 
 .nhrotm-modal-content {
     background-color: #fefefe;
-    margin: 15% auto; /* 15% from the top and centered */
+    margin: 15% auto;
+    /* 15% from the top and centered */
     padding: 20px;
     border: 1px solid #888;
-    width: 80%; /* Could be more or less, depending on screen size */
-    max-width: 500px; /* Set a max width for larger screens */
-    border-radius: 8px; /* Rounded corners */
+    width: 80%;
+    /* Could be more or less, depending on screen size */
+    max-width: 500px;
+    /* Set a max width for larger screens */
+    border-radius: 8px;
+    /* Rounded corners */
+}
+
+.nhrotm-modal-lg {
+    max-width: 800px;
+    width: 90%;
 }
 
 .nhrotm-modal-content h2 {
@@ -522,4 +635,190 @@ input:checked+.nhrotm-slider:before {
     border-radius: 4px;
     margin-bottom: 20px;
     border-left: 4px solid #2271b1;
+}
+
+/* Orphan Scanner Styles */
+.nhrotm-risk-low {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-risk-medium {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-risk-high {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-scanner-actions {
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+#nhrotm-scanner-results .wp-list-table {
+    margin-top: 20px;
+}
+
+#nhrotm-scanner-results td {
+    vertical-align: middle;
+}
+
+.nhrotm-spinner-centered {
+    float: none;
+    margin-bottom: 10px;
+}
+
+/* Search & Replace Styles */
+.nhrotm-search-replace-form .nhrotm-form-field input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+}
+
+.nhrotm-summary-box {
+    border-left: 4px solid #2271b1;
+}
+
+.nhrotm-sr-list-body td {
+    vertical-align: middle;
+}
+
+/* Import / Export Styles */
+.nhrotm-ie-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+}
+
+.nhrotm-ie-column {
+    min-width: 300px;
+}
+
+.nhrotm-ie-border-left {
+    border-left: 1px solid #ddd;
+    padding-left: 40px;
+}
+
+/* Export Suggestions */
+.nhrotm-suggestions-box {
+    border: 1px solid #ccd0d4;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    position: absolute;
+    width: 95%;
+    /* Approximate relative width */
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.nhrotm-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.nhrotm-suggestion-item:hover {
+    background: #f0f0f1;
+    color: #2271b1;
+}
+
+/* Export Basket */
+.nhrotm-export-basket {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    padding: 15px;
+    border-radius: 4px;
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.nhrotm-export-basket ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nhrotm-export-basket li {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    margin-bottom: 5px;
+    padding: 6px 10px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nhrotm-basket-remove {
+    cursor: pointer;
+    color: #d63638;
+}
+
+.nhrotm-basket-remove:hover {
+    color: #b32d2e;
+}
+
+.empty-basket {
+    color: #646970;
+    font-style: italic;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* Import Preview */
+.nhrotm-status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nhrotm-status-badge.new {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.nhrotm-status-badge.modified,
+.nhrotm-status-badge.changed {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.nhrotm-status-badge.unchanged,
+.nhrotm-status-badge.none {
+    background-color: #e2e4e7;
+    color: #646970;
+}
+
+.nhrotm-scrollable-table {
+    border: 1px solid #c3c4c7;
+}
+
+.nhrotm-scrollable-table .wp-list-table {
+    margin: 0;
+    border: none;
+    box-shadow: none;
 }

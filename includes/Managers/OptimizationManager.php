@@ -57,19 +57,19 @@ class OptimizationManager extends BaseTableManager
         $limit = intval($limit);
         $table = $this->table_name;
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT option_name, option_value, autoload, LENGTH(option_value) as size_bytes
-                FROM $table
-                WHERE autoload NOT IN ('off', 'no', 'false', '0', '')
-                ORDER BY size_bytes DESC
-                LIMIT %d",
-                $limit
-            ),
-            ARRAY_A
-        );
-        // phpcs:enable
+        // Query to get autoloaded options
+        // Broaden the search to catch 'yes', 'true', '1', 'on' by excluding known 'no' values
+        global $wpdb;
+        
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT option_name, option_value, autoload, LENGTH(option_value) as size_bytes 
+            FROM {$wpdb->options} 
+            WHERE autoload NOT IN ('off', 'no', 'false', '0', '')
+            ORDER BY size_bytes DESC 
+            LIMIT %d",
+            $limit
+        ), ARRAY_A);
 
         return array_map(function ($row) {
             // Format size for display
@@ -135,13 +135,8 @@ class OptimizationManager extends BaseTableManager
     public function get_total_autoload_size()
     {
         global $wpdb;
-        $table = $this->table_name;
-
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $bytes = $wpdb->get_var(
-            "SELECT SUM(LENGTH(option_value)) FROM $table WHERE autoload NOT IN ('no', 'false', '0', '')"
-        );
-        // phpcs:enable
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        $bytes = $wpdb->get_var("SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload NOT IN ('no', 'false', '0', '')");
         return size_format($bytes ? $bytes : 0);
     }
 }
