@@ -1,0 +1,12 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/wp-admin/tools.php?page=nhrotm-options-table-manager",
+  "preferredVersions": {
+    "wp": "latest",
+    "php": "8.2"
+  },
+  "login": true,
+  "plugins": [
+    "nhrrob-options-table-manager"
+  ]
+}
