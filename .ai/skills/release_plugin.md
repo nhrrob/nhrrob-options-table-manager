@@ -2,6 +2,10 @@
 
 This skill outlines the standard operating procedure for releasing a new version of the **NHR Advanced Options Table Manager** plugin.
 
+## Versioning Definitions
+- **Major Release**: Increment the second digit (0.1.0 bump). Example: `1.4.0` -> `1.5.0`.
+- **Minor Release**: Increment the third digit (0.0.1 bump). Example: `1.4.0` -> `1.4.1`.
+
 ## Prerequisites
 - Ensure you are on the `dev` branch.
 - Ensure all tests pass.
@@ -30,21 +34,41 @@ git merge staging
    git add nhrrob-options-table-manager.php readme.txt
    git commit -m "Chore: Bump version to X.Y.Z"
    ```
-2. Push and create a Pull Request to `master`:
+2. Push and create a Pull Request to `main`:
    ```bash
    git push origin dev
    # Create PR via GitHub CLI or Web UI
    ```
 
-## Step 4: Finalize Release
-1. Approve and merge the PR into `master`.
-2. Checkout `master` and pull changes:
+## Step 4: Approval & Finalize Release
+1. **Wait for Approval**: Do NOT proceed until the USER has manually reviewed the PR and explicitly said "yes" or "proceed".
+2. **Merge PR**: Once approved, merge the PR into `main`.
+3. Checkout `main` and pull changes:
    ```bash
-   git checkout master
-   git pull origin master
+   git checkout main
+   git pull origin main
    ```
 3. Create a git tag for the version:
    ```bash
    git tag -a vX.Y.Z -m "Release version X.Y.Z"
    git push origin vX.Y.Z
+   ```
+
+## Step 5: Post-Release Sync
+Ensure all development branches are in sync with the new release.
+1. **Sync Dev**: Merge `main` back into `dev`.
+   ```bash
+   git checkout dev
+   git merge main
+   git push origin dev
+   ```
+2. **Sync Staging**: Merge `main` back into `staging`.
+   ```bash
+   git checkout staging
+   git merge main
+   git push origin staging
+   ```
+3. **Return to Dev**:
+   ```bash
+   git checkout dev
    ```

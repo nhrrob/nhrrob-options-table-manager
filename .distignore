@@ -1,4 +1,5 @@
 # System files
+.ai/
 .sass-cache
 .DS_Store
 .phpintel
