@@ -114,6 +114,7 @@ final class Nhrotm_Options_Table_Manager
         add_action('nhrotm_daily_history_prune', [$this, 'run_history_prune']);
 
         new Nhrotm\OptionsTableManager\Assets();
+        $this->check_version();
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             new Nhrotm\OptionsTableManager\Ajax\AjaxHandler();
@@ -125,6 +126,23 @@ final class Nhrotm_Options_Table_Manager
 
         if (is_admin()) {
             new Nhrotm\OptionsTableManager\Admin();
+        }
+    }
+
+    /**
+     * Check if the plugin version has changed and run updates
+     * 
+     * @return void
+     */
+    public function check_version()
+    {
+        $stored_version = get_option('nhrotm_version', '1.0.0');
+
+        if (version_compare($stored_version, self::nhrotm_version, '<')) {
+            $history_manager = new \Nhrotm\OptionsTableManager\Managers\HistoryManager();
+            $history_manager->create_table();
+
+            update_option('nhrotm_version', self::nhrotm_version);
         }
     }
 
