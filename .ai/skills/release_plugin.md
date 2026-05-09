@@ -49,3 +49,22 @@ git merge staging
    git tag -a vX.Y.Z -m "Release version X.Y.Z"
    git push origin vX.Y.Z
    ```
+
+## Step 5: Post-Release Sync
+Ensure all development branches are in sync with the new release.
+1. **Sync Dev**: Merge `main` back into `dev`.
+   ```bash
+   git checkout dev
+   git merge main
+   git push origin dev
+   ```
+2. **Sync Staging**: Merge `main` back into `staging`.
+   ```bash
+   git checkout staging
+   git merge main
+   git push origin staging
+   ```
+3. **Return to Dev**:
+   ```bash
+   git checkout dev
+   ```
