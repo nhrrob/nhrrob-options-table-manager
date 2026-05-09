@@ -70,6 +70,11 @@ class HistoryManager
             $old_value = maybe_serialize($old_value);
         }
 
+        // Ensure table exists (lazy creation)
+        if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) {
+            $this->create_table();
+        }
+
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific history tracking
         return $wpdb->insert(
             $table,
