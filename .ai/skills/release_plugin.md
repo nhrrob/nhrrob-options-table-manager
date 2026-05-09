@@ -53,6 +53,10 @@ git merge staging
    git tag -a vX.Y.Z -m "Release version X.Y.Z"
    git push origin vX.Y.Z
    ```
+4. **Publish GitHub Release**:
+   ```bash
+   gh release create vX.Y.Z --title "X.Y.Z" --notes "Changelog description here"
+   ```
 
 ## Step 5: Post-Release Sync
 Ensure all development branches are in sync with the new release.
