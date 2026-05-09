@@ -5,7 +5,7 @@
  * Description: Optimize WordPress with Advanced Option History, Autoload Health Checks, and Automated Cleanup. Boost performance by reducing database bloat.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.4.1
+ * Version: 1.4.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-options-table-manager
@@ -29,7 +29,7 @@ final class Nhrotm_Options_Table_Manager
      *
      * @var string
      */
-    const nhrotm_version = '1.4.1';
+    const nhrotm_version = '1.4.2';
 
     /**
      * Class construcotr

@@ -4,7 +4,7 @@ Tags: wp_options, transients, usermeta, optimize, database-optimization
 Requires at least: 6.0  
 Tested up to: 7.0
 Requires PHP: 7.4  
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -88,6 +88,9 @@ Yes! We have an automated daily cleanup feature and a manual delete button.
 6. Options usage analytics
 
 == Changelog ==
+
+= 1.4.2 - 09/05/2026 =
+- Fixed: Database error when history table was missing; added lazy table creation logic.
 
 = 1.4.1 - 09/05/2026 =
 - Few minor bug fixes & improvements
