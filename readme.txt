@@ -90,7 +90,7 @@ Yes! We have an automated daily cleanup feature and a manual delete button.
 == Changelog ==
 
 = 1.4.1 - 09/05/2026 =
-- Few minor bug fixes and improvements
+- Few minor bug fixes & improvements
 
 = 1.4.0 - 09/05/2026 =
 - Added: "Allow HTML in Option Values" setting to preserve HTML tags when adding or editing options
