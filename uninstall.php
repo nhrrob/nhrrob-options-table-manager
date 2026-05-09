@@ -27,6 +27,7 @@ $wpdb->query("DROP TABLE IF EXISTS $nhrotm_history_table");
  * Cleanup settings/options
  */
 delete_option('nhrotm_auto_cleanup_enabled');
+delete_option('nhrotm_allow_html_in_values');
 
 // Add any other options to be deleted here
 // delete_option( 'nhrotm_version' );

@@ -96,6 +96,7 @@ class Assets extends App
             'is_better_payment_installed' => $this->is_better_payment_installed(),
             'is_wp_recipe_maker_installed' => $this->is_plugin_installed('\WP_Recipe_Maker'),
             'auto_cleanup_enabled' => get_option('nhrotm_auto_cleanup_enabled', 'false'),
+            'allow_html_in_values' => get_option('nhrotm_allow_html_in_values', 'false'),
         ]);
     }
 }

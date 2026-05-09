@@ -71,8 +71,8 @@ class AjaxHandler
             'nhrotm_get_heavy_autoload_options' => 'get_heavy_autoload_options',
             'nhrotm_toggle_autoload' => 'toggle_autoload',
             'nhrotm_get_total_autoload_size' => 'get_total_autoload_size',
-            // Auto Cleanup
-            'nhrotm_update_auto_cleanup_setting' => 'update_auto_cleanup_setting',
+            // Settings
+            'nhrotm_save_settings' => 'save_settings',
             // Orphan Scanner
             'nhrotm_scan_orphans' => 'scan_orphans',
             'nhrotm_delete_orphaned_prefix' => 'delete_orphaned_prefix',
@@ -370,7 +370,7 @@ class AjaxHandler
         }
     }
 
-    public function update_auto_cleanup_setting()
+    public function save_settings()
     {
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
             wp_send_json_error('Invalid nonce');
@@ -380,8 +380,11 @@ class AjaxHandler
             wp_send_json_error('Unauthorized');
         }
 
-        $enabled = isset($_POST['enabled']) && sanitize_text_field(wp_unslash($_POST['enabled'])) === 'true' ? 'true' : 'false';
-        update_option('nhrotm_auto_cleanup_enabled', $enabled);
+        $auto_cleanup = isset($_POST['auto_cleanup_enabled']) && sanitize_text_field(wp_unslash($_POST['auto_cleanup_enabled'])) === 'true' ? 'true' : 'false';
+        $allow_html   = isset($_POST['allow_html_in_values']) && sanitize_text_field(wp_unslash($_POST['allow_html_in_values'])) === 'true' ? 'true' : 'false';
+
+        update_option('nhrotm_auto_cleanup_enabled', $auto_cleanup);
+        update_option('nhrotm_allow_html_in_values', $allow_html);
 
         wp_send_json_success('Settings updated');
     }

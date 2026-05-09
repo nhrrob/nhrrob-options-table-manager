@@ -79,4 +79,57 @@ class ValidationService
         // Default to text field sanitization for strings and other types
         return sanitize_text_field(wp_unslash($item));
     }
+
+    /**
+     * Recursively sanitize input data, preserving allowed HTML via wp_kses_post on string values.
+     * Used when the "Allow HTML in Option Values" setting is enabled.
+     *
+     * @param mixed $data Input data to sanitize
+     * @return mixed Sanitized data
+     */
+    public function sanitize_recursive_html($data)
+    {
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        if (!is_array($data)) {
+            if (is_numeric($data)) {
+                return is_float($data) ? floatval($data) : intval($data);
+            }
+            if (is_bool($data)) {
+                return (bool) $data;
+            }
+            return wp_kses_post(wp_unslash((string) $data));
+        }
+
+        $sanitized = [];
+
+        foreach ($data as $key => $value) {
+            $clean_key = \sanitize_key($key);
+
+            if ($clean_key === '') {
+                continue;
+            }
+
+            if (is_array($value) || is_object($value)) {
+                $sanitized[$clean_key] = $this->sanitize_recursive_html($value);
+                continue;
+            }
+
+            if (is_numeric($value)) {
+                $sanitized[$clean_key] = is_float($value) ? floatval($value) : intval($value);
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $sanitized[$clean_key] = (bool) $value;
+                continue;
+            }
+
+            $sanitized[$clean_key] = wp_kses_post(wp_unslash((string) $value));
+        }
+
+        return $sanitized;
+    }
 }

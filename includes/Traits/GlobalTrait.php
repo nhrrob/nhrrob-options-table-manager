@@ -70,6 +70,8 @@ trait GlobalTrait
                 'required' => 1,
                 'readonly' => 1,
                 'disabled' => 1,
+                'checked' => 1,
+                'min' => 1,
             ),
             'select' => array(
                 'class' => 1,
