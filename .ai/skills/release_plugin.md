@@ -30,18 +30,19 @@ git merge staging
    git add nhrrob-options-table-manager.php readme.txt
    git commit -m "Chore: Bump version to X.Y.Z"
    ```
-2. Push and create a Pull Request to `master`:
+2. Push and create a Pull Request to `main`:
    ```bash
    git push origin dev
    # Create PR via GitHub CLI or Web UI
    ```
 
-## Step 4: Finalize Release
-1. Approve and merge the PR into `master`.
-2. Checkout `master` and pull changes:
+## Step 4: Approval & Finalize Release
+1. **Wait for Approval**: Do NOT proceed until the USER has manually reviewed the PR and explicitly said "yes" or "proceed".
+2. **Merge PR**: Once approved, merge the PR into `main`.
+3. Checkout `main` and pull changes:
    ```bash
-   git checkout master
-   git pull origin master
+   git checkout main
+   git pull origin main
    ```
 3. Create a git tag for the version:
    ```bash
