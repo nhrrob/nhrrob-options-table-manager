@@ -554,6 +554,20 @@
                             </p>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="nhrotm_allow_html_toggle"><?php esc_html_e('Allow HTML in Option Values', 'nhrrob-options-table-manager'); ?></label>
+                        </th>
+                        <td>
+                            <label class="nhrotm-switch">
+                                <input type="checkbox" id="nhrotm_allow_html_toggle" <?php checked(get_option('nhrotm_allow_html_in_values', 'false'), 'true'); ?>>
+                                <span class="nhrotm-slider nhrotm-round"></span>
+                            </label>
+                            <p class="description">
+                                <?php esc_html_e('When enabled, HTML tags are preserved (using wp_kses_post) instead of being stripped when you add or edit an option value.', 'nhrrob-options-table-manager'); ?>
+                            </p>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

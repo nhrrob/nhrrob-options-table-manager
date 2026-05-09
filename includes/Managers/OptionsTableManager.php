@@ -240,7 +240,9 @@ class OptionsTableManager extends BaseTableManager
 
         // Sanitize and validate input data
         $option_name = isset($_POST['new_option_name']) ? sanitize_text_field(wp_unslash($_POST['new_option_name'])) : '';
-        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(sanitize_text_field(wp_unslash($_POST['new_option_value']))) : '';
+        $allow_html = get_option('nhrotm_allow_html_in_values', 'false') === 'true';
+        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(wp_unslash($_POST['new_option_value'])) : '';
+        $option_value = $allow_html ? wp_kses_post($option_value) : sanitize_text_field($option_value);
         $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field(wp_unslash($_POST['new_option_autoload'])) : 'no';
 
         if (empty($option_name)) {
@@ -292,7 +294,8 @@ class OptionsTableManager extends BaseTableManager
             throw new \Exception('This option is protected and cannot be edited');
         }
 
-        $raw_option_value = sanitize_text_field(wp_unslash($_POST['option_value']));
+        $allow_html = get_option('nhrotm_allow_html_in_values', 'false') === 'true';
+        $raw_option_value = wp_unslash($_POST['option_value']); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below based on setting
 
         try {
             $decoded_value = json_decode($raw_option_value, true);
@@ -303,7 +306,10 @@ class OptionsTableManager extends BaseTableManager
         $sanitized_value = '';
 
         if ($decoded_value !== null && json_last_error() === JSON_ERROR_NONE) {
-            $sanitized_value = $this->validation_service->sanitize_recursive($decoded_value);
+            // JSON value: sanitize each string leaf according to the HTML setting
+            $sanitized_value = $allow_html
+                ? $this->validation_service->sanitize_recursive_html($decoded_value)
+                : $this->validation_service->sanitize_recursive($decoded_value);
         } else if (is_serialized($raw_option_value)) {
             try {
                 $unserialized = unserialize($raw_option_value, ['allowed_classes' => false]);
@@ -316,9 +322,11 @@ class OptionsTableManager extends BaseTableManager
                     is_array($unserialized)
                     || is_object($unserialized)
                 ) {
-                    $sanitized_value = $this->validation_service->sanitize_recursive((array) $unserialized);
+                    $sanitized_value = $allow_html
+                        ? $this->validation_service->sanitize_recursive_html((array) $unserialized)
+                        : $this->validation_service->sanitize_recursive((array) $unserialized);
                 } else {
-                    $sanitized_value = sanitize_text_field($unserialized);
+                    $sanitized_value = $allow_html ? wp_kses_post($unserialized) : sanitize_text_field($unserialized);
                 }
 
             } catch (\Exception $e) {
@@ -327,7 +335,7 @@ class OptionsTableManager extends BaseTableManager
             }
         } else {
             // Plain string/value
-            $sanitized_value = sanitize_text_field($raw_option_value);
+            $sanitized_value = $allow_html ? wp_kses_post($raw_option_value) : sanitize_text_field($raw_option_value);
         }
 
         $autoload = isset($_POST['autoload']) ? sanitize_text_field(wp_unslash($_POST['autoload'])) : null;

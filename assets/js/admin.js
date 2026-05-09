@@ -978,45 +978,38 @@
             });
         });
 
-        // --- Settings / Auto Cleanup Feature ---
+        // --- Settings ---
 
+        // Initialize toggles from server-side values
+        $('#nhrotm_auto_cleanup_toggle').prop('checked', nhrotmOptionsTableManager.auto_cleanup_enabled === 'true');
+        $('#nhrotm_allow_html_toggle').prop('checked', nhrotmOptionsTableManager.allow_html_in_values === 'true');
 
-
-
-
-        // Initialize Toggle
-        if (nhrotmOptionsTableManager.auto_cleanup_enabled === 'true') {
-            $('#nhrotm_auto_cleanup_toggle').prop('checked', true);
-        } else {
-            $('#nhrotm_auto_cleanup_toggle').prop('checked', false);
-        }
-
-        // Toggle Change Handler
-        $('#nhrotm_auto_cleanup_toggle').on('change', function () {
-            const isEnabled = $(this).is(':checked');
-
+        function saveSettings() {
             $.ajax({
                 url: nhrotmOptionsTableManager.ajaxUrl,
-                method: "POST",
+                method: 'POST',
                 data: {
-                    action: "nhrotm_update_auto_cleanup_setting",
+                    action: 'nhrotm_save_settings',
                     nonce: nhrotmOptionsTableManager.nonce,
-                    enabled: isEnabled
+                    auto_cleanup_enabled: $('#nhrotm_auto_cleanup_toggle').is(':checked') ? 'true' : 'false',
+                    allow_html_in_values: $('#nhrotm_allow_html_toggle').is(':checked') ? 'true' : 'false',
                 },
                 success: function (response) {
                     if (response.success) {
-                        showToast("Settings updated.", "success");
+                        nhrotmOptionsTableManager.allow_html_in_values = $('#nhrotm_allow_html_toggle').is(':checked') ? 'true' : 'false';
+                        showToast('Settings updated.', 'success');
                     } else {
-                        showToast("Failed to update settings.", "error");
-                        // Revert toggle if failed
-                        $(this).prop('checked', !isEnabled);
+                        showToast('Failed to update settings.', 'error');
                     }
                 },
                 error: function () {
-                    showToast("System error.", "error");
-                    $(this).prop('checked', !isEnabled);
+                    showToast('System error.', 'error');
                 }
             });
+        }
+
+        $('#nhrotm_auto_cleanup_toggle, #nhrotm_allow_html_toggle').on('change', function () {
+            saveSettings();
         });
 
         // --- Orphan Scanner Feature ---
