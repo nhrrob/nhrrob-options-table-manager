@@ -4,7 +4,7 @@ Tags: wp_options, transients, usermeta, optimize, database-optimization
 Requires at least: 6.0  
 Tested up to: 6.9
 Requires PHP: 7.4  
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -88,6 +88,11 @@ Yes! We have an automated daily cleanup feature and a manual delete button.
 6. Options usage analytics
 
 == Changelog ==
+
+= 1.4.0 - 09/05/2026 =
+- Added: "Allow HTML in Option Values" setting to preserve HTML tags when adding or editing options
+- Improved: Unified AJAX handling for settings for better performance and maintainability
+- Security: Enhanced sanitization for option values using wp_kses_post when HTML mode is enabled
 
 = 1.3.0 - 30/01/2026 =
 - Added: Export/Import feature allowing JSON configuration portability
