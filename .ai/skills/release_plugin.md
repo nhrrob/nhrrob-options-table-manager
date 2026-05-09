@@ -2,6 +2,10 @@
 
 This skill outlines the standard operating procedure for releasing a new version of the **NHR Advanced Options Table Manager** plugin.
 
+## Versioning Definitions
+- **Major Release**: Increment the second digit (0.1.0 bump). Example: `1.4.0` -> `1.5.0`.
+- **Minor Release**: Increment the third digit (0.0.1 bump). Example: `1.4.0` -> `1.4.1`.
+
 ## Prerequisites
 - Ensure you are on the `dev` branch.
 - Ensure all tests pass.
