@@ -71,6 +71,7 @@ class HistoryManager
         }
 
         // Ensure table exists (lazy creation)
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time schema check, not a data query
         if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) {
             $this->create_table();
         }
