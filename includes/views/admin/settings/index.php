@@ -564,7 +564,7 @@
                                 <span class="nhrotm-slider nhrotm-round"></span>
                             </label>
                             <p class="description">
-                                <?php esc_html_e('When enabled, HTML is stored exactly as entered instead of being stripped when you add or edit an option value. Only enable this if you trust all users with manage_options access.', 'nhrrob-options-table-manager'); ?>
+                                <?php esc_html_e('When enabled, HTML is stored exactly as entered instead of being stripped when you add or edit an option value.', 'nhrrob-options-table-manager'); ?>
                             </p>
                         </td>
                     </tr>
