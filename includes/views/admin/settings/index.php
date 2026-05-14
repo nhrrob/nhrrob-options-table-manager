@@ -564,7 +564,7 @@
                                 <span class="nhrotm-slider nhrotm-round"></span>
                             </label>
                             <p class="description">
-                                <?php esc_html_e('When enabled, HTML tags are preserved (using wp_kses_post) instead of being stripped when you add or edit an option value.', 'nhrrob-options-table-manager'); ?>
+                                <?php esc_html_e('When enabled, HTML is stored exactly as entered instead of being stripped when you add or edit an option value.', 'nhrrob-options-table-manager'); ?>
                             </p>
                         </td>
                     </tr>

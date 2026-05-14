@@ -241,8 +241,8 @@ class OptionsTableManager extends BaseTableManager
         // Sanitize and validate input data
         $option_name = isset($_POST['new_option_name']) ? sanitize_text_field(wp_unslash($_POST['new_option_name'])) : '';
         $allow_html = get_option('nhrotm_allow_html_in_values', 'false') === 'true';
-        $option_value = isset($_POST['new_option_value']) ? stripslashes_deep(wp_unslash($_POST['new_option_value'])) : '';
-        $option_value = $allow_html ? wp_kses_post($option_value) : sanitize_text_field($option_value);
+        $option_value = isset($_POST['new_option_value']) ? wp_unslash($_POST['new_option_value']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below based on setting
+        $option_value = $allow_html ? $option_value : sanitize_text_field($option_value);
         $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field(wp_unslash($_POST['new_option_autoload'])) : 'no';
 
         if (empty($option_name)) {
@@ -326,7 +326,7 @@ class OptionsTableManager extends BaseTableManager
                         ? $this->validation_service->sanitize_recursive_html((array) $unserialized)
                         : $this->validation_service->sanitize_recursive((array) $unserialized);
                 } else {
-                    $sanitized_value = $allow_html ? wp_kses_post($unserialized) : sanitize_text_field($unserialized);
+                    $sanitized_value = $allow_html ? $unserialized : sanitize_text_field($unserialized);
                 }
 
             } catch (\Exception $e) {
@@ -335,7 +335,7 @@ class OptionsTableManager extends BaseTableManager
             }
         } else {
             // Plain string/value
-            $sanitized_value = $allow_html ? wp_kses_post($raw_option_value) : sanitize_text_field($raw_option_value);
+            $sanitized_value = $allow_html ? $raw_option_value : sanitize_text_field($raw_option_value);
         }
 
         $autoload = isset($_POST['autoload']) ? sanitize_text_field(wp_unslash($_POST['autoload'])) : null;

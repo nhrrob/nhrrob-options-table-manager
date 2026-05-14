@@ -100,7 +100,7 @@ class ValidationService
             if (is_bool($data)) {
                 return (bool) $data;
             }
-            return wp_kses_post(wp_unslash((string) $data));
+            return (string) $data;
         }
 
         $sanitized = [];
@@ -127,7 +127,7 @@ class ValidationService
                 continue;
             }
 
-            $sanitized[$clean_key] = wp_kses_post(wp_unslash((string) $value));
+            $sanitized[$clean_key] = (string) $value;
         }
 
         return $sanitized;

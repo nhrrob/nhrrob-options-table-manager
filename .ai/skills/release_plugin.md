@@ -6,6 +6,15 @@ This skill outlines the standard operating procedure for releasing a new version
 - **Major Release**: Increment the second digit (0.1.0 bump). Example: `1.4.0` -> `1.5.0`.
 - **Minor Release**: Increment the third digit (0.0.1 bump). Example: `1.4.0` -> `1.4.1`.
 
+## Step 0: Sync Local Branches
+Ensure all local branches are up to date with the remote before starting.
+```bash
+git checkout main && git pull origin main
+git checkout dev && git pull origin dev
+git checkout staging && git pull origin staging
+git checkout dev
+```
+
 ## Prerequisites
 - Ensure you are on the `dev` branch.
 - Ensure all tests pass.
