@@ -1,0 +1,1142 @@
+<title>Options Table Manager 2.0 — UI Mockup</title>
+
+<style>
+/* ============================================================
+   NHR Options Manager 2.0 — design mockup
+   Tokens mirror .ai/DESIGN.md §9/§12/§13 exactly. All colour is
+   CSS custom properties (zero bundle cost). Faithful to wp-admin
+   density + system font stack; extended here with dark theme
+   and the two PRO surfaces (tags + Upgrade screen).
+   ============================================================ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Brand — violet/indigo */
+  --nhrotm-primary:        #6d5efc;
+  --nhrotm-primary-600:    #5b4ce6;
+  --nhrotm-gradient:       linear-gradient(135deg, #6d5efc 0%, #9b5cff 100%);
+  --nhrotm-gradient-soft:  linear-gradient(135deg, #eef0ff 0%, #f6eeff 100%);
+
+  /* Status */
+  --nhrotm-success:        #12b76a;
+  --nhrotm-warning:        #f79009;
+  --nhrotm-danger:         #f04438;
+  --nhrotm-info:           #2e90fa;
+
+  /* Per-card accent tints */
+  --nhrotm-card-autoload:   #eef4ff;
+  --nhrotm-card-options:    #f4f0ff;
+  --nhrotm-card-transients: #fff4ec;
+  --nhrotm-card-backup:     #ecfdf3;
+
+  /* PRO */
+  --nhrotm-pro:            #f4f0ff;
+  --nhrotm-pro-text:       #6d5efc;
+  --nhrotm-pro-border:     #e4dcff;
+
+  /* Neutrals — grey biased toward the violet accent */
+  --nhrotm-surface:        #ffffff;
+  --nhrotm-bg:             #f7f8fc;
+  --nhrotm-border:         #eaecf5;
+  --nhrotm-border-strong:  #dfe1ee;
+  --nhrotm-text:           #101828;
+  --nhrotm-text-muted:     #667085;
+  --nhrotm-radius:         12px;
+  --nhrotm-shadow:         0 1px 3px rgba(16,24,40,.08), 0 1px 2px rgba(16,24,40,.06);
+  --nhrotm-shadow-lg:      0 12px 32px rgba(16,24,40,.14);
+
+  --nhrotm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --nhrotm-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nhrotm-gradient-soft:  linear-gradient(135deg, #242a4d 0%, #2c2350 100%);
+    --nhrotm-card-autoload:   rgba(46,144,250,.14);
+    --nhrotm-card-options:    rgba(109,94,252,.16);
+    --nhrotm-card-transients: rgba(247,144,9,.14);
+    --nhrotm-card-backup:     rgba(18,183,106,.14);
+    --nhrotm-pro:            rgba(109,94,252,.16);
+    --nhrotm-pro-text:       #b9adff;
+    --nhrotm-pro-border:     rgba(109,94,252,.35);
+    --nhrotm-surface:        #1b1e2b;
+    --nhrotm-bg:             #14161f;
+    --nhrotm-border:         #2a2e3f;
+    --nhrotm-border-strong:  #363b50;
+    --nhrotm-text:           #e7e9f2;
+    --nhrotm-text-muted:     #9aa1b8;
+    --nhrotm-shadow:         0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+    --nhrotm-shadow-lg:      0 14px 38px rgba(0,0,0,.6);
+  }
+}
+/* Explicit toggle must win in both directions */
+:root[data-theme="dark"] {
+  --nhrotm-gradient-soft:  linear-gradient(135deg, #242a4d 0%, #2c2350 100%);
+  --nhrotm-card-autoload:   rgba(46,144,250,.14);
+  --nhrotm-card-options:    rgba(109,94,252,.16);
+  --nhrotm-card-transients: rgba(247,144,9,.14);
+  --nhrotm-card-backup:     rgba(18,183,106,.14);
+  --nhrotm-pro:            rgba(109,94,252,.16);
+  --nhrotm-pro-text:       #b9adff;
+  --nhrotm-pro-border:     rgba(109,94,252,.35);
+  --nhrotm-surface:        #1b1e2b;
+  --nhrotm-bg:             #14161f;
+  --nhrotm-border:         #2a2e3f;
+  --nhrotm-border-strong:  #363b50;
+  --nhrotm-text:           #e7e9f2;
+  --nhrotm-text-muted:     #9aa1b8;
+  --nhrotm-shadow:         0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+  --nhrotm-shadow-lg:      0 14px 38px rgba(0,0,0,.6);
+}
+:root[data-theme="light"] {
+  --nhrotm-gradient-soft:  linear-gradient(135deg, #eef0ff 0%, #f6eeff 100%);
+  --nhrotm-card-autoload:   #eef4ff;
+  --nhrotm-card-options:    #f4f0ff;
+  --nhrotm-card-transients: #fff4ec;
+  --nhrotm-card-backup:     #ecfdf3;
+  --nhrotm-pro:            #f4f0ff;
+  --nhrotm-pro-text:       #6d5efc;
+  --nhrotm-pro-border:     #e4dcff;
+  --nhrotm-surface:        #ffffff;
+  --nhrotm-bg:             #f7f8fc;
+  --nhrotm-border:         #eaecf5;
+  --nhrotm-border-strong:  #dfe1ee;
+  --nhrotm-text:           #101828;
+  --nhrotm-text-muted:     #667085;
+  --nhrotm-shadow:         0 1px 3px rgba(16,24,40,.08), 0 1px 2px rgba(16,24,40,.06);
+  --nhrotm-shadow-lg:      0 12px 32px rgba(16,24,40,.14);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--nhrotm-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--nhrotm-text);
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(109,94,252,.10), transparent 60%),
+    var(--nhrotm-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Page frame (mockup chrome, not part of the plugin) --- */
+.frame {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+.frame__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  margin: 0 4px 18px;
+  color: var(--nhrotm-text-muted);
+  font-size: 12.5px;
+}
+.frame__caption strong { color: var(--nhrotm-text); font-weight: 600; font-size: 13.5px; }
+.frame__caption code {
+  font-family: var(--nhrotm-mono);
+  font-size: 11.5px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--nhrotm-surface);
+  border: 1px solid var(--nhrotm-border);
+}
+
+/* ============================================================
+   App shell
+   ============================================================ */
+.nhrotm-app {
+  background: var(--nhrotm-bg);
+  border: 1px solid var(--nhrotm-border);
+  border-radius: var(--nhrotm-radius);
+  overflow: hidden;
+  box-shadow: var(--nhrotm-shadow-lg);
+}
+
+.nhrotm-appbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--nhrotm-gradient);
+  padding: 15px 22px;
+  color: #fff;
+}
+.nhrotm-appbar__mark {
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: rgba(255,255,255,.18);
+  flex: 0 0 auto;
+}
+.nhrotm-appbar__title { font-size: 17px; font-weight: 600; letter-spacing: .2px; }
+.nhrotm-appbar__spacer { flex: 1; }
+.nhrotm-appbar__btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 0; cursor: pointer;
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  padding: 7px 12px;
+  border-radius: 9px;
+  font: inherit; font-size: 13px; font-weight: 500;
+  transition: background 150ms;
+}
+.nhrotm-appbar__btn:hover { background: rgba(255,255,255,.28); }
+
+.nhrotm-appbar__collapse {
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border: 0; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,.16); color: #fff;
+  transition: background 150ms;
+  flex: 0 0 auto;
+}
+.nhrotm-appbar__collapse:hover { background: rgba(255,255,255,.28); }
+
+.nhrotm-body { display: flex; min-height: 620px; background: var(--nhrotm-bg); }
+
+/* --- Left nav --- */
+.nhrotm-nav {
+  flex: 0 0 224px;
+  display: flex;
+  flex-direction: column;
+  background: var(--nhrotm-surface);
+  border-right: 1px solid var(--nhrotm-border);
+  padding: 14px 12px;
+  gap: 3px;
+  transition: flex-basis 180ms ease;
+  overflow: hidden;
+}
+
+/* --- Collapsed: nav shrinks to icons so the content (table) gets full width --- */
+.nhrotm-app.is-collapsed .nhrotm-nav { flex-basis: 60px; }
+.nhrotm-app.is-collapsed .nhrotm-nav__label { display: none; }
+.nhrotm-app.is-collapsed .nhrotm-nav__item { justify-content: center; padding-left: 0; padding-right: 0; }
+.nhrotm-nav__item {
+  display: flex; align-items: center; gap: 11px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0; border-radius: 10px;
+  background: transparent;
+  color: var(--nhrotm-text-muted);
+  font: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; text-align: left;
+  transition: background 150ms, color 150ms;
+}
+.nhrotm-nav__item:hover { background: var(--nhrotm-gradient-soft); color: var(--nhrotm-primary-600); }
+.nhrotm-nav__item.is-active {
+  background: var(--nhrotm-gradient);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(109,94,252,.35);
+}
+.nhrotm-nav__item.is-active .nhrotm-nav__ico { opacity: 1; }
+.nhrotm-nav__ico { width: 18px; height: 18px; flex: 0 0 auto; opacity: .85; }
+.nhrotm-nav__sep {
+  height: 1px; margin: 10px 8px; background: var(--nhrotm-border);
+}
+.nhrotm-nav__spacer { flex: 1; }
+/* de-emphasised Upgrade item */
+.nhrotm-nav__item--upgrade { color: var(--nhrotm-text-muted); font-weight: 500; }
+.nhrotm-nav__item--upgrade:hover { background: var(--nhrotm-pro); color: var(--nhrotm-pro-text); }
+.nhrotm-nav__item--upgrade.is-active { background: var(--nhrotm-pro); color: var(--nhrotm-pro-text); box-shadow: none; }
+
+.nhrotm-content { flex: 1; padding: 24px; min-width: 0; }
+
+/* --- Screen switching --- */
+.screen { display: none; }
+.screen.is-active { display: block; animation: fade 180ms ease-out; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.screen__head { margin: 0 0 6px; }
+.screen__title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.2px; }
+.screen__lede { margin: 4px 0 22px; color: var(--nhrotm-text-muted); font-size: 13.5px; }
+
+/* ============================================================
+   Panels / cards / buttons / fields
+   ============================================================ */
+.panel {
+  background: var(--nhrotm-surface);
+  border: 1px solid var(--nhrotm-border);
+  border-radius: var(--nhrotm-radius);
+  box-shadow: var(--nhrotm-shadow);
+  margin-bottom: 20px;
+}
+.panel__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 15px 20px; border-bottom: 1px solid var(--nhrotm-border);
+}
+.panel__title { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+.panel__meta { font-size: 12.5px; color: var(--nhrotm-text-muted); }
+.panel__body { padding: 20px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 15px;
+  border: 1px solid transparent; border-radius: 10px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: transform 150ms, box-shadow 150ms, background 150ms, border-color 150ms;
+}
+.btn--primary { background: var(--nhrotm-gradient); color: #fff; }
+.btn--primary:hover { box-shadow: 0 6px 16px rgba(109,94,252,.4); transform: translateY(-1px); }
+.btn--soft { background: var(--nhrotm-gradient-soft); color: var(--nhrotm-primary-600); }
+.btn--soft:hover { transform: translateY(-1px); }
+.btn--ghost { background: transparent; border-color: var(--nhrotm-border-strong); color: var(--nhrotm-text); }
+.btn--ghost:hover { border-color: var(--nhrotm-primary); color: var(--nhrotm-primary-600); }
+.btn--danger { background: transparent; border-color: var(--nhrotm-danger); color: var(--nhrotm-danger); }
+.btn--danger:hover { background: var(--nhrotm-danger); color: #fff; }
+.btn--sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+
+.pro-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px 2px 7px;
+  border-radius: 20px;
+  background: var(--nhrotm-pro);
+  border: 1px solid var(--nhrotm-pro-border);
+  color: var(--nhrotm-pro-text);
+  font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  cursor: pointer;
+  font-family: var(--nhrotm-sans);
+}
+.pro-tag::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pro-tag:hover { filter: brightness(.97); }
+
+/* ============================================================
+   Dashboard
+   ============================================================ */
+.health { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+.gauge { position: relative; width: 132px; height: 132px; flex: 0 0 auto; }
+.gauge__value {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.gauge__num { font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+.gauge__den { font-size: 12px; color: var(--nhrotm-text-muted); margin-top: 2px; }
+.health__copy h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+.health__copy p { margin: 0; color: var(--nhrotm-text-muted); font-size: 13.5px; }
+.health__stats { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; }
+.health__stats b { font-weight: 600; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px; }
+.card {
+  display: flex; flex-direction: column;
+  padding: 18px;
+  border-radius: var(--nhrotm-radius);
+  background: var(--nhrotm-surface);
+  border: 1px solid var(--nhrotm-border);
+  box-shadow: var(--nhrotm-shadow);
+}
+.card--autoload   { background: var(--nhrotm-card-autoload); border-color: transparent; }
+.card--options    { background: var(--nhrotm-card-options); border-color: transparent; }
+.card--transients { background: var(--nhrotm-card-transients); border-color: transparent; }
+.card--backup     { background: var(--nhrotm-card-backup); border-color: transparent; }
+.card__top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.card__ico { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: rgba(255,255,255,.65); }
+:root[data-theme="dark"] .card__ico, .card__ico { }
+@media (prefers-color-scheme: dark) { .card__ico { background: rgba(255,255,255,.08); } }
+:root[data-theme="dark"] .card__ico { background: rgba(255,255,255,.08); }
+:root[data-theme="light"] .card__ico { background: rgba(255,255,255,.65); }
+.card__label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--nhrotm-text-muted); }
+.card__metric { font-size: 24px; font-weight: 800; line-height: 1.1; letter-spacing: -.5px; }
+.card__sub { font-size: 12.5px; color: var(--nhrotm-text-muted); margin: 3px 0 14px; }
+.card__action { margin-top: auto; }
+
+.recs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.rec {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 13px 15px;
+  border-radius: 10px;
+  background: var(--nhrotm-bg);
+  border-left: 4px solid var(--nhrotm-text-muted);
+}
+.rec--danger  { border-left-color: var(--nhrotm-danger); }
+.rec--warning { border-left-color: var(--nhrotm-warning); }
+.rec--info    { border-left-color: var(--nhrotm-info); }
+.rec--success { border-left-color: var(--nhrotm-success); }
+.rec__text { font-size: 13.5px; display: flex; align-items: center; gap: 10px; }
+.rec__sev { width: 20px; height: 20px; flex: 0 0 auto; }
+
+.activity { list-style: none; margin: 0; padding: 0; }
+.activity li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--nhrotm-border);
+  font-size: 13.5px;
+}
+.activity li:last-child { border-bottom: 0; }
+.activity__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--nhrotm-primary); flex: 0 0 auto; }
+.activity__when { margin-left: auto; color: var(--nhrotm-text-muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.activity code { font-family: var(--nhrotm-mono); font-size: 12px; }
+
+/* ============================================================
+   Browse
+   ============================================================ */
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.toolbar__left, .toolbar__right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.segmented { display: inline-flex; background: var(--nhrotm-bg); border: 1px solid var(--nhrotm-border); border-radius: 10px; padding: 3px; }
+.segmented__item {
+  border: 0; background: transparent;
+  padding: 7px 15px; border-radius: 8px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--nhrotm-text-muted); cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+.segmented__item.is-active { background: var(--nhrotm-gradient); color: #fff; }
+.search {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--nhrotm-border-strong); border-radius: 9px;
+  background: var(--nhrotm-surface);
+  min-width: 230px;
+}
+.search input { border: 0; outline: 0; background: transparent; font: inherit; font-size: 13px; color: var(--nhrotm-text); width: 100%; }
+.search svg { color: var(--nhrotm-text-muted); flex: 0 0 auto; }
+
+.grid-wrap { border: 1px solid var(--nhrotm-border); border-radius: var(--nhrotm-radius); overflow: hidden; background: var(--nhrotm-surface); box-shadow: var(--nhrotm-shadow); }
+.grid-scroll { overflow-x: auto; }
+.grid { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 680px; table-layout: fixed; }
+.grid th, .grid td { text-align: left; padding: 9px 16px; border-bottom: 1px solid var(--nhrotm-border); vertical-align: middle; }
+.grid thead th {
+  color: var(--nhrotm-text-muted); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .5px;
+  background: var(--nhrotm-bg);
+  height: 40px;
+}
+/* fixed column widths — value flexes and truncates, everything else stays put */
+.grid col.c-check { width: 40px; }
+.grid col.c-name  { width: 24%; }
+.grid col.c-val   { width: auto; }
+.grid col.c-size  { width: 84px; }
+.grid col.c-auto  { width: 128px; }
+.grid col.c-act   { width: 88px; }
+.grid tbody tr:last-child td { border-bottom: 0; }
+.grid tbody tr:hover { background: var(--nhrotm-gradient-soft); }
+.grid tbody tr:hover .grid__actions { opacity: 1; }
+.grid__name {
+  font-family: var(--nhrotm-mono); font-weight: 600; font-size: 12.5px;
+  color: var(--nhrotm-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.grid__tag { margin-left: 7px; font-family: var(--nhrotm-sans); font-weight: 500; font-size: 10px; letter-spacing: .3px; text-transform: uppercase; padding: 2px 7px; }
+.grid__tag.badge::before { display: none; }
+.grid__preview {
+  color: var(--nhrotm-text-muted); font-family: var(--nhrotm-mono); font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.grid__size { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--nhrotm-text-muted); text-align: right; }
+.grid__actions { display: flex; gap: 4px; justify-content: flex-end; opacity: .55; transition: opacity 120ms; }
+.iconbtn { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--nhrotm-text-muted); cursor: pointer; transition: color 150ms, background 150ms, border-color 150ms; }
+.iconbtn:hover { color: var(--nhrotm-primary); background: var(--nhrotm-surface); border-color: var(--nhrotm-border); }
+.iconbtn--danger:hover { color: var(--nhrotm-danger); border-color: var(--nhrotm-danger); }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge--info { background: var(--nhrotm-card-autoload); color: var(--nhrotm-info); }
+.badge--success { background: var(--nhrotm-card-backup); color: var(--nhrotm-success); }
+.badge--warning { background: var(--nhrotm-card-transients); color: var(--nhrotm-warning); }
+.badge--muted { background: var(--nhrotm-bg); color: var(--nhrotm-text-muted); }
+.badge--muted::before { background: currentColor; }
+.badge__link { margin-left: 6px; font-size: 11px; font-weight: 600; color: var(--nhrotm-primary); text-decoration: none; }
+
+.pager { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+.pager__pos { font-size: 13px; color: var(--nhrotm-text-muted); font-variant-numeric: tabular-nums; }
+.pager__nav { display: flex; align-items: center; gap: 4px; }
+.pager__pg { min-width: 32px; height: 32px; padding: 0 8px; display: grid; place-items: center; border: 1px solid var(--nhrotm-border); border-radius: 8px; background: var(--nhrotm-surface); color: var(--nhrotm-text); cursor: pointer; font: inherit; font-size: 13px; }
+.pager__pg.is-active { background: var(--nhrotm-gradient); color: #fff; border-color: transparent; }
+.pager__pg:disabled { opacity: .45; cursor: default; }
+
+/* ============================================================
+   Optimize
+   ============================================================ */
+.budget { margin-bottom: 6px; }
+.budget__meta { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.budget__val { font-size: 15px; font-weight: 700; }
+.budget__pct { font-size: 12.5px; color: var(--nhrotm-text-muted); }
+.budget__bar { height: 10px; border-radius: 20px; background: var(--nhrotm-bg); overflow: hidden; }
+.budget__fill { height: 100%; width: 60%; border-radius: 20px; background: linear-gradient(90deg, var(--nhrotm-success), var(--nhrotm-warning)); }
+
+.oplist { list-style: none; margin: 14px 0 0; padding: 0; }
+.oprow { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--nhrotm-border); }
+.oprow:last-child { border-bottom: 0; }
+.oprow__name { flex: 1; font-family: var(--nhrotm-mono); font-size: 12.5px; font-weight: 600; word-break: break-all; }
+.oprow__src { color: var(--nhrotm-text-muted); font-style: italic; font-weight: 400; font-family: var(--nhrotm-sans); }
+.oprow__size { color: var(--nhrotm-text-muted); font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.radio-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.radio { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; cursor: pointer; }
+.radio input { accent-color: var(--nhrotm-primary); }
+.hint { display: flex; align-items: center; gap: 7px; color: var(--nhrotm-text-muted); font-size: 12.5px; }
+
+/* ============================================================
+   Tools & Settings
+   ============================================================ */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+.field__label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; }
+.field__hint { display: block; font-size: 12px; color: var(--nhrotm-text-muted); margin-top: 6px; }
+.input, .select {
+  width: 100%; max-width: 340px;
+  padding: 9px 12px;
+  border: 1px solid var(--nhrotm-border-strong); border-radius: 9px;
+  background: var(--nhrotm-surface); color: var(--nhrotm-text);
+  font: inherit; font-size: 13.5px;
+}
+.input:focus, .select:focus { outline: 2px solid var(--nhrotm-primary); outline-offset: 1px; border-color: var(--nhrotm-primary); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.snapshot-note { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--nhrotm-success); }
+
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--nhrotm-border); }
+.switch:last-child { border-bottom: 0; }
+.switch__label { font-size: 13.5px; font-weight: 600; }
+.switch__desc { font-size: 12.5px; color: var(--nhrotm-text-muted); margin-top: 2px; }
+.toggle { position: relative; width: 42px; height: 24px; border-radius: 20px; background: var(--nhrotm-border-strong); border: 0; cursor: pointer; transition: background 150ms; flex: 0 0 auto; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 150ms; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.toggle.is-on { background: var(--nhrotm-primary); }
+.toggle.is-on::after { transform: translateX(18px); }
+
+/* Backups list */
+.bk { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--nhrotm-border); }
+.bk:last-child { border-bottom: 0; }
+.bk__ico { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--nhrotm-card-backup); color: var(--nhrotm-success); flex: 0 0 auto; }
+.bk__name { font-weight: 600; font-size: 13.5px; }
+.bk__meta { font-size: 12px; color: var(--nhrotm-text-muted); font-variant-numeric: tabular-nums; }
+.bk__actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* ============================================================
+   Upgrade screen
+   ============================================================ */
+.upgrade__hero {
+  border-radius: var(--nhrotm-radius);
+  background: var(--nhrotm-gradient-soft);
+  border: 1px solid var(--nhrotm-pro-border);
+  padding: 26px 28px;
+  margin-bottom: 20px;
+}
+.upgrade__eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--nhrotm-pro-text); }
+.upgrade__title { margin: 8px 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -.3px; }
+.upgrade__lede { margin: 0; color: var(--nhrotm-text-muted); font-size: 14px; max-width: 60ch; }
+.compare { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.compare th, .compare td { padding: 13px 16px; border-bottom: 1px solid var(--nhrotm-border); text-align: left; }
+.compare thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--nhrotm-text-muted); }
+.compare col.c-pro, .compare th.c-pro, .compare td.c-pro { background: var(--nhrotm-pro); }
+.compare td.c-cap { font-weight: 600; }
+.compare .yes { color: var(--nhrotm-success); font-weight: 700; }
+.compare .no  { color: var(--nhrotm-text-muted); }
+.compare .plus { color: var(--nhrotm-pro-text); font-weight: 600; }
+.upgrade__cta { display: flex; align-items: center; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
+.upgrade__fine { font-size: 12px; color: var(--nhrotm-text-muted); }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 900px) {
+  .nhrotm-nav { flex-basis: 62px; }
+  .nhrotm-nav__label { display: none; }
+  .nhrotm-nav__item { justify-content: center; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="frame">
+  <div class="frame__caption">
+    <strong>Options Table Manager 2.0</strong>
+    <span>Free-core UI mockup · faithful to <code>.ai/DESIGN.md</code> tokens</span>
+    <span>·&nbsp; Click the left nav to move between sections; use&nbsp;<code>☾</code>&nbsp;to preview dark theme.</span>
+  </div>
+
+  <div class="nhrotm-app" id="app">
+    <!-- App bar (gradient hero) -->
+    <header class="nhrotm-appbar">
+      <button class="nhrotm-appbar__collapse" id="collapseBtn" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M14 9l2 3-2 3"/></svg>
+      </button>
+      <span class="nhrotm-appbar__mark" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+      </span>
+      <span class="nhrotm-appbar__title">Options Table Manager</span>
+      <span class="nhrotm-appbar__spacer"></span>
+      <button class="nhrotm-appbar__btn" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        Refresh
+      </button>
+      <button class="nhrotm-appbar__btn" type="button" id="themeBtn" aria-label="Toggle dark theme">
+        <span id="themeIco">☾</span>
+      </button>
+    </header>
+
+    <div class="nhrotm-body">
+      <!-- Left nav -->
+      <nav class="nhrotm-nav" aria-label="Sections">
+        <button class="nhrotm-nav__item is-active" data-screen="dashboard" type="button">
+          <svg class="nhrotm-nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          <span class="nhrotm-nav__label">Dashboard</span>
+        </button>
+        <button class="nhrotm-nav__item" data-screen="browse" type="button">
+          <svg class="nhrotm-nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg>
+          <span class="nhrotm-nav__label">Browse</span>
+        </button>
+        <button class="nhrotm-nav__item" data-screen="optimize" type="button">
+          <svg class="nhrotm-nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+          <span class="nhrotm-nav__label">Optimize</span>
+        </button>
+        <button class="nhrotm-nav__item" data-screen="tools" type="button">
+          <svg class="nhrotm-nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5 5L3 18l3 3 6.7-6.7a4 4 0 0 0 5-5l-2.8 2.8-2.1-2.1z"/></svg>
+          <span class="nhrotm-nav__label">Tools</span>
+        </button>
+        <button class="nhrotm-nav__item" data-screen="integrations" type="button">
+          <svg class="nhrotm-nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8 3 12l4 4M17 8l4 4-4 4M14 4l-4 16"/></svg>
+          <span class="nhrotm-nav__label">Integrations</span>
+        </button>
+        <button class="nhrotm-nav__item" data-screen="settings" type="button">
+          <svg class="nhrotm-nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.6a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          <span class="nhrotm-nav__label">Settings</span>
+        </button>
+
+        <div class="nhrotm-nav__spacer"></div>
+        <div class="nhrotm-nav__sep" role="separator"></div>
+        <button class="nhrotm-nav__item nhrotm-nav__item--upgrade" data-screen="upgrade" type="button">
+          <svg class="nhrotm-nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 9v12h16V9z"/><path d="M9 21v-6h6v6"/></svg>
+          <span class="nhrotm-nav__label">Upgrade</span>
+        </button>
+      </nav>
+
+      <!-- Content -->
+      <main class="nhrotm-content">
+
+        <!-- ============ DASHBOARD ============ -->
+        <section class="screen is-active" id="screen-dashboard">
+          <div class="screen__head">
+            <h1 class="screen__title">Dashboard</h1>
+            <p class="screen__lede">Is your options table healthy — and what should you do next?</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel__body">
+              <div class="health">
+                <div class="gauge">
+                  <svg width="132" height="132" viewBox="0 0 132 132">
+                    <circle cx="66" cy="66" r="52" fill="none" stroke="var(--nhrotm-border)" stroke-width="12"/>
+                    <circle cx="66" cy="66" r="52" fill="none" stroke="var(--nhrotm-success)" stroke-width="12"
+                            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="58.8"
+                            transform="rotate(-90 66 66)"/>
+                  </svg>
+                  <div class="gauge__value">
+                    <span class="gauge__num">82</span>
+                    <span class="gauge__den">/ 100</span>
+                  </div>
+                </div>
+                <div class="health__copy">
+                  <h3>Good — a few easy wins available.</h3>
+                  <p>Your database is in decent shape. Clearing expired transients and reviewing unused autoloads will push you into the green.</p>
+                  <div class="health__stats">
+                    <span><b>0.6 MB</b> autoload</span>
+                    <span><b>41</b> expired transients</span>
+                    <span><b>7</b> orphans</span>
+                    <span>Last backup <b>2h ago</b></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cards">
+            <div class="card card--autoload">
+              <div class="card__top">
+                <span class="card__ico" style="color:var(--nhrotm-info)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></span>
+                <span class="card__label">Autoload</span>
+              </div>
+              <div class="card__metric">0.6 MB</div>
+              <div class="card__sub">312 autoloaded options</div>
+              <div class="card__action"><button class="btn btn--soft btn--sm" data-goto="optimize" type="button">Review →</button></div>
+            </div>
+            <div class="card card--options">
+              <div class="card__top">
+                <span class="card__ico" style="color:var(--nhrotm-primary)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/></svg></span>
+                <span class="card__label">Options</span>
+              </div>
+              <div class="card__metric">1,204</div>
+              <div class="card__sub">18 look orphaned</div>
+              <div class="card__action"><button class="btn btn--soft btn--sm" data-goto="optimize" type="button">Scan →</button></div>
+            </div>
+            <div class="card card--transients">
+              <div class="card__top">
+                <span class="card__ico" style="color:var(--nhrotm-warning)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                <span class="card__label">Transients</span>
+              </div>
+              <div class="card__metric">128</div>
+              <div class="card__sub">41 expired · 220 KB</div>
+              <div class="card__action"><button class="btn btn--soft btn--sm" data-goto="optimize" type="button">Clean 41 →</button></div>
+            </div>
+            <div class="card card--backup">
+              <div class="card__top">
+                <span class="card__ico" style="color:var(--nhrotm-success)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M12 7v5l3 2"/></svg></span>
+                <span class="card__label">Last backup</span>
+              </div>
+              <div class="card__metric">2h ago</div>
+              <div class="card__sub">6 snapshots saved</div>
+              <div class="card__action"><button class="btn btn--soft btn--sm" data-goto="tools" type="button">New →</button></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Recommendations</h2><span class="panel__meta">3 items</span></div>
+            <div class="panel__body">
+              <ul class="recs">
+                <li class="rec rec--warning">
+                  <span class="rec__text">
+                    <svg class="rec__sev" style="color:var(--nhrotm-warning)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+                    41 expired transients are taking up 220&nbsp;KB.
+                  </span>
+                  <button class="btn btn--primary btn--sm" data-goto="optimize" type="button">Delete expired</button>
+                </li>
+                <li class="rec rec--info">
+                  <span class="rec__text">
+                    <svg class="rec__sev" style="color:var(--nhrotm-info)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+                    12 autoloaded options were never used across 340 front-end loads.
+                  </span>
+                  <button class="btn btn--soft btn--sm" data-goto="optimize" type="button">Review in Optimize</button>
+                </li>
+                <li class="rec rec--info">
+                  <span class="rec__text">
+                    <svg class="rec__sev" style="color:var(--nhrotm-text-muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+                    7 options look like leftovers from removed plugins.
+                  </span>
+                  <button class="btn btn--soft btn--sm" data-goto="optimize" type="button">Scan orphans</button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Recent activity</h2><a class="badge__link" href="#" onclick="return false">View all →</a></div>
+            <div class="panel__body" style="padding-top:6px;padding-bottom:6px">
+              <ul class="activity">
+                <li><span class="activity__dot"></span> Restored option <code>siteurl</code> to previous value <span class="activity__when">2h ago</span></li>
+                <li><span class="activity__dot"></span> Auto snapshot taken before Import <span class="activity__when">1d ago</span></li>
+                <li><span class="activity__dot"></span> Deleted 63 expired transients <span class="activity__when">2d ago</span></li>
+                <li><span class="activity__dot"></span> Disabled autoload on <code>rewrite_rules</code> <span class="activity__when">3d ago</span></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ BROWSE ============ -->
+        <section class="screen" id="screen-browse">
+          <div class="screen__head">
+            <h1 class="screen__title">Browse</h1>
+            <p class="screen__lede">One data browser for options, user meta and transients. Autoload is managed in Optimize.</p>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar__left">
+              <div class="segmented" role="tablist" aria-label="Data type">
+                <button class="segmented__item is-active" type="button">Options</button>
+                <button class="segmented__item" type="button">Usermeta</button>
+                <button class="segmented__item" type="button">Transients</button>
+              </div>
+              <div class="search">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" placeholder="Search option names…" aria-label="Search">
+              </div>
+            </div>
+            <div class="toolbar__right">
+              <button class="btn btn--ghost btn--sm" type="button">Bulk ▾</button>
+              <button class="btn btn--primary btn--sm" type="button">+ Add option</button>
+            </div>
+          </div>
+
+          <div class="grid-wrap">
+            <div class="grid-scroll">
+              <table class="grid">
+                <colgroup>
+                  <col class="c-check"><col class="c-name"><col class="c-val"><col class="c-size"><col class="c-auto"><col class="c-act">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" aria-label="Select all"></th>
+                    <th>Name</th><th>Value</th><th style="text-align:right">Size</th><th>Autoload</th><th style="text-align:right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select"></td>
+                    <td class="grid__name" title="option_optimizer">option_optimizer</td>
+                    <td class="grid__preview" title='a:4:{s:17:"starting_point_kb";d:53.412109375;s:18:"starting_point_num";s:3:"166";…}'>a:4:{s:17:"starting_point_kb";d:53.412109375;s:18:"starting_point_num";…</td>
+                    <td class="grid__size">15 KB</td>
+                    <td><span class="badge badge--success">on</span></td>
+                    <td class="grid__actions"><button class="iconbtn" aria-label="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="iconbtn iconbtn--danger" aria-label="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td class="grid__name" title="rewrite_rules">rewrite_rules<span class="grid__tag badge badge--muted">protected</span></td>
+                    <td class="grid__preview" title='a:94:{s:11:"^wp-json/?$";s:22:"index.php?rest_route=/";…}'>a:94:{s:11:"^wp-json/?$";s:22:"index.php?rest_route=/";…</td>
+                    <td class="grid__size">8 KB</td>
+                    <td><span class="badge badge--success">on</span></td>
+                    <td class="grid__actions"><button class="iconbtn" aria-label="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select"></td>
+                    <td class="grid__name" title="okkk">okkk</td>
+                    <td class="grid__preview" title='<style type="text/css"> <!-- /* GLOBAL RESET */ … -->'>&lt;style type="text/css"&gt; &lt;!-- /* ———— GLOBAL RES…</td>
+                    <td class="grid__size">4 KB</td>
+                    <td><span class="badge badge--success">on</span></td>
+                    <td class="grid__actions"><button class="iconbtn" aria-label="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="iconbtn iconbtn--danger" aria-label="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td class="grid__name" title="wp_user_roles">wp_user_roles<span class="grid__tag badge badge--muted">protected</span></td>
+                    <td class="grid__preview" title='a:5:{s:13:"administrator";a:2:{s:4:"name";s:13:"Administrator";…}'>a:5:{s:13:"administrator";a:2:{s:4:"name";s:13:"Administrator";…</td>
+                    <td class="grid__size">3 KB</td>
+                    <td><span class="badge badge--success">on</span></td>
+                    <td class="grid__actions"><button class="iconbtn" aria-label="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td class="grid__name" title="cron">cron<span class="grid__tag badge badge--muted">protected</span></td>
+                    <td class="grid__preview" title='a:14:{i:1785903671;a:2:{s:34:"wp_privacy_delete_old_export_files";…}'>a:14:{i:1785903671;a:2:{s:34:"wp_privacy_delete_old_export_files";…</td>
+                    <td class="grid__size">3 KB</td>
+                    <td><span class="badge badge--info">on</span></td>
+                    <td class="grid__actions"><button class="iconbtn" aria-label="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select"></td>
+                    <td class="grid__name" title="nhrotm_used_autoload_options">nhrotm_used_autoload_options</td>
+                    <td class="grid__preview" title='a:88:{s:34:"nhrrob_secure_limit_login_attempts";b:1;s:31:"nhrrob_secure_custom_l…}'>a:88:{s:34:"nhrrob_secure_limit_login_attempts";b:1;s:31:"nhrrob_secure…</td>
+                    <td class="grid__size">3 KB</td>
+                    <td><span class="badge badge--success">on</span></td>
+                    <td class="grid__actions"><button class="iconbtn" aria-label="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="iconbtn iconbtn--danger" aria-label="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select"></td>
+                    <td class="grid__name" title="wpmudev_posts_maintenance_log">wpmudev_posts_maintenance_log</td>
+                    <td class="grid__preview" title='a:19:{i:0;a:5:{s:9:"timestamp";s:19:"2026-01-04 13:49:04";s:9:"processed";i:4;…}'>a:19:{i:0;a:5:{s:9:"timestamp";s:19:"2026-01-04 13:49:04";s:9:"processed";…</td>
+                    <td class="grid__size">2 KB</td>
+                    <td><span class="badge badge--success">on</span></td>
+                    <td class="grid__actions"><button class="iconbtn" aria-label="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="iconbtn iconbtn--danger" aria-label="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="pager">
+            <span class="pager__pos">1–50 of 1,204</span>
+            <div class="pager__nav">
+              <button class="pager__pg" disabled aria-label="Previous">‹</button>
+              <button class="pager__pg is-active" type="button">1</button>
+              <button class="pager__pg" type="button">2</button>
+              <button class="pager__pg" type="button">3</button>
+              <span class="pager__pos" style="padding:0 4px">…</span>
+              <button class="pager__pg" type="button">25</button>
+              <button class="pager__pg" type="button" aria-label="Next">›</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ OPTIMIZE ============ -->
+        <section class="screen" id="screen-optimize">
+          <div class="screen__head">
+            <h1 class="screen__title">Optimize</h1>
+            <p class="screen__lede">The single home for autoload, usage tracking, orphan scanning and cleanup.</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Autoload health</h2><span class="panel__meta">Sort: size ▾</span></div>
+            <div class="panel__body">
+              <div class="budget">
+                <div class="budget__meta"><span class="budget__val">0.6 MB / 1 MB budget</span><span class="budget__pct">60% used</span></div>
+                <div class="budget__bar"><div class="budget__fill"></div></div>
+              </div>
+              <ul class="oplist">
+                <li class="oprow"><span class="oprow__name">cron</span><span class="oprow__size">84 KB</span><span class="badge badge--info">on</span><button class="btn btn--ghost btn--sm" type="button">Disable autoload</button></li>
+                <li class="oprow"><span class="oprow__name">rewrite_rules</span><span class="oprow__size">41 KB</span><span class="badge badge--info">on</span><button class="btn btn--ghost btn--sm" type="button">Disable autoload</button></li>
+                <li class="oprow"><span class="oprow__name">wc_admin_notices</span><span class="oprow__size">28 KB</span><span class="badge badge--info">on</span><button class="btn btn--ghost btn--sm" type="button">Disable autoload</button></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Usage Tracker <span class="hint" style="font-weight:400">· front-end sampling</span></h2><span class="panel__meta">Tracking since 3d ago · 340 loads</span></div>
+            <div class="panel__body">
+              <p style="margin:0 0 4px">12 autoloaded options were <b>never used</b> on any sampled front-end load. Sampling only — nothing is changed automatically.</p>
+              <ul class="oplist">
+                <li class="oprow"><span class="oprow__name">some_plugin_cache <span class="oprow__src">— from a removed plugin?</span></span><span class="oprow__size">6 KB</span><button class="btn btn--ghost btn--sm" type="button">Disable autoload</button></li>
+                <li class="oprow"><span class="oprow__name">legacy_theme_mods_2019</span><span class="oprow__size">3 KB</span><button class="btn btn--ghost btn--sm" type="button">Disable autoload</button></li>
+              </ul>
+              <div class="actions">
+                <button class="btn btn--ghost btn--sm" type="button">Reset tracking data</button>
+                <span class="hint">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  Auto-disable after N unused days
+                </span>
+                <button class="pro-tag" data-screen="upgrade" type="button" title="Available in Pro">Pro</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Orphan scanner</h2><button class="btn btn--soft btn--sm" type="button">Scan now</button></div>
+            <div class="panel__body">
+              <p style="margin:0">7 options look like leftovers from removed plugins. Review before deleting.</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Cleanup</h2></div>
+            <div class="panel__body">
+              <p style="margin:0 0 14px">Expired transients: <b>41</b> (220 KB)</p>
+              <div class="actions" style="margin-top:0;margin-bottom:18px">
+                <button class="btn btn--primary btn--sm" type="button">Delete expired</button>
+                <button class="btn btn--ghost btn--sm" type="button">Delete all transients</button>
+              </div>
+              <div class="radio-row">
+                <span class="field__label" style="margin:0">Auto-cleanup:</span>
+                <label class="radio"><input type="radio" name="autoclean"> Off</label>
+                <label class="radio"><input type="radio" name="autoclean" checked> Daily</label>
+                <label class="radio"><input type="radio" name="autoclean"> Weekly</label>
+                <span class="hint" style="margin-left:auto">Custom hourly→monthly scheduling</span>
+                <button class="pro-tag" data-screen="upgrade" type="button" title="Available in Pro">Pro</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ TOOLS ============ -->
+        <section class="screen" id="screen-tools">
+          <div class="screen__head">
+            <h1 class="screen__title">Tools</h1>
+            <p class="screen__lede">Search &amp; replace, import / export, and backups — each takes a snapshot before it changes anything.</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Search &amp; Replace</h2></div>
+            <div class="panel__body">
+              <div class="grid-2">
+                <div class="field"><label class="field__label">Find</label><input class="input" type="text" placeholder="http://old-domain.com"></div>
+                <div class="field"><label class="field__label">Replace with</label><input class="input" type="text" placeholder="https://new-domain.com"></div>
+              </div>
+              <div class="field">
+                <label class="field__label">Scope</label>
+                <select class="select"><option>wp_options only</option><option>wp_options + wp_usermeta</option></select>
+                <span class="field__hint">Regex and all-table replacement across the whole database.
+                  <button class="pro-tag" data-screen="upgrade" type="button" title="Available in Pro" style="vertical-align:middle">Pro</button>
+                </span>
+              </div>
+              <div class="actions">
+                <button class="btn btn--primary" type="button">Dry-run preview</button>
+                <button class="btn btn--ghost" type="button">Run replace</button>
+                <span class="snapshot-note">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  A backup is saved automatically before a live run.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel__head"><h2 class="panel__title">Import / Export</h2></div>
+              <div class="panel__body">
+                <p style="margin:0 0 14px" class="hint" style="align-items:flex-start">Move options between sites as JSON. Import auto-snapshots first.</p>
+                <div class="actions" style="margin-top:0">
+                  <button class="btn btn--soft" type="button">Export JSON</button>
+                  <button class="btn btn--ghost" type="button">Import JSON</button>
+                </div>
+                <div class="field__hint" style="margin-top:14px">Scheduled export to Drive / S3 / Dropbox
+                  <button class="pro-tag" data-screen="upgrade" type="button" title="Available in Pro" style="vertical-align:middle">Pro</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2 class="panel__title">Backups</h2><button class="btn btn--primary btn--sm" type="button">+ Create</button></div>
+              <div class="panel__body" style="padding-top:6px;padding-bottom:10px">
+                <div class="bk">
+                  <span class="bk__ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M12 7v5l3 2"/></svg></span>
+                  <div><div class="bk__name">Manual snapshot</div><div class="bk__meta">1,204 options · 2.1 MB · 2h ago</div></div>
+                  <div class="bk__actions"><button class="btn btn--ghost btn--sm" type="button">Restore</button><button class="iconbtn iconbtn--danger" aria-label="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
+                </div>
+                <div class="bk">
+                  <span class="bk__ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M12 7v5l3 2"/></svg></span>
+                  <div><div class="bk__name">Before Import</div><div class="bk__meta">1,198 options · 2.0 MB · 1d ago</div></div>
+                  <div class="bk__actions"><button class="btn btn--ghost btn--sm" type="button">Restore</button><button class="iconbtn iconbtn--danger" aria-label="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
+                </div>
+                <div class="field__hint" style="margin-top:12px">Local, last 15 kept. Unlimited + off-site + emergency recovery
+                  <button class="pro-tag" data-screen="upgrade" type="button" title="Available in Pro" style="vertical-align:middle">Pro</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ INTEGRATIONS ============ -->
+        <section class="screen" id="screen-integrations">
+          <div class="screen__head">
+            <h1 class="screen__title">Integrations</h1>
+            <p class="screen__lede">Third-party tables, quarantined here so they never clutter the main navigation.</p>
+          </div>
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Detected integrations</h2></div>
+            <div class="panel__body">
+              <div class="bk">
+                <span class="bk__ico" style="background:var(--nhrotm-card-options);color:var(--nhrotm-primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg></span>
+                <div><div class="bk__name">Better Payment</div><div class="bk__meta">wp_better_payment_transactions · 842 rows</div></div>
+                <div class="bk__actions"><button class="btn btn--soft btn--sm" type="button">Open browser →</button></div>
+              </div>
+              <div class="bk">
+                <span class="bk__ico" style="background:var(--nhrotm-card-transients);color:var(--nhrotm-warning)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg></span>
+                <div><div class="bk__name">WP Recipe Maker — Ratings</div><div class="bk__meta">wp_wprm_ratings · 5,110 rows</div></div>
+                <div class="bk__actions"><button class="btn btn--soft btn--sm" type="button">Open browser →</button></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ SETTINGS ============ -->
+        <section class="screen" id="screen-settings">
+          <div class="screen__head">
+            <h1 class="screen__title">Settings</h1>
+            <p class="screen__lede">Every preference in one place — saved as a single <code style="font-family:var(--nhrotm-mono);font-size:12px">nhrotm_settings</code> object.</p>
+          </div>
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">General</h2></div>
+            <div class="panel__body" style="padding-top:6px;padding-bottom:8px">
+              <div class="switch">
+                <div><div class="switch__label">Allow HTML in option values</div><div class="switch__desc">Permit raw HTML when editing values in the browser.</div></div>
+                <button class="toggle" type="button" aria-pressed="false" aria-label="Allow HTML"></button>
+              </div>
+              <div class="switch">
+                <div><div class="switch__label">Autoload usage tracking</div><div class="switch__desc">Sample real front-end loads to flag never-used autoloads.</div></div>
+                <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Usage tracking"></button>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title">Schedules &amp; retention</h2></div>
+            <div class="panel__body">
+              <div class="grid-2">
+                <div class="field"><label class="field__label">Auto-cleanup frequency</label><select class="select"><option>Off</option><option selected>Daily</option><option>Weekly</option></select></div>
+                <div class="field"><label class="field__label">Backup frequency</label><select class="select"><option>Off</option><option selected>Daily</option><option>Weekly</option></select></div>
+                <div class="field"><label class="field__label">Option history retention</label><select class="select"><option>30 days</option><option selected>90 days</option><option>1 year</option></select><span class="field__hint">Moved here out of Optimizer.</span></div>
+              </div>
+              <div class="actions"><button class="btn btn--primary" type="button">Save settings</button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ UPGRADE ============ -->
+        <section class="screen" id="screen-upgrade">
+          <div class="screen__head">
+            <h1 class="screen__title">Upgrade</h1>
+            <p class="screen__lede">Everything you use today stays free. Pro adds automation, scale and off-site safety on top.</p>
+          </div>
+
+          <div class="upgrade__hero">
+            <div class="upgrade__eyebrow">Options Table Manager Pro</div>
+            <h2 class="upgrade__title">Set it, schedule it, and sleep easy.</h2>
+            <p class="upgrade__lede">The free plugin keeps your database lean by hand. Pro automates the routine — scheduled cleanup, auto-disabling unused autoloads, and off-site backups with one-click recovery.</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel__body" style="padding:6px 8px">
+              <div class="grid-scroll">
+                <table class="compare">
+                  <colgroup><col><col><col class="c-pro"></colgroup>
+                  <thead><tr><th>Capability</th><th>Free</th><th class="c-pro">Pro</th></tr></thead>
+                  <tbody>
+                    <tr><td class="c-cap">Browse / edit options, usermeta, transients</td><td class="yes">Included</td><td class="c-pro yes">Included</td></tr>
+                    <tr><td class="c-cap">Autoload health &amp; manual toggle</td><td class="yes">Included</td><td class="c-pro yes">Included</td></tr>
+                    <tr><td class="c-cap">Autoload Usage Tracker</td><td class="yes">Full</td><td class="c-pro plus">+ auto-disable · per-page breakdown</td></tr>
+                    <tr><td class="c-cap">Cleanup</td><td>Manual</td><td class="c-pro plus">Scheduled hourly→monthly</td></tr>
+                    <tr><td class="c-cap">Search &amp; Replace</td><td>Dry-run</td><td class="c-pro plus">+ Regex, all tables, scheduled</td></tr>
+                    <tr><td class="c-cap">Backups</td><td>15, local</td><td class="c-pro plus">Unlimited + off-site + recovery</td></tr>
+                    <tr><td class="c-cap">Reports &amp; alerts</td><td class="no">—</td><td class="c-pro plus">Email health + threshold alerts</td></tr>
+                    <tr><td class="c-cap">Multisite / network</td><td class="no">—</td><td class="c-pro yes">Included</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="upgrade__cta">
+            <a class="btn btn--primary" href="#" onclick="return false">View plans →</a>
+            <span class="upgrade__fine">From $39/yr · 14-day money-back guarantee · one plugin, no bundle.</span>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var app = document.getElementById('app');
+
+  // Section switching (nav items + any [data-goto]/[data-screen] control)
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(function (s) {
+      s.classList.toggle('is-active', s.id === 'screen-' + id);
+    });
+    document.querySelectorAll('.nhrotm-nav__item').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-screen') === id);
+    });
+    var main = document.querySelector('.nhrotm-content');
+    if (main) main.scrollTop = 0;
+  }
+  document.querySelectorAll('[data-screen]').forEach(function (b) {
+    b.addEventListener('click', function () { show(b.getAttribute('data-screen')); });
+  });
+  document.querySelectorAll('[data-goto]').forEach(function (b) {
+    b.addEventListener('click', function () { show(b.getAttribute('data-goto')); });
+  });
+
+  // Segmented control demo
+  document.querySelectorAll('.segmented').forEach(function (seg) {
+    seg.querySelectorAll('.segmented__item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        seg.querySelectorAll('.segmented__item').forEach(function (i) { i.classList.remove('is-active'); });
+        item.classList.add('is-active');
+      });
+    });
+  });
+
+  // Toggles
+  document.querySelectorAll('.toggle').forEach(function (t) {
+    t.addEventListener('click', function () {
+      var on = t.classList.toggle('is-on');
+      t.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  });
+
+  // Sidebar collapse — nav shrinks to icons so the table gets full width
+  var collapseBtn = document.getElementById('collapseBtn');
+  collapseBtn.addEventListener('click', function () {
+    var collapsed = app.classList.toggle('is-collapsed');
+    collapseBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    collapseBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+  });
+
+  // Theme toggle (stamps data-theme, overriding prefers-color-scheme both ways)
+  var themeBtn = document.getElementById('themeBtn');
+  var themeIco = document.getElementById('themeIco');
+  function darkNow() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  themeBtn.addEventListener('click', function () {
+    var next = darkNow() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    themeIco.textContent = next === 'dark' ? '☀' : '☾';
+  });
+})();
+</script>

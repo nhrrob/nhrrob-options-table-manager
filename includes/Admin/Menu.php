@@ -28,12 +28,17 @@ class Menu extends App
      */
     public function admin_menu()
     {
-        $parent_slug = 'nhrotm-options-table-manager';
+        // Legacy DataTables UI, kept reachable as "Classic" after the 2.0 React cutover.
+        // The page stays registered (so its URL works and the React app can link to
+        // it), but we hide its Tools submenu entry so only ONE menu item shows —
+        // "Options Table" (the React app). Reach Classic from inside that app.
+        $parent_slug = 'nhrotm-classic';
         $capability = apply_filters('nhrotm-options-table-manager/menu/capability', 'manage_options');
 
-        // $hook = add_menu_page(__('Options Table', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
-        // add_submenu_page( $parent_slug, __( 'Settings', 'nhrrob-options-table-manager' ), __( 'Settings', 'nhrrob-options-table-manager' ), $capability, 'nhrotm-options-table-manager-settings', [ $this, 'settings_page' ] );
-        $hook = add_submenu_page('tools.php', __('Manage Options', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page']);
+        $hook = add_submenu_page('tools.php', __('Options Table (Classic)', 'nhrrob-options-table-manager'), __('Options Table (Classic)', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page']);
+
+        // Registered but hidden from the menu — reachable only via tools.php?page=nhrotm-classic.
+        remove_submenu_page('tools.php', $parent_slug);
 
         add_action('admin_head-' . $hook, [$this, 'enqueue_assets']);
     }

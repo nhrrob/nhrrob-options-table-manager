@@ -21,6 +21,9 @@ global $wpdb;
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 $nhrotm_history_table = $wpdb->prefix . 'nhrotm_option_history';
 $wpdb->query("DROP TABLE IF EXISTS $nhrotm_history_table");
+
+$nhrotm_backups_table = $wpdb->prefix . 'nhrotm_option_backups';
+$wpdb->query("DROP TABLE IF EXISTS $nhrotm_backups_table");
 // phpcs:enable
 
 /**
@@ -28,6 +31,11 @@ $wpdb->query("DROP TABLE IF EXISTS $nhrotm_history_table");
  */
 delete_option('nhrotm_auto_cleanup_enabled');
 delete_option('nhrotm_allow_html_in_values');
+delete_option('nhrotm_usage_tracking_enabled');
+delete_option('nhrotm_used_autoload_options');
+delete_option('nhrotm_usage_tracking_since');
+delete_option('nhrotm_usage_load_count');
+delete_option('nhrotm_backup_frequency');
 
 // Add any other options to be deleted here
 // delete_option( 'nhrotm_version' );

@@ -71,8 +71,7 @@ class HistoryManager
         }
 
         // Ensure table exists (lazy creation)
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time schema check, not a data query
-        if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) {
+        if (!$this->table_exists()) {
             $this->create_table();
         }
 
@@ -112,8 +111,94 @@ class HistoryManager
     }
 
     /**
+     * Get the most recent history entries across all options (for the dashboard feed).
+     *
+     * @param int $limit Max rows to return (1–20).
+     * @return array
+     */
+    public function get_recent($limit = 5)
+    {
+        global $wpdb;
+        $table = $this->table_name;
+        $limit = max(1, min(20, (int) $limit));
+
+        if (!$this->table_exists()) {
+            return [];
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-specific history query
+        $rows = $wpdb->get_results(
+            $wpdb->prepare("SELECT option_name, action, performed_at FROM {$table} ORDER BY performed_at DESC, id DESC LIMIT %d", $limit),
+            ARRAY_A
+        );
+
+        return $rows ? $rows : [];
+    }
+
+    /**
+     * Total number of recorded history entries.
+     *
+     * @return int
+     */
+    public function count_all()
+    {
+        global $wpdb;
+        $table = $this->table_name;
+
+        if (!$this->table_exists()) {
+            return 0;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-specific history query
+        return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table}");
+    }
+
+    /**
+     * One page of history entries across all options, newest first.
+     *
+     * @param int $offset Rows to skip.
+     * @param int $limit  Rows to return (1–100).
+     * @return array
+     */
+    public function get_page($offset = 0, $limit = 20)
+    {
+        global $wpdb;
+        $table  = $this->table_name;
+        $offset = max(0, (int) $offset);
+        $limit  = max(1, min(100, (int) $limit));
+
+        if (!$this->table_exists()) {
+            return [];
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-specific history query
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT option_name, action, performed_at FROM {$table} ORDER BY performed_at DESC, id DESC LIMIT %d OFFSET %d",
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+
+        return $rows ? $rows : [];
+    }
+
+    /**
+     * Whether the history table has been created yet.
+     *
+     * @return bool
+     */
+    private function table_exists()
+    {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time schema check
+        return $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $this->table_name)) === $this->table_name;
+    }
+
+    /**
      * Delete history older than a specified number of days.
-     * 
+     *
      * @param int $days The number of days to keep history for. Defaults to 30.
      * @return int|false The number of rows deleted, or false on error.
      */

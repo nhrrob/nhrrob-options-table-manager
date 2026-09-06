@@ -1,0 +1,1362 @@
+/**
+ * NHR Options Manager 2.0 — colorful, modern admin UI.
+ * All colour is CSS custom properties (zero bundle cost). Violet/indigo brand.
+ * Light + dark themes (token remap); dense, professional data grid.
+ * Mirrors .ai/DESIGN.md §9/§12/§13.
+ */
+
+@mixin dark-tokens {
+	--nhrotm-gradient-soft: linear-gradient(135deg, #242a4d 0%, #2c2350 100%);
+	--nhrotm-card-autoload: rgba(46, 144, 250, 0.14);
+	--nhrotm-card-options: rgba(109, 94, 252, 0.16);
+	--nhrotm-card-transients: rgba(247, 144, 9, 0.14);
+	--nhrotm-card-backup: rgba(18, 183, 106, 0.14);
+	--nhrotm-pro: rgba(109, 94, 252, 0.16);
+	--nhrotm-pro-text: #b9adff;
+	--nhrotm-pro-border: rgba(109, 94, 252, 0.35);
+	--nhrotm-surface: #1b1e2b;
+	--nhrotm-bg: #14161f;
+	--nhrotm-border: #2a2e3f;
+	--nhrotm-border-strong: #363b50;
+	--nhrotm-text: #e7e9f2;
+	--nhrotm-text-muted: #9aa1b8;
+	--nhrotm-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+	// Solid tint used for hover — a gradient can't be transitioned, a colour can.
+	--nhrotm-hover: rgba(255, 255, 255, 0.05);
+}
+
+.nhrotm-app {
+	// ---- Design tokens (light) ----
+	--nhrotm-primary: #6d5efc;
+	--nhrotm-primary-600: #5b4ce6;
+	--nhrotm-gradient: linear-gradient(135deg, #6d5efc 0%, #9b5cff 100%);
+	--nhrotm-gradient-soft: linear-gradient(135deg, #eef0ff 0%, #f6eeff 100%);
+
+	--nhrotm-success: #12b76a;
+	--nhrotm-warning: #f79009;
+	--nhrotm-danger: #f04438;
+	--nhrotm-info: #2e90fa;
+
+	--nhrotm-card-autoload: #eef4ff;
+	--nhrotm-card-options: #f4f0ff;
+	--nhrotm-card-transients: #fff4ec;
+	--nhrotm-card-backup: #ecfdf3;
+
+	--nhrotm-pro: #f4f0ff;
+	--nhrotm-pro-text: #6d5efc;
+	--nhrotm-pro-border: #e4dcff;
+
+	--nhrotm-surface: #ffffff;
+	--nhrotm-bg: #f7f8fc;
+	--nhrotm-border: #eaecf5;
+	--nhrotm-border-strong: #dfe1ee;
+	--nhrotm-text: #101828;
+	--nhrotm-text-muted: #667085;
+	--nhrotm-radius: 12px;
+	--nhrotm-shadow: 0 1px 3px rgba(16, 24, 40, 0.08),
+		0 1px 2px rgba(16, 24, 40, 0.06);
+	// Solid tint used for hover — a gradient can't be transitioned, a colour can.
+	--nhrotm-hover: #f5f3ff;
+
+	--nhrotm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+	// Horizontal insets come from .wrap alone, so the app lines up with the
+	// admin notices above it instead of sitting 20px further from the right edge.
+	margin: 20px 0 0;
+	color: var(--nhrotm-text);
+	background: var(--nhrotm-bg);
+	border-radius: var(--nhrotm-radius);
+	overflow: hidden;
+	box-shadow: var(--nhrotm-shadow);
+
+	* {
+		box-sizing: border-box;
+	}
+}
+
+// Notices relocated into our .wrap should sit flush with the app below them.
+.nhrotm-wrap .notice,
+.nhrotm-wrap div.updated,
+.nhrotm-wrap div.error {
+	margin: 5px 0 15px;
+}
+
+// Dark: follow OS unless the user explicitly chose light; explicit dark always wins.
+@media (prefers-color-scheme: dark) {
+	.nhrotm-app:not([data-theme='light']) {
+		@include dark-tokens;
+	}
+}
+.nhrotm-app[data-theme='dark'] {
+	@include dark-tokens;
+}
+
+// ---- App bar (gradient hero strip) ----
+.nhrotm-appbar {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	background: var(--nhrotm-gradient);
+	padding: 14px 22px;
+	color: #fff;
+
+	&__mark {
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 9px;
+		background: rgba(255, 255, 255, 0.18);
+		flex: 0 0 auto;
+	}
+
+	&__title {
+		font-size: 17px;
+		font-weight: 600;
+		letter-spacing: 0.2px;
+	}
+
+	&__spacer {
+		flex: 1;
+	}
+
+	&__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		border: 0;
+		cursor: pointer;
+		background: rgba(255, 255, 255, 0.16);
+		color: #fff;
+		padding: 7px 11px;
+		border-radius: 8px;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 500;
+		transition: background 150ms;
+
+		&:hover {
+			background: rgba(255, 255, 255, 0.28);
+		}
+	}
+
+	&__icobtn {
+		display: grid;
+		place-items: center;
+		width: 32px;
+		height: 32px;
+		padding: 0;
+	}
+
+	&__link {
+		text-decoration: none;
+		line-height: 1;
+
+		&:hover {
+			color: #fff;
+		}
+	}
+}
+
+// ---- Layout ----
+.nhrotm-body {
+	display: flex;
+	min-height: 520px;
+}
+
+.nhrotm-nav {
+	flex: 0 0 216px;
+	display: flex;
+	flex-direction: column;
+	background: var(--nhrotm-surface);
+	border-right: 1px solid var(--nhrotm-border);
+	padding: 12px;
+	gap: 3px;
+	transition: flex-basis 180ms ease;
+	overflow: hidden;
+
+	&__item {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		width: 100%;
+		padding: 9px 12px;
+		border: 0;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		font: inherit;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		text-align: left;
+		transition: background-color 160ms ease, color 160ms ease;
+
+		&:hover {
+			background-color: var(--nhrotm-hover);
+			color: var(--nhrotm-primary-600);
+		}
+
+		&.is-active {
+			background: var(--nhrotm-gradient);
+			color: #fff;
+			box-shadow: 0 4px 12px rgba(109, 94, 252, 0.35);
+		}
+	}
+
+	&__icon {
+		flex: 0 0 auto;
+		opacity: 0.9;
+	}
+
+	&__spacer {
+		flex: 1;
+	}
+
+	&__sep {
+		height: 1px;
+		margin: 10px 8px;
+		background: var(--nhrotm-border);
+	}
+
+	&__item--upgrade {
+		color: var(--nhrotm-text-muted);
+
+		&:hover {
+			background: var(--nhrotm-pro);
+			color: var(--nhrotm-pro-text);
+		}
+
+		&.is-active {
+			background: var(--nhrotm-pro);
+			color: var(--nhrotm-pro-text);
+			box-shadow: none;
+		}
+	}
+}
+
+// Collapsed: nav becomes an icon rail so content (grid) gets full width.
+.nhrotm-app.is-collapsed {
+	.nhrotm-nav {
+		flex-basis: 58px;
+	}
+	.nhrotm-nav__label {
+		display: none;
+	}
+	.nhrotm-nav__item {
+		justify-content: center;
+		padding-left: 0;
+		padding-right: 0;
+	}
+}
+
+.nhrotm-content {
+	flex: 1;
+	padding: 24px;
+	min-width: 0;
+	background: var(--nhrotm-bg);
+}
+
+// Soft fade on every section switch (keyed remount) — no more hard blink.
+// Opacity-only (no transform): a transformed ancestor would trap position:fixed
+// modals inside the content box instead of the viewport.
+.nhrotm-screen {
+	animation: nhrotm-screen-in 200ms ease-out both;
+}
+
+@keyframes nhrotm-screen-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+// ---- Screen header (title + lede at the top of each section) ----
+.nhrotm-screen__head {
+	margin: 0 0 22px;
+}
+.nhrotm-screen__title {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: -0.2px;
+	color: var(--nhrotm-text);
+}
+.nhrotm-screen__lede {
+	margin: 4px 0 0;
+	color: var(--nhrotm-text-muted);
+	font-size: 13.5px;
+}
+
+// ---- Panel ----
+.nhrotm-panel {
+	background: var(--nhrotm-surface);
+	border: 1px solid var(--nhrotm-border);
+	border-radius: var(--nhrotm-radius);
+	box-shadow: var(--nhrotm-shadow);
+	margin-bottom: 20px;
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 15px 20px;
+		border-bottom: 1px solid var(--nhrotm-border);
+	}
+
+	&__title {
+		margin: 0;
+		font-size: 15px;
+		font-weight: 600;
+	}
+
+	// Right-hand count in a panel header, e.g. "3 items".
+	&__meta {
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+		white-space: nowrap;
+	}
+
+	&__body {
+		padding: 20px;
+	}
+
+	// Brief ring when a cross-section link lands on this panel, so the jump is
+	// legible instead of looking like a random scroll position.
+	&.is-focused {
+		border-color: var(--nhrotm-primary);
+		box-shadow: 0 0 0 3px rgba(109, 94, 252, 0.18);
+		transition: box-shadow 250ms, border-color 250ms;
+	}
+}
+
+// ---- Fields ----
+.nhrotm-field {
+	margin-bottom: 16px;
+
+	label {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 14px;
+		font-weight: 500;
+	}
+
+	input[type='text'],
+	input[type='number'],
+	input[type='search'],
+	textarea,
+	select {
+		margin-top: 6px;
+		padding: 8px 11px;
+		border: 1px solid var(--nhrotm-border-strong);
+		border-radius: 8px;
+		min-width: 200px;
+		background: var(--nhrotm-surface);
+		color: var(--nhrotm-text);
+		font: inherit;
+		font-size: 13.5px;
+	}
+
+	input:focus,
+	textarea:focus,
+	select:focus {
+		outline: 2px solid var(--nhrotm-primary);
+		outline-offset: 1px;
+		border-color: var(--nhrotm-primary);
+	}
+}
+
+.nhrotm-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+	flex-wrap: wrap;
+}
+
+// ---- Buttons ----
+.nhrotm-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 9px 16px;
+	border: 1px solid transparent;
+	border-radius: 10px;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 150ms, box-shadow 150ms, background 150ms,
+		border-color 150ms;
+
+	&--primary {
+		background: var(--nhrotm-gradient);
+		color: #fff;
+
+		&:hover {
+			box-shadow: 0 6px 16px rgba(109, 94, 252, 0.4);
+			transform: translateY(-1px);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: default;
+			transform: none;
+			box-shadow: none;
+		}
+	}
+
+	&--soft {
+		background: var(--nhrotm-gradient-soft);
+		color: var(--nhrotm-primary-600);
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: default;
+		}
+	}
+
+	&--sm {
+		padding: 6px 11px;
+		font-size: 12px;
+		border-radius: 8px;
+	}
+}
+
+// ---- PRO tag (muted, quiet — reads as metadata, not a button) ----
+.nhrotm-pro-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 8px 2px 7px;
+	border-radius: 20px;
+	background: var(--nhrotm-pro);
+	border: 1px solid var(--nhrotm-pro-border);
+	color: var(--nhrotm-pro-text);
+	font: inherit;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	cursor: pointer;
+
+	&::before {
+		content: '';
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: currentColor;
+	}
+
+	&:hover {
+		filter: brightness(0.97);
+	}
+}
+
+.nhrotm-hint {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--nhrotm-text-muted);
+	font-size: 12.5px;
+}
+
+// ---- Dashboard ----
+.nhrotm-health {
+	display: flex;
+	align-items: center;
+	gap: 30px;
+	flex-wrap: wrap;
+	// The health panel is the page's headline surface — give it room to read as
+	// one rather than a thin strip above the cards.
+	padding: 14px 6px;
+}
+
+.nhrotm-gauge {
+	position: relative;
+	flex: 0 0 auto;
+
+	&__value {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+
+		strong {
+			font-size: 32px;
+			line-height: 1;
+			letter-spacing: -0.5px;
+		}
+
+		span {
+			font-size: 12px;
+			color: var(--nhrotm-text-muted);
+		}
+	}
+}
+
+.nhrotm-health__copy {
+	// Take the remaining row width so the description wraps beside the gauge
+	// rather than pushing it onto its own line.
+	flex: 1 1 320px;
+	min-width: 0;
+
+	h3 {
+		margin: 0 0 6px;
+		font-size: 17px;
+		font-weight: 700;
+	}
+
+	p {
+		margin: 0;
+		font-size: 13.5px;
+		max-width: 68ch;
+	}
+}
+
+// Figure strip under the health description.
+.nhrotm-health__stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 22px;
+	margin-top: 14px;
+	font-size: 13px;
+	color: var(--nhrotm-text-muted);
+
+	b {
+		color: var(--nhrotm-text);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+}
+
+.nhrotm-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.nhrotm-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 18px;
+	border-radius: var(--nhrotm-radius);
+	background: var(--nhrotm-surface);
+	box-shadow: var(--nhrotm-shadow);
+
+	&--autoload {
+		background: var(--nhrotm-card-autoload);
+	}
+	&--options {
+		background: var(--nhrotm-card-options);
+	}
+	&--transients {
+		background: var(--nhrotm-card-transients);
+	}
+	&--backup {
+		background: var(--nhrotm-card-backup);
+	}
+
+	&__top {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 12px;
+	}
+
+	&__ico {
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 8px;
+		background: rgba(255, 255, 255, 0.65);
+	}
+
+	&__label {
+		font-size: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.4px;
+		color: var(--nhrotm-text-muted);
+	}
+
+	&__metric {
+		font-size: 24px;
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: -0.5px;
+	}
+
+	&__sub {
+		font-size: 12.5px;
+		color: var(--nhrotm-text-muted);
+		margin: 3px 0 14px;
+	}
+
+	&__action {
+		margin-top: auto;
+	}
+
+	// The soft button's tint is close enough to some card tints (notably
+	// --nhrotm-card-options) to disappear. On a card it gets a solid surface
+	// and a real border so it always reads as a control.
+	.nhrotm-btn--soft {
+		background: var(--nhrotm-surface);
+		border-color: var(--nhrotm-border-strong);
+
+		&:hover {
+			background: var(--nhrotm-hover);
+			border-color: var(--nhrotm-primary);
+		}
+	}
+}
+
+[data-theme='dark'] .nhrotm-card__ico {
+	background: rgba(255, 255, 255, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+	.nhrotm-app:not([data-theme='light']) .nhrotm-card__ico {
+		background: rgba(255, 255, 255, 0.08);
+	}
+}
+
+// ---- Browse: toolbar, segmented switcher, grid, pager ----
+.nhrotm-browse__toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+	flex-wrap: wrap;
+}
+
+.nhrotm-segmented {
+	display: inline-flex;
+	background: var(--nhrotm-bg);
+	border: 1px solid var(--nhrotm-border);
+	border-radius: 10px;
+	padding: 3px;
+
+	&__item {
+		border: 0;
+		background: transparent;
+		padding: 7px 14px;
+		border-radius: 8px;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		transition: background 150ms, color 150ms;
+
+		&.is-active {
+			background: var(--nhrotm-gradient);
+			color: #fff;
+		}
+	}
+}
+
+.nhrotm-browse__tools {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.nhrotm-browse__search {
+	padding: 8px 12px;
+	border: 1px solid var(--nhrotm-border-strong);
+	border-radius: 8px;
+	min-width: 200px;
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	font: inherit;
+	font-size: 13px;
+}
+
+.nhrotm-grid__wrap {
+	border: 1px solid var(--nhrotm-border);
+	border-radius: var(--nhrotm-radius);
+	overflow: hidden;
+	background: var(--nhrotm-surface);
+	box-shadow: var(--nhrotm-shadow);
+}
+
+.nhrotm-grid__scroll {
+	overflow-x: auto;
+}
+
+.nhrotm-grid {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	min-width: 680px;
+	table-layout: fixed;
+
+	col.nhrotm-col-check {
+		width: 40px;
+	}
+	col.nhrotm-col-name {
+		width: 24%;
+	}
+	col.nhrotm-col-size {
+		width: 84px;
+	}
+	col.nhrotm-col-badge {
+		width: 128px;
+	}
+	col.nhrotm-col-act {
+		width: 92px;
+	}
+
+	th,
+	td {
+		text-align: left;
+		padding: 9px 16px;
+		border-bottom: 1px solid var(--nhrotm-border);
+		vertical-align: middle;
+	}
+
+	thead th {
+		color: var(--nhrotm-text-muted);
+		font-weight: 600;
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		background: var(--nhrotm-bg);
+		height: 40px;
+		white-space: nowrap;
+	}
+
+	tbody tr {
+		transition: background-color 140ms ease;
+	}
+
+	tbody tr:last-child td {
+		border-bottom: 0;
+	}
+
+	tbody tr:hover {
+		background-color: var(--nhrotm-hover);
+	}
+
+	tbody tr:hover .nhrotm-grid__actions {
+		opacity: 1;
+	}
+
+	// Compact, on-brand checkboxes (native ones render oversized).
+	input[type='checkbox'] {
+		width: 15px;
+		height: 15px;
+		margin: 0;
+		vertical-align: middle;
+		accent-color: var(--nhrotm-primary);
+		cursor: pointer;
+	}
+
+	&__sort {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		padding: 0;
+
+		&:hover {
+			color: var(--nhrotm-primary-600);
+		}
+
+		&.is-active {
+			color: var(--nhrotm-primary-600);
+		}
+
+		svg {
+			opacity: 0.6;
+		}
+		&.is-active svg {
+			opacity: 1;
+		}
+	}
+
+	&__name {
+		font-family: var(--nhrotm-mono);
+		font-weight: 600;
+		font-size: 12.5px;
+		color: var(--nhrotm-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__preview {
+		color: var(--nhrotm-text-muted);
+		font-family: var(--nhrotm-mono);
+		font-size: 12px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__size {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		color: var(--nhrotm-text-muted);
+		text-align: right;
+	}
+
+	&__actions {
+		display: flex;
+		gap: 4px;
+		justify-content: flex-end;
+		opacity: 0.55;
+		transition: opacity 120ms;
+	}
+}
+
+.nhrotm-iconbtn {
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border: 1px solid transparent;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--nhrotm-text-muted);
+	cursor: pointer;
+	transition: color 150ms, background 150ms, border-color 150ms;
+
+	&:hover {
+		color: var(--nhrotm-primary);
+		background: var(--nhrotm-surface);
+		border-color: var(--nhrotm-border);
+	}
+
+	&--danger:hover {
+		color: var(--nhrotm-danger);
+		border-color: var(--nhrotm-danger);
+	}
+}
+
+.nhrotm-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 9px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.6;
+	text-transform: capitalize;
+
+	// Optional leading status dot (autoload On/Off, transient status).
+	&--dot::before {
+		content: '';
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+		flex: 0 0 auto;
+	}
+
+	&--info {
+		background: var(--nhrotm-card-autoload);
+		color: var(--nhrotm-info);
+	}
+	&--success {
+		background: var(--nhrotm-card-backup);
+		color: var(--nhrotm-success);
+	}
+	&--warning {
+		background: var(--nhrotm-card-transients);
+		color: var(--nhrotm-warning);
+	}
+	&--danger {
+		background: rgba(240, 68, 56, 0.12);
+		color: var(--nhrotm-danger);
+	}
+	&--muted {
+		background: var(--nhrotm-bg);
+		color: var(--nhrotm-text-muted);
+	}
+}
+
+// "protected" label inside a grid name cell — a state, not a status: no dot, quieter.
+.nhrotm-grid__tag {
+	margin-left: 7px;
+	font-size: 10px;
+	font-weight: 500;
+	letter-spacing: 0.3px;
+	text-transform: uppercase;
+	padding: 2px 7px;
+}
+
+.nhrotm-linkbtn {
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nhrotm-primary-600);
+	padding: 0;
+
+	&--danger {
+		color: var(--nhrotm-danger);
+	}
+}
+
+.nhrotm-pager {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 16px;
+	flex-wrap: wrap;
+	gap: 12px;
+
+	&__nav {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	&__pos {
+		font-size: 13px;
+		color: var(--nhrotm-text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__perpage {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 12.5px;
+		color: var(--nhrotm-text-muted);
+
+		select {
+			padding: 5px 8px;
+			border: 1px solid var(--nhrotm-border-strong);
+			border-radius: 8px;
+			background: var(--nhrotm-surface);
+			color: var(--nhrotm-text);
+			font: inherit;
+			font-size: 12.5px;
+		}
+	}
+
+	.nhrotm-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+}
+
+// ---- Optimize: option lists ----
+.nhrotm-oplist {
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+.nhrotm-oprow {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--nhrotm-border);
+
+	&:last-child {
+		border-bottom: 0;
+	}
+
+	&__name {
+		flex: 1;
+		font-weight: 600;
+		font-family: var(--nhrotm-mono);
+		font-size: 12.5px;
+		word-break: break-all;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	&__size {
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__src {
+		color: var(--nhrotm-text-muted);
+		font-style: italic;
+		font-weight: 400;
+		font-family: inherit;
+	}
+}
+
+// ---- Recommendations ----
+.nhrotm-recs {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.nhrotm-rec {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 14px;
+	margin-bottom: 8px;
+	border-radius: 10px;
+	background: var(--nhrotm-bg);
+	border-left: 4px solid var(--nhrotm-text-muted);
+
+	&--danger {
+		border-left-color: var(--nhrotm-danger);
+	}
+	&--warning {
+		border-left-color: var(--nhrotm-warning);
+	}
+	&--info {
+		border-left-color: var(--nhrotm-info);
+	}
+	&--success {
+		border-left-color: var(--nhrotm-success);
+	}
+
+	&__text {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 14px;
+	}
+
+	// Severity glyph, tinted by the modifier on the row.
+	&__sev {
+		flex: 0 0 auto;
+		color: var(--nhrotm-text-muted);
+	}
+
+	&--danger &__sev {
+		color: var(--nhrotm-danger);
+	}
+	&--warning &__sev {
+		color: var(--nhrotm-warning);
+	}
+	&--info &__sev {
+		color: var(--nhrotm-info);
+	}
+	&--success &__sev {
+		color: var(--nhrotm-success);
+	}
+
+	&__action {
+		flex: 0 0 auto;
+	}
+}
+
+// ---- Recent activity ----
+.nhrotm-activity {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+
+	li {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 11px 0;
+		border-bottom: 1px solid var(--nhrotm-border);
+		font-size: 13.5px;
+
+		&:last-child {
+			border-bottom: 0;
+		}
+	}
+
+	&__dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--nhrotm-primary);
+		flex: 0 0 auto;
+	}
+
+	&__text code {
+		font-family: var(--nhrotm-mono);
+		font-size: 12px;
+		word-break: break-all;
+	}
+
+	&__when {
+		margin-left: auto;
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+}
+
+// Text link used in a panel header, e.g. "View all →".
+.nhrotm-linkbtn {
+	border: 0;
+	padding: 0;
+	background: none;
+	cursor: pointer;
+	font: inherit;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--nhrotm-primary);
+	white-space: nowrap;
+
+	&:hover,
+	&:focus {
+		text-decoration: underline;
+	}
+}
+
+.nhrotm-activity__foot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 14px;
+	padding-top: 14px;
+	border-top: 1px solid var(--nhrotm-border);
+	font-size: 12.5px;
+	color: var(--nhrotm-text-muted);
+}
+
+// ---- Upgrade screen ----
+.nhrotm-upgrade {
+	&__hero {
+		border-radius: var(--nhrotm-radius);
+		background: var(--nhrotm-gradient-soft);
+		border: 1px solid var(--nhrotm-pro-border);
+		padding: 24px 26px;
+		margin-bottom: 20px;
+	}
+
+	&__eyebrow {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.6px;
+		text-transform: uppercase;
+		color: var(--nhrotm-pro-text);
+	}
+
+	&__title {
+		margin: 8px 0 6px;
+		font-size: 21px;
+		font-weight: 800;
+		letter-spacing: -0.3px;
+	}
+
+	&__lede {
+		margin: 0;
+		color: var(--nhrotm-text-muted);
+		font-size: 14px;
+		max-width: 60ch;
+	}
+
+	&__cta {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		margin-top: 20px;
+		flex-wrap: wrap;
+	}
+
+	&__fine {
+		font-size: 12px;
+		color: var(--nhrotm-text-muted);
+	}
+}
+
+.nhrotm-compare {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13.5px;
+
+	th,
+	td {
+		padding: 12px 16px;
+		border-bottom: 1px solid var(--nhrotm-border);
+		text-align: left;
+	}
+
+	thead th {
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.4px;
+		color: var(--nhrotm-text-muted);
+	}
+
+	.nhrotm-compare__pro {
+		background: var(--nhrotm-pro);
+	}
+
+	tbody tr:last-child td {
+		border-bottom: 0;
+	}
+
+	&__cap {
+		font-weight: 600;
+	}
+
+	.yes {
+		color: var(--nhrotm-success);
+		font-weight: 700;
+	}
+	.no {
+		color: var(--nhrotm-text-muted);
+	}
+	.plus {
+		color: var(--nhrotm-pro-text);
+		font-weight: 600;
+	}
+}
+
+// ---- Modal ----
+.nhrotm-modal__overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(16, 24, 40, 0.55);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	z-index: 100000;
+	animation: nhrotm-overlay-in 160ms ease-out both;
+}
+
+@keyframes nhrotm-overlay-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes nhrotm-modal-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.nhrotm-modal {
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	border-radius: var(--nhrotm-radius);
+	width: min(640px, 100%);
+	max-height: 90vh;
+	overflow: auto;
+	box-shadow: 0 20px 48px rgba(16, 24, 40, 0.28);
+	animation: nhrotm-modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+	@media (prefers-reduced-motion: reduce) {
+		animation: none;
+	}
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16px 20px;
+		border-bottom: 1px solid var(--nhrotm-border);
+
+		h2 {
+			margin: 0;
+			font-size: 16px;
+		}
+	}
+
+	&__close {
+		border: 0;
+		background: transparent;
+		font-size: 22px;
+		line-height: 1;
+		cursor: pointer;
+		color: var(--nhrotm-text-muted);
+	}
+
+	&__body {
+		padding: 20px;
+	}
+
+	&__foot {
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		padding: 16px 20px;
+		border-top: 1px solid var(--nhrotm-border);
+	}
+
+	&__textarea {
+		width: 100%;
+		border: 1px solid var(--nhrotm-border-strong);
+		border-radius: 8px;
+		padding: 10px;
+		font-family: var(--nhrotm-mono);
+		font-size: 12px;
+		resize: vertical;
+		background: var(--nhrotm-surface);
+		color: var(--nhrotm-text);
+	}
+}
+
+// ---- Utilities ----
+.nhrotm-muted {
+	color: var(--nhrotm-text-muted);
+}
+.nhrotm-error {
+	color: var(--nhrotm-danger);
+	font-weight: 500;
+}
+.nhrotm-notice {
+	color: var(--nhrotm-success);
+	font-weight: 500;
+}
+
+@media (max-width: 900px) {
+	.nhrotm-nav {
+		flex-basis: 58px;
+	}
+	.nhrotm-nav__label {
+		display: none;
+	}
+	.nhrotm-nav__item {
+		justify-content: center;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nhrotm-app *,
+	.nhrotm-screen {
+		transition: none !important;
+		animation: none !important;
+	}
+}

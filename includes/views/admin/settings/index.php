@@ -53,6 +53,12 @@
             <button class="tablinks import-export-tab" data-tab="nhrotm-import-export-tab">
                 <?php esc_html_e('Import / Export', 'nhrrob-options-table-manager'); ?>
             </button>
+            <button class="tablinks transients-tab" data-tab="nhrotm-transients-tab">
+                <?php esc_html_e('Transients', 'nhrrob-options-table-manager'); ?>
+            </button>
+            <button class="tablinks backups-tab" data-tab="nhrotm-backups-tab">
+                <?php esc_html_e('Backups', 'nhrrob-options-table-manager'); ?>
+            </button>
         </div>
 
         <!-- Filter starts -->
@@ -361,6 +367,31 @@
                 </tbody>
             </table>
 
+            <div class="nhrotm-usage-tracker-section mt-5 nhrotm-section-divider">
+                <h3><?php esc_html_e('Unused Autoloaded Options', 'nhrrob-options-table-manager'); ?></h3>
+                <p class="description">
+                    <?php esc_html_e('Autoloaded options that have not been read on any tracked front-end page load. These are strong candidates for turning autoload off. Enable "Autoload Usage Tracking" in Settings, then browse your site for a while to collect data.', 'nhrrob-options-table-manager'); ?>
+                </p>
+                <p id="nhrotm-usage-status" class="description"></p>
+
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Option Name', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Size', 'nhrrob-options-table-manager'); ?></th>
+                            <th><?php esc_html_e('Disable Autoload', 'nhrrob-options-table-manager'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody id="nhrotm-unused-autoload-body">
+                        <!-- Rows -->
+                    </tbody>
+                </table>
+
+                <p class="submit">
+                    <button type="button" id="nhrotm-reset-usage-tracking" class="button button-secondary"><?php esc_html_e('Reset Tracking Data', 'nhrrob-options-table-manager'); ?></button>
+                </p>
+            </div>
+
             <div class="nhrotm-history-retention-settings mt-5 nhrotm-section-divider">
                 <h3><?php esc_html_e('History Retention', 'nhrrob-options-table-manager'); ?></h3>
                 <p><?php esc_html_e('To prevent the history log from growing too large, you can automatically delete old logs.', 'nhrrob-options-table-manager'); ?></p>
@@ -568,6 +599,92 @@
                             </p>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="nhrotm_usage_tracking_toggle"><?php esc_html_e('Autoload Usage Tracking', 'nhrrob-options-table-manager'); ?></label>
+                        </th>
+                        <td>
+                            <label class="nhrotm-switch">
+                                <input type="checkbox" id="nhrotm_usage_tracking_toggle">
+                                <span class="nhrotm-slider nhrotm-round"></span>
+                            </label>
+                            <p class="description">
+                                <?php esc_html_e('Records which autoloaded options are actually used on front-end page loads so unused ones can be flagged in the Autoload Optimizer. Adds minor per-request overhead; enable temporarily while collecting data.', 'nhrrob-options-table-manager'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="nhrotm_backup_frequency"><?php esc_html_e('Scheduled Backups', 'nhrrob-options-table-manager'); ?></label>
+                        </th>
+                        <td>
+                            <select id="nhrotm_backup_frequency">
+                                <option value="off"><?php esc_html_e('Off', 'nhrrob-options-table-manager'); ?></option>
+                                <option value="daily"><?php esc_html_e('Daily', 'nhrrob-options-table-manager'); ?></option>
+                                <option value="weekly"><?php esc_html_e('Weekly', 'nhrrob-options-table-manager'); ?></option>
+                            </select>
+                            <p class="description">
+                                <?php esc_html_e('Automatically snapshot the options table on a schedule via WP Cron. Manage snapshots in the Backups tab.', 'nhrrob-options-table-manager'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="nhrotm-transients-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
+            <h2><?php esc_html_e('Transients Manager', 'nhrrob-options-table-manager'); ?></h2>
+            <p class="description"><?php esc_html_e('View every transient with its size, expiration and status. Delete individually or in bulk by scope.', 'nhrrob-options-table-manager'); ?></p>
+
+            <div class="nhrotm-transient-actions mb-4 mt-3">
+                <button type="button" class="button nhrotm-bulk-transients" data-scope="expired"><?php esc_html_e('Delete Expired', 'nhrrob-options-table-manager'); ?></button>
+                <button type="button" class="button nhrotm-bulk-transients" data-scope="persistent"><?php esc_html_e('Delete Persistent', 'nhrrob-options-table-manager'); ?></button>
+                <button type="button" class="button button-danger nhrotm-bulk-transients" data-scope="all"><?php esc_html_e('Delete All', 'nhrrob-options-table-manager'); ?></button>
+            </div>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Name', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Status', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Expires (UTC)', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Size', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Value Snippet', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                    </tr>
+                </thead>
+                <tbody id="nhrotm-transients-body">
+                    <!-- Rows -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="nhrotm-backups-tab" class="nhrotm-tab-content d-none">
+        <div class="card nhrotm-tab-card">
+            <h2><?php esc_html_e('Options Table Backups', 'nhrrob-options-table-manager'); ?></h2>
+            <p class="description"><?php esc_html_e('Restorable snapshots of your options table. Snapshots are also taken automatically before Search & Replace and Import. Configure scheduled backups in Settings.', 'nhrrob-options-table-manager'); ?></p>
+
+            <div class="nhrotm-backup-actions mb-4 mt-3">
+                <input type="text" id="nhrotm-backup-label" class="regular-text" placeholder="<?php esc_attr_e('Optional label', 'nhrrob-options-table-manager'); ?>">
+                <button type="button" id="nhrotm-create-backup" class="button button-primary"><?php esc_html_e('Create Snapshot Now', 'nhrrob-options-table-manager'); ?></button>
+            </div>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Label', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Type', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Options', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Size', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Created', 'nhrrob-options-table-manager'); ?></th>
+                        <th><?php esc_html_e('Action', 'nhrrob-options-table-manager'); ?></th>
+                    </tr>
+                </thead>
+                <tbody id="nhrotm-backups-body">
+                    <!-- Rows -->
                 </tbody>
             </table>
         </div>

@@ -14,6 +14,9 @@ use Nhrotm\OptionsTableManager\Managers\OptimizationManager;
 use Nhrotm\OptionsTableManager\Managers\ScannerManager;
 use Nhrotm\OptionsTableManager\Managers\SearchReplaceManager;
 use Nhrotm\OptionsTableManager\Managers\ImportExportManager;
+use Nhrotm\OptionsTableManager\Managers\UsageTracker;
+use Nhrotm\OptionsTableManager\Managers\TransientsManager;
+use Nhrotm\OptionsTableManager\Managers\BackupManager;
 
 class AjaxHandler
 {
@@ -25,6 +28,9 @@ class AjaxHandler
     private $scanner_manager;
     private $search_replace_manager;
     private $import_export_manager;
+    private $usage_tracker;
+    private $transients_manager;
+    private $backup_manager;
     protected $wpdb;
 
     public function __construct()
@@ -37,6 +43,9 @@ class AjaxHandler
         $this->scanner_manager = new ScannerManager();
         $this->search_replace_manager = new SearchReplaceManager();
         $this->import_export_manager = new ImportExportManager();
+        $this->usage_tracker = new UsageTracker();
+        $this->transients_manager = new TransientsManager();
+        $this->backup_manager = new BackupManager();
 
         global $wpdb;
         $this->wpdb = $wpdb;
@@ -88,6 +97,18 @@ class AjaxHandler
             // History & Optimization
             'nhrotm_save_history_settings' => 'save_history_settings',
             'nhrotm_prune_history' => 'prune_history',
+            // Autoload Usage Tracker
+            'nhrotm_get_unused_autoload' => 'get_unused_autoload',
+            'nhrotm_reset_usage_tracking' => 'reset_usage_tracking',
+            // Transients Manager
+            'nhrotm_transients_data' => 'transients_data',
+            'nhrotm_delete_transient' => 'delete_transient',
+            'nhrotm_bulk_delete_transients' => 'bulk_delete_transients',
+            // Backups
+            'nhrotm_get_backups' => 'get_backups',
+            'nhrotm_create_backup' => 'create_backup',
+            'nhrotm_restore_backup' => 'restore_backup',
+            'nhrotm_delete_backup' => 'delete_backup',
         ];
 
         foreach ($ajax_actions as $action => $method) {
@@ -382,9 +403,21 @@ class AjaxHandler
 
         $auto_cleanup = isset($_POST['auto_cleanup_enabled']) && sanitize_text_field(wp_unslash($_POST['auto_cleanup_enabled'])) === 'true' ? 'true' : 'false';
         $allow_html   = isset($_POST['allow_html_in_values']) && sanitize_text_field(wp_unslash($_POST['allow_html_in_values'])) === 'true' ? 'true' : 'false';
+        $usage_track  = isset($_POST['usage_tracking_enabled']) && sanitize_text_field(wp_unslash($_POST['usage_tracking_enabled'])) === 'true' ? 'true' : 'false';
+
+        $backup_freq  = isset($_POST['backup_frequency']) ? sanitize_text_field(wp_unslash($_POST['backup_frequency'])) : 'off';
+        if (!in_array($backup_freq, ['off', 'daily', 'weekly'], true)) {
+            $backup_freq = 'off';
+        }
 
         update_option('nhrotm_auto_cleanup_enabled', $auto_cleanup);
         update_option('nhrotm_allow_html_in_values', $allow_html);
+        update_option(UsageTracker::ENABLED_OPTION, $usage_track);
+
+        if (get_option(BackupManager::FREQUENCY_OPTION, 'off') !== $backup_freq) {
+            update_option(BackupManager::FREQUENCY_OPTION, $backup_freq);
+            BackupManager::reschedule($backup_freq);
+        }
 
         wp_send_json_success('Settings updated');
     }
@@ -464,6 +497,10 @@ class AjaxHandler
 
             if (empty($search)) {
                 throw new \Exception('Search string is required');
+            }
+
+            if (!$dry_run) {
+                $this->backup_manager->create_snapshot('Auto: before search & replace', 'auto');
             }
 
             $result = $this->search_replace_manager->execute_replace($search, $replace, $dry_run);
@@ -560,6 +597,8 @@ class AjaxHandler
 
             if (!$raw_data) throw new \Exception('Missing import data');
 
+            $this->backup_manager->create_snapshot('Auto: before import', 'auto');
+
             $count = $this->import_export_manager->execute_import($raw_data, $selected);
                 wp_send_json_success(['count' => $count]);
         } catch (\Exception $e) {
@@ -601,8 +640,196 @@ class AjaxHandler
             
             $history_manager = new \Nhrotm\OptionsTableManager\Managers\HistoryManager();
             $deleted = $history_manager->prune_history($days);
-            
+
             wp_send_json_success(['deleted' => $deleted]);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Get autoloaded options never recorded as used.
+     *
+     * @return void
+     */
+    public function get_unused_autoload()
+    {
+        try {
+            if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            wp_send_json_success($this->usage_tracker->get_unused_autoload_options());
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Reset collected autoload usage data.
+     *
+     * @return void
+     */
+    public function reset_usage_tracking()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            $this->usage_tracker->reset();
+            wp_send_json_success('Usage tracking data reset');
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * List all regular transients.
+     *
+     * @return void
+     */
+    public function transients_data()
+    {
+        try {
+            if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            wp_send_json_success($this->transients_manager->get_data());
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a single transient.
+     *
+     * @return void
+     */
+    public function delete_transient()
+    {
+        try {
+            $result = $this->transients_manager->delete_record();
+            if ($result) {
+                wp_send_json_success('Transient deleted successfully!');
+            } else {
+                wp_send_json_error('Failed to delete transient!');
+            }
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk delete transients by scope.
+     *
+     * @return void
+     */
+    public function bulk_delete_transients()
+    {
+        try {
+            $count = $this->transients_manager->bulk_delete();
+            wp_send_json_success(['count' => $count]);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * List option-table backup snapshots.
+     *
+     * @return void
+     */
+    public function get_backups()
+    {
+        try {
+            if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            wp_send_json_success($this->backup_manager->get_snapshots());
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Create a manual snapshot of the options table.
+     *
+     * @return void
+     */
+    public function create_backup()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            $label = isset($_POST['label']) ? sanitize_text_field(wp_unslash($_POST['label'])) : '';
+            $id = $this->backup_manager->create_snapshot($label, 'manual');
+            if ($id) {
+                wp_send_json_success(['id' => $id]);
+            } else {
+                wp_send_json_error('Failed to create snapshot');
+            }
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Restore a snapshot.
+     *
+     * @return void
+     */
+    public function restore_backup()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+            $count = $this->backup_manager->restore_snapshot($id);
+            wp_send_json_success(['count' => $count]);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a snapshot.
+     *
+     * @return void
+     */
+    public function delete_backup()
+    {
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
+                throw new \Exception('Invalid nonce');
+            }
+            if (!current_user_can('manage_options')) {
+                throw new \Exception('Unauthorized');
+            }
+            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+            if ($this->backup_manager->delete_snapshot($id)) {
+                wp_send_json_success('Snapshot deleted');
+            } else {
+                wp_send_json_error('Failed to delete snapshot');
+            }
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }

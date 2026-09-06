@@ -857,7 +857,7 @@
             }
 
             // Filters and User ID - Hidden for Feature tabs
-            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab') || $(this).hasClass('scanner-tab') || $(this).hasClass('search-replace-tab') || $(this).hasClass('import-export-tab');
+            const isFeatureTab = $(this).hasClass('optimization-tab') || $(this).hasClass('settings-tab') || $(this).hasClass('scanner-tab') || $(this).hasClass('search-replace-tab') || $(this).hasClass('import-export-tab') || $(this).hasClass('transients-tab') || $(this).hasClass('backups-tab');
             
             if (isFeatureTab) {
                 $('.nhrotm-filter-container').hide();
@@ -877,12 +877,17 @@
             // Trigger specific feature logic
             if ($(this).hasClass('optimization-tab')) {
                 loadAutoloadData();
+                loadUnusedAutoload();
             } else if ($(this).hasClass('scanner-tab')) {
                 // Potential initial load or reset view
             } else if ($(this).hasClass('search-replace-tab')) {
                 // Potential reset view
                 $('#nhrotm-search-replace-results').hide();
                 $('.nhrotm-search-replace-form').show();
+            } else if ($(this).hasClass('transients-tab')) {
+                loadTransients();
+            } else if ($(this).hasClass('backups-tab')) {
+                loadBackups();
             }
         });
 
@@ -978,11 +983,256 @@
             });
         });
 
+        // --- Autoload Usage Tracker ---
+
+        function loadUnusedAutoload() {
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'GET',
+                data: { action: 'nhrotm_get_unused_autoload', nonce: nhrotmOptionsTableManager.nonce },
+                success: function (response) {
+                    if (!response.success) {
+                        $('#nhrotm-unused-autoload-body').html('<tr><td colspan="3">Error: ' + (response.data || 'Unknown error') + '</td></tr>');
+                        return;
+                    }
+                    const d = response.data;
+                    if (!d.tracking) {
+                        $('#nhrotm-usage-status').text('Tracking is OFF. Enable "Autoload Usage Tracking" in Settings to collect data.');
+                    } else {
+                        $('#nhrotm-usage-status').text('Tracking since ' + (d.since || 'now') + ' — ' + d.seen_count + ' autoloaded options seen in use.');
+                    }
+                    const rows = d.options || [];
+                    let html = '';
+                    if (rows.length === 0) {
+                        html = '<tr><td colspan="3">No unused autoloaded options detected yet.</td></tr>';
+                    } else {
+                        rows.forEach(row => {
+                            html += `<tr>
+                                <td>${row.option_name}</td>
+                                <td>${row.size_formatted}</td>
+                                <td><button class="button nhrotm-disable-autoload" data-option="${row.option_name}">Disable</button></td>
+                            </tr>`;
+                        });
+                    }
+                    $('#nhrotm-unused-autoload-body').html(html);
+                },
+                error: function () {
+                    $('#nhrotm-unused-autoload-body').html('<tr><td colspan="3">Connection error.</td></tr>');
+                }
+            });
+        }
+
+        $(document).on('click', '.nhrotm-disable-autoload', function () {
+            const optionName = $(this).data('option');
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: { action: 'nhrotm_toggle_autoload', nonce: nhrotmOptionsTableManager.nonce, option_name: optionName, autoload_status: 'no' },
+                success: function (response) {
+                    if (response.success) {
+                        showToast('Autoload disabled for ' + optionName, 'success');
+                        loadUnusedAutoload();
+                        loadAutoloadData();
+                    } else {
+                        showToast('Failed: ' + response.data, 'error');
+                    }
+                }
+            });
+        });
+
+        $('#nhrotm-reset-usage-tracking').on('click', function () {
+            if (!confirm(nhrotmOptionsTableManager.confirm)) return;
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: { action: 'nhrotm_reset_usage_tracking', nonce: nhrotmOptionsTableManager.nonce },
+                success: function (response) {
+                    if (response.success) {
+                        showToast('Tracking data reset.', 'success');
+                        loadUnusedAutoload();
+                    } else {
+                        showToast('Failed to reset.', 'error');
+                    }
+                }
+            });
+        });
+
+        // --- Transients Manager ---
+
+        function loadTransients() {
+            $('#nhrotm-transients-body').html('<tr><td colspan="6">Loading...</td></tr>');
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'GET',
+                data: { action: 'nhrotm_transients_data', nonce: nhrotmOptionsTableManager.nonce },
+                success: function (response) {
+                    if (!response.success) {
+                        $('#nhrotm-transients-body').html('<tr><td colspan="6">Error: ' + (response.data || 'Unknown error') + '</td></tr>');
+                        return;
+                    }
+                    const rows = response.data || [];
+                    let html = '';
+                    if (rows.length === 0) {
+                        html = '<tr><td colspan="6">No transients found.</td></tr>';
+                    } else {
+                        rows.forEach(row => {
+                            html += `<tr>
+                                <td>${row.name}</td>
+                                <td>${row.status}</td>
+                                <td>${row.expires}</td>
+                                <td>${row.size_formatted}</td>
+                                <td><code>${row.value_snippet}</code></td>
+                                <td><button class="button nhrotm-delete-transient" data-name="${row.name}">Delete</button></td>
+                            </tr>`;
+                        });
+                    }
+                    $('#nhrotm-transients-body').html(html);
+                },
+                error: function () {
+                    $('#nhrotm-transients-body').html('<tr><td colspan="6">Connection error.</td></tr>');
+                }
+            });
+        }
+
+        $(document).on('click', '.nhrotm-delete-transient', function () {
+            const name = $(this).data('name');
+            if (!confirm(nhrotmOptionsTableManager.confirm)) return;
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: { action: 'nhrotm_delete_transient', nonce: nhrotmOptionsTableManager.nonce, name: name },
+                success: function (response) {
+                    if (response.success) {
+                        showToast('Transient deleted.', 'success');
+                        loadTransients();
+                    } else {
+                        showToast('Failed: ' + response.data, 'error');
+                    }
+                }
+            });
+        });
+
+        $('.nhrotm-bulk-transients').on('click', function () {
+            const scope = $(this).data('scope');
+            if (!confirm(nhrotmOptionsTableManager.confirm)) return;
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: { action: 'nhrotm_bulk_delete_transients', nonce: nhrotmOptionsTableManager.nonce, scope: scope },
+                success: function (response) {
+                    if (response.success) {
+                        showToast(response.data.count + ' transient(s) deleted.', 'success');
+                        loadTransients();
+                    } else {
+                        showToast('Failed: ' + response.data, 'error');
+                    }
+                }
+            });
+        });
+
+        // --- Backups ---
+
+        function loadBackups() {
+            $('#nhrotm-backups-body').html('<tr><td colspan="6">Loading...</td></tr>');
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'GET',
+                data: { action: 'nhrotm_get_backups', nonce: nhrotmOptionsTableManager.nonce },
+                success: function (response) {
+                    if (!response.success) {
+                        $('#nhrotm-backups-body').html('<tr><td colspan="6">Error: ' + (response.data || 'Unknown error') + '</td></tr>');
+                        return;
+                    }
+                    const rows = response.data || [];
+                    let html = '';
+                    if (rows.length === 0) {
+                        html = '<tr><td colspan="6">No snapshots yet.</td></tr>';
+                    } else {
+                        rows.forEach(row => {
+                            html += `<tr>
+                                <td>${row.label}</td>
+                                <td>${row.type}</td>
+                                <td>${row.option_count}</td>
+                                <td>${row.size_formatted}</td>
+                                <td>${row.created_at}</td>
+                                <td>
+                                    <button class="button nhrotm-restore-backup" data-id="${row.id}">Restore</button>
+                                    <button class="button nhrotm-delete-backup" data-id="${row.id}">Delete</button>
+                                </td>
+                            </tr>`;
+                        });
+                    }
+                    $('#nhrotm-backups-body').html(html);
+                },
+                error: function () {
+                    $('#nhrotm-backups-body').html('<tr><td colspan="6">Connection error.</td></tr>');
+                }
+            });
+        }
+
+        $('#nhrotm-create-backup').on('click', function () {
+            const label = $('#nhrotm-backup-label').val();
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: { action: 'nhrotm_create_backup', nonce: nhrotmOptionsTableManager.nonce, label: label },
+                success: function (response) {
+                    if (response.success) {
+                        showToast('Snapshot created.', 'success');
+                        $('#nhrotm-backup-label').val('');
+                        loadBackups();
+                    } else {
+                        showToast('Failed: ' + response.data, 'error');
+                    }
+                }
+            });
+        });
+
+        $(document).on('click', '.nhrotm-restore-backup', function () {
+            const id = $(this).data('id');
+            if (!confirm('Restore this snapshot? Current option values will be overwritten.')) return;
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: { action: 'nhrotm_restore_backup', nonce: nhrotmOptionsTableManager.nonce, id: id },
+                success: function (response) {
+                    if (response.success) {
+                        showToast(response.data.count + ' option(s) restored.', 'success');
+                        if ($.fn.DataTable.isDataTable('#nhrotm-data-table')) {
+                            $('#nhrotm-data-table').DataTable().ajax.reload(null, false);
+                        }
+                    } else {
+                        showToast('Failed: ' + response.data, 'error');
+                    }
+                }
+            });
+        });
+
+        $(document).on('click', '.nhrotm-delete-backup', function () {
+            const id = $(this).data('id');
+            if (!confirm(nhrotmOptionsTableManager.confirm)) return;
+            $.ajax({
+                url: nhrotmOptionsTableManager.ajaxUrl,
+                method: 'POST',
+                data: { action: 'nhrotm_delete_backup', nonce: nhrotmOptionsTableManager.nonce, id: id },
+                success: function (response) {
+                    if (response.success) {
+                        showToast('Snapshot deleted.', 'success');
+                        loadBackups();
+                    } else {
+                        showToast('Failed: ' + response.data, 'error');
+                    }
+                }
+            });
+        });
+
         // --- Settings ---
 
         // Initialize toggles from server-side values
         $('#nhrotm_auto_cleanup_toggle').prop('checked', nhrotmOptionsTableManager.auto_cleanup_enabled === 'true');
         $('#nhrotm_allow_html_toggle').prop('checked', nhrotmOptionsTableManager.allow_html_in_values === 'true');
+        $('#nhrotm_usage_tracking_toggle').prop('checked', nhrotmOptionsTableManager.usage_tracking_enabled === 'true');
+        $('#nhrotm_backup_frequency').val(nhrotmOptionsTableManager.backup_frequency || 'off');
 
         function saveSettings() {
             $.ajax({
@@ -993,10 +1243,14 @@
                     nonce: nhrotmOptionsTableManager.nonce,
                     auto_cleanup_enabled: $('#nhrotm_auto_cleanup_toggle').is(':checked') ? 'true' : 'false',
                     allow_html_in_values: $('#nhrotm_allow_html_toggle').is(':checked') ? 'true' : 'false',
+                    usage_tracking_enabled: $('#nhrotm_usage_tracking_toggle').is(':checked') ? 'true' : 'false',
+                    backup_frequency: $('#nhrotm_backup_frequency').val(),
                 },
                 success: function (response) {
                     if (response.success) {
                         nhrotmOptionsTableManager.allow_html_in_values = $('#nhrotm_allow_html_toggle').is(':checked') ? 'true' : 'false';
+                        nhrotmOptionsTableManager.usage_tracking_enabled = $('#nhrotm_usage_tracking_toggle').is(':checked') ? 'true' : 'false';
+                        nhrotmOptionsTableManager.backup_frequency = $('#nhrotm_backup_frequency').val();
                         showToast('Settings updated.', 'success');
                     } else {
                         showToast('Failed to update settings.', 'error');
@@ -1008,7 +1262,7 @@
             });
         }
 
-        $('#nhrotm_auto_cleanup_toggle, #nhrotm_allow_html_toggle').on('change', function () {
+        $('#nhrotm_auto_cleanup_toggle, #nhrotm_allow_html_toggle, #nhrotm_usage_tracking_toggle, #nhrotm_backup_frequency').on('change', function () {
             saveSettings();
         });
 

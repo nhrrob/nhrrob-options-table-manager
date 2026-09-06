@@ -1,0 +1,8 @@
+#!/bin/sh
+# Block the commit on lint or unit-test failure.
+npm run lint || exit 1
+
+# Run PHP unit tests only when the dev toolchain is present.
+if [ -f vendor/bin/phpunit ]; then
+	composer run test:unit || exit 1
+fi

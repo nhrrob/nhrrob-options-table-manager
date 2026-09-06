@@ -4,7 +4,7 @@ Tags: wp_options, transients, usermeta, optimize, database-optimization
 Requires at least: 6.0  
 Tested up to: 7.0
 Requires PHP: 7.4  
-Stable tag: 1.4.3
+Stable tag: 2.0.0
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -26,6 +26,11 @@ Install this plugin and get a fine view of the table and analytics.
 Tired of an overloaded `wp_options` table slowing down your WordPress site? **NHR Options Table Manager** provides a clean, organized, and optimized way to view and manage your options table efficiently. Get detailed analytics, edit and delete options, and keep your database lean and performant.
 
 ### ✨ Key Features
+- **Database Health Dashboard** – An at-a-glance scorecard (0–100) summarizing autoload size, transient and orphan counts, and last backup, with prioritized one-click recommendations.
+- **Modern React Interface** – A fast, dashboard-first admin app organized into Dashboard, Browse, Optimize, Tools, Integrations, and Settings.
+- **Autoload Usage Tracker** – Records which autoloaded options are actually used on real front-end page loads, then flags the ones that are never used so you can safely turn off their autoload.
+- **Transients Manager** – Dedicated view of every transient with size, expiration and status; delete individually or in bulk by scope (expired, persistent, or all).
+- **Scheduled Backups & Snapshots** – Create restorable snapshots of your `wp_options` table manually or on a daily/weekly schedule, with automatic snapshots taken before Search & Replace and Import.
 - **Option History & Rollback** – Track all changes to individual options and restore previous versions instantly.
 - **Autoload Health Check** – Analyze total autoloaded data size and identify heavy options that slow down your site.
 - **Automated Daily Cleanup** – Schedule automated daily deletion of expired transients via WP Cron.
@@ -41,12 +46,8 @@ Tired of an overloaded `wp_options` table slowing down your WordPress site? **NH
 - **Orphan Scanner** – Find and clean up leftovers from uninstalled plugins.
 - **WP-CLI Support** – Manage options (wp nhr-options list, wp nhr-options delete) from the command line.
 
-### 🚀 Coming Soon
-We're constantly improving NHR Options Table Manager! Here's what's on the way:
-- **Scheduled Backups** – Automatically backup your `wp_options` table before major changes.
-
 ### ⚡ Easy Installation & Instant Setup
-No complex configurations needed! Just install, activate, and head to **Tools → Options Table** for a detailed DataTable view of your options.
+No complex configurations needed! Just install, activate, and head to **Tools → Options Table** for the dashboard-first interface. The previous DataTables view remains available under **Tools → Options Table (Classic)**.
 
 ### 🎯 Optimize Performance & Reduce Bloat
 Analyze, clean, and optimize your database by removing unnecessary options, improving site performance significantly.
@@ -88,6 +89,16 @@ Yes! We have an automated daily cleanup feature and a manual delete button.
 6. Options usage analytics
 
 == Changelog ==
+
+= 2.0.0 - 06/07/2026 =
+- New: Complete React interface rewrite — a dashboard-first admin app with Dashboard, Browse, Optimize, Tools, Integrations, and Settings sections.
+- New: Database Health Dashboard with a 0–100 score, stat cards, and prioritized recommendations.
+- New: Unified Browse view for options, usermeta, and transients with add, inline edit (structured serialized/JSON editing), bulk delete, and search.
+- New: REST API backend (nhrotm/v1) with centralized settings.
+- Improved: Consolidated the interface; the previous DataTables view remains available as "Options Table (Classic)".
+- Added: Autoload Usage Tracker – flags autoloaded options never used on front-end page loads, with one-click autoload disable.
+- Added: Transients Manager tab – view all transients (size, expiration, status) and bulk delete by scope.
+- Added: Scheduled Backups & Snapshots of the wp_options table (manual, daily/weekly cron) with restore; automatic snapshot before Search & Replace and Import.
 
 = 1.4.3 - 14/05/2026 =
 - Enhancement: Add GitHub Actions workflow for automated plugin checks

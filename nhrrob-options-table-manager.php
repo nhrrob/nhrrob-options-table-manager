@@ -5,7 +5,7 @@
  * Description: Optimize WordPress with Advanced Option History, Autoload Health Checks, and Automated Cleanup. Boost performance by reducing database bloat.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.4.3
+ * Version: 2.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-options-table-manager
@@ -29,7 +29,7 @@ final class Nhrotm_Options_Table_Manager
      *
      * @var string
      */
-    const nhrotm_version = '1.4.2';
+    const nhrotm_version = '2.0.0';
 
     /**
      * Class construcotr
@@ -51,6 +51,9 @@ final class Nhrotm_Options_Table_Manager
         $history_manager = new \Nhrotm\OptionsTableManager\Managers\HistoryManager();
         $history_manager->create_table();
 
+        $backup_manager = new \Nhrotm\OptionsTableManager\Managers\BackupManager();
+        $backup_manager->create_table();
+
         if (!wp_next_scheduled('nhrotm_daily_cleanup')) {
             wp_schedule_event(time(), 'daily', 'nhrotm_daily_cleanup');
         }
@@ -58,6 +61,13 @@ final class Nhrotm_Options_Table_Manager
         if (!wp_next_scheduled('nhrotm_daily_history_prune')) {
             wp_schedule_event(time(), 'daily', 'nhrotm_daily_history_prune');
         }
+
+        \Nhrotm\OptionsTableManager\Managers\BackupManager::reschedule(
+            get_option(\Nhrotm\OptionsTableManager\Managers\BackupManager::FREQUENCY_OPTION, 'off')
+        );
+
+        // 2.0: fold legacy nhrotm_* options into the centralized nhrotm_settings store.
+        (new \Nhrotm\OptionsTableManager\Services\SettingsService())->migrate();
     }
 
     /**
@@ -67,6 +77,7 @@ final class Nhrotm_Options_Table_Manager
     {
         wp_clear_scheduled_hook('nhrotm_daily_cleanup');
         wp_clear_scheduled_hook('nhrotm_daily_history_prune');
+        wp_clear_scheduled_hook(\Nhrotm\OptionsTableManager\Managers\BackupManager::CRON_HOOK);
     }
 
     /**
@@ -112,6 +123,15 @@ final class Nhrotm_Options_Table_Manager
         // Cron Handler
         add_action('nhrotm_daily_cleanup', [$this, 'run_cleanup']);
         add_action('nhrotm_daily_history_prune', [$this, 'run_history_prune']);
+        add_action(\Nhrotm\OptionsTableManager\Managers\BackupManager::CRON_HOOK, [$this, 'run_scheduled_backup']);
+
+        // Front-end autoload usage tracking (opt-in)
+        if (!is_admin()) {
+            (new Nhrotm\OptionsTableManager\Managers\UsageTracker())->maybe_track();
+        }
+
+        // 2.0 architecture: module registry + REST (additive; runs alongside 1.5.x admin-ajax).
+        (new Nhrotm\OptionsTableManager\Core\Bootstrap())->init();
 
         new Nhrotm\OptionsTableManager\Assets();
 
@@ -148,6 +168,15 @@ final class Nhrotm_Options_Table_Manager
         $days = get_option('nhrotm_history_retention_days', 30);
         $history_manager = new \Nhrotm\OptionsTableManager\Managers\HistoryManager();
         $history_manager->prune_history($days);
+    }
+
+    /**
+     * Run scheduled options-table backup
+     */
+    public function run_scheduled_backup()
+    {
+        $backup_manager = new \Nhrotm\OptionsTableManager\Managers\BackupManager();
+        $backup_manager->create_snapshot('Scheduled backup', 'scheduled');
     }
 }
 

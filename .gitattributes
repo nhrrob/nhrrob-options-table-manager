@@ -68,5 +68,5 @@ tests/                  export-ignore
 *.tar.gz                export-ignore
 *.zip                   export-ignore
 /src/                   export-ignore
-build/                  export-ignore
 postcss.config.js       export-ignore
+.husky/                export-ignore
