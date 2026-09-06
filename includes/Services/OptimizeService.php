@@ -145,18 +145,20 @@ class OptimizeService
             return $removed;
         }
 
-        // Expired only: remove timeouts in the past plus their value rows.
+        // Expired only: remove timeouts in the past plus their value rows
+        // (both the regular and network-wide scopes).
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $expired = $wpdb->get_col($wpdb->prepare(
-            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_timeout\_%' AND option_value < %d",
+            "SELECT option_name FROM {$wpdb->options} WHERE " . $this->transient_timeout_where('option_name') . ' AND option_value < %d',
             time()
         ));
         $deleted = 0;
         $cleared = 0;
         foreach ($expired as $timeout_name) {
-            $transient = str_replace('_transient_timeout_', '', $timeout_name);
-            $deleted += (int) $wpdb->delete($wpdb->options, ['option_name' => '_transient_timeout_' . $transient]);
-            $deleted += (int) $wpdb->delete($wpdb->options, ['option_name' => '_transient_' . $transient]);
+            $is_site = $this->is_site_transient($timeout_name);
+            $transient = $this->transient_bare_name_from_timeout($timeout_name);
+            $deleted += (int) $wpdb->delete($wpdb->options, ['option_name' => $timeout_name]);
+            $deleted += (int) $wpdb->delete($wpdb->options, ['option_name' => $this->transient_value_name($transient, $is_site)]);
             $cleared++;
         }
         // phpcs:enable
@@ -176,7 +178,7 @@ class OptimizeService
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_timeout\_%' AND option_value < %d",
+            "SELECT COUNT(*) FROM {$wpdb->options} WHERE " . $this->transient_timeout_where('option_name') . ' AND option_value < %d',
             time()
         ));
     }

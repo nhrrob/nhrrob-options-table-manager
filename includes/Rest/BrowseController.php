@@ -53,13 +53,14 @@ class BrowseController extends RestController
             'callback'            => [$this, 'save_record'],
             'permission_callback' => [$this, 'can_manage'],
             'args'                => [
-                'type'     => ['type' => 'string', 'enum' => BrowseService::TYPES, 'default' => 'options'],
-                'id'       => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
-                'name'     => ['type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field'],
-                'value'    => ['type' => 'string', 'default' => ''],
-                'format'   => ['type' => 'string', 'enum' => ['plain', 'json', 'serialized'], 'default' => 'plain'],
-                'autoload' => ['type' => 'string', 'enum' => ['yes', 'no'], 'default' => 'yes'],
-                'user_id'  => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+                'type'       => ['type' => 'string', 'enum' => BrowseService::TYPES, 'default' => 'options'],
+                'id'         => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+                'name'       => ['type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field'],
+                'value'      => ['type' => 'string', 'default' => ''],
+                'format'     => ['type' => 'string', 'enum' => ['plain', 'json', 'serialized'], 'default' => 'plain'],
+                'autoload'   => ['type' => 'string', 'enum' => ['yes', 'no'], 'default' => 'yes'],
+                'user_id'    => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+                'expiration' => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
             ],
         ]);
 
@@ -113,13 +114,14 @@ class BrowseController extends RestController
     public function save_record($request)
     {
         $saved = $this->browse->save([
-            'type'     => $request->get_param('type'),
-            'id'       => $request->get_param('id'),
-            'name'     => $request->get_param('name'),
-            'value'    => $request->get_param('value'),
-            'format'   => $request->get_param('format'),
-            'autoload' => $request->get_param('autoload'),
-            'user_id'  => $request->get_param('user_id'),
+            'type'       => $request->get_param('type'),
+            'id'         => $request->get_param('id'),
+            'name'       => $request->get_param('name'),
+            'value'      => $request->get_param('value'),
+            'format'     => $request->get_param('format'),
+            'autoload'   => $request->get_param('autoload'),
+            'user_id'    => $request->get_param('user_id'),
+            'expiration' => $request->get_param('expiration'),
         ]);
         if (false === $saved) {
             return $this->fail('nhrotm_save_failed', __('This record is protected or the input was invalid.', 'nhrrob-options-table-manager'));

@@ -439,7 +439,7 @@ class OptionsTableManager extends BaseTableManager
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $transients = $wpdb->get_results(
-            "SELECT option_name FROM {$wpdb->prefix}options WHERE option_name LIKE '_transient_timeout_%'",
+            "SELECT option_name FROM {$wpdb->prefix}options WHERE " . $this->transient_timeout_where('option_name'),
             ARRAY_A
         );
         // phpcs:enable
@@ -449,12 +449,18 @@ class OptionsTableManager extends BaseTableManager
 
             foreach ($transients as $transient) {
                 $timeout_name = $transient['option_name'];
-                $transient_name = str_replace('_transient_timeout_', '', $timeout_name);
+                $is_site = $this->is_site_transient($timeout_name);
+                $transient_name = $this->transient_bare_name_from_timeout($timeout_name);
 
-                // Check if the transient itself exists and is expired
-                if (false === get_transient($transient_name)) {
+                // Check if the transient itself exists and is expired (both scopes).
+                $exists = $is_site ? get_site_transient($transient_name) : get_transient($transient_name);
+                if (false === $exists) {
                     $deleted_transients[] = $transient_name;
-                    delete_transient($transient_name);
+                    if ($is_site) {
+                        delete_site_transient($transient_name);
+                    } else {
+                        delete_transient($transient_name);
+                    }
                 }
             }
 
@@ -489,8 +495,8 @@ class OptionsTableManager extends BaseTableManager
         foreach ($results as $row) {
             $option_name = $row['option_name'];
 
-            // Remove '_transient' and '_timeout' and take the next part as the prefix
-            $modified_option_name = preg_replace('/^_transient(?:_timeout)?_/', '', $option_name); // Remove _transient and _timeout
+            // Remove '_transient'/'_site_transient' and '_timeout' and take the next part as the prefix
+            $modified_option_name = preg_replace('/^_(?:site_)?transient(?:_timeout)?_/', '', $option_name);
             $parts = explode('_', $modified_option_name);
 
             if (count($parts) > 0) {

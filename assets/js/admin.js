@@ -4,7 +4,6 @@
 
         let protectedOptions = nhrotmOptionsTableManager.protected_options;
         let protectedUsermetas = nhrotmOptionsTableManager.protected_usermetas;
-        let isBetterPaymentInstalled = nhrotmOptionsTableManager.is_better_payment_installed;
         let isWpRecipeMakerInstalled = nhrotmOptionsTableManager.is_wp_recipe_maker_installed;
 
         // Initial visibility setup
@@ -311,7 +310,6 @@
         }
 
         let usermetaTableAdjusted = false;
-        let betterPaymentTableAdjusted = false;
         let wprmRatingsTableAdjusted = false;
         let wprmAnalyticsTableAdjusted = false;
         let wprmChangelogTableAdjusted = false;
@@ -324,7 +322,6 @@
             if ($(this).hasClass('options-table')) {
                 $('#nhrotm-data-table-usermeta_wrapper').fadeOut();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
-                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
@@ -335,7 +332,6 @@
             } else if ($(this).hasClass('usermeta-table')) {
                 $('#nhrotm-data-table_wrapper').fadeOut();
                 $('.nhrotm-filter-container').fadeOut();
-                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
@@ -347,27 +343,11 @@
                     $('#nhrotm-data-table-usermeta').DataTable().columns.adjust().draw();
                     usermetaTableAdjusted = true;
                 }
-            } else if ($(this).hasClass('better_payment-table')) {
-                $('#nhrotm-data-table-usermeta_wrapper').fadeOut();
-                $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
-                $('#nhrotm-data-table_wrapper').fadeOut();
-                $('.nhrotm-filter-container').fadeOut();
-                $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
-                $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
-                $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
-
-                $('#nhrotm-data-table-better_payment_wrapper').fadeIn();
-
-                if (!betterPaymentTableAdjusted) {
-                    $('#nhrotm-data-table-better_payment').DataTable().columns.adjust().draw();
-                    betterPaymentTableAdjusted = true;
-                }
             } else if ($(this).hasClass('wprm_ratings-table')) {
                 $('#nhrotm-data-table-usermeta_wrapper').fadeOut();
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
                 $('#nhrotm-data-table_wrapper').fadeOut();
                 $('.nhrotm-filter-container').fadeOut();
-                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
 
@@ -382,7 +362,6 @@
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
                 $('#nhrotm-data-table_wrapper').fadeOut();
                 $('.nhrotm-filter-container').fadeOut();
-                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
 
@@ -397,7 +376,6 @@
                 $('.nhrotm-data-table-wrap .logged-user-id').fadeOut();
                 $('#nhrotm-data-table_wrapper').fadeOut();
                 $('.nhrotm-filter-container').fadeOut();
-                $('#nhrotm-data-table-better_payment_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_ratings_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_changelog_wrapper').fadeOut();
                 $('#nhrotm-data-table-wprm_analytics_wrapper').fadeOut();
@@ -522,33 +500,6 @@
                     }
                 });
             }
-        }
-
-        // Better Payment Table
-        if (isBetterPaymentInstalled) {
-            $('#nhrotm-data-table-better_payment').DataTable({
-                "processing": true,
-                "serverSide": true,
-                "ajax": {
-                    "type": "GET",
-                    "url": nhrotmOptionsTableManager.ajaxUrl + "?action=nhrotm_better_payment_table_data&nonce=" + nhrotmOptionsTableManager.nonce,
-                },
-                "columns": [
-                    { "data": "id", 'visible': false },
-                    { "data": "transaction_id" },
-                    { "data": "email" },
-                    { "data": "amount" },
-                    { "data": "form_fields_info" },
-                    { "data": "source" },
-                    { "data": "status" },
-                    { "data": "payment_date" },
-                ],
-                "searchDelay": 500, // Delay in milliseconds (0.5 seconds)
-                // "scrollY": "400px",     // Fixed height
-                // "scrollCollapse": true,
-                // "paging": true,
-                // "order": [[0, 'asc']], // Default order on the first column in ascending
-            });
         }
 
         // WP Recipe Maker Tables

@@ -143,7 +143,7 @@ Search & Replace · Import/Export · Backups (tabbed or stacked cards).
 
 ## 6. Integrations
 
-Conditional section — only rendered when Better Payment / WPRM tables exist. Quarantined here so third-party tables never inflate the main nav. Same grid component as Browse, scoped to the integration's tables.
+Conditional section — only rendered when a supported third-party table (e.g. WPRM) exists. Quarantined here so third-party tables never inflate the main nav. Same grid component as Browse, scoped to the integration's tables.
 
 ## 7. Settings
 
@@ -174,7 +174,7 @@ The look is branded and vibrant, delivered entirely through a small set of CSS c
 
 ```css
 :root {
-  /* Brand — violet/indigo primary (WPDeveloper-family energy) */
+  /* Brand — violet/indigo primary (vibrant SaaS-admin energy) */
   --nhrotm-primary:        #6d5efc;   /* buttons, active nav, links */
   --nhrotm-primary-600:    #5b4ce6;   /* hover */
   --nhrotm-gradient:       linear-gradient(135deg, #6d5efc 0%, #9b5cff 100%);
@@ -298,3 +298,55 @@ Rules: brand violet and the four status hues are **theme-invariant** (recognisab
 - Health-score band thresholds — validate 50/80 against real sites before locking.
 - Type switcher: dropdown vs segmented control (a11y + narrow-width behavior). Mockup uses a **segmented control** (clearer state, keyboard-navigable); revisit for very narrow widths.
 - `Pro` tag exact hue vs the options-card tint — confirm they're distinguishable side by side (Optimize shows both).
+
+## 14. UI implementation gotchas (read before touching CSS here)
+
+Recurring bug classes found across the Browse/Optimize/Tools/Settings polish pass. These aren't one-off fixes — the same root causes will bite again on any new form control, button, or modal added later. Check every new interactive element against this list.
+
+### 14.1 wp-admin core CSS fights our styles on *every* native form element
+
+`input`, `textarea`, `select`, `a`, and `input[type=checkbox]` all carry real declarations from wp-admin's own `forms.css`/`common.css` — not just resets. Two separate failure modes, and a component can hit either or both:
+
+1. **Specificity loss on the base (non-`:focus`) style.** Core selectors like `input[type=search]{border-radius:2px;...}` combine an element type with an attribute selector — that's more specific than a lone class (`.my-input{border-radius:10px}` loses outright, regardless of source order). **Fix:** scope our selector under `.nhrotm-app` (e.g. `.nhrotm-app .nhrotm-browse__search`) so it has enough specificity to win even against `input[type=search]`.
+2. **Leaked properties on `:focus` even after (1) is fixed.** Winning the cascade for the properties *we* declare does nothing for properties core sets that we never touch. Core's `:focus` rules typically set `border-color`, `outline`, and a themed **`box-shadow`** (often a *double* one — see 14.2) together; if our `:focus` rule only redeclares `outline`, the box-shadow shows through untouched. **Fix:** every custom `:focus` rule here must explicitly redeclare `outline`, `border-color`, *and* `box-shadow` — never assume one implies the others are covered.
+
+This exact pattern has hit: the Browse search field, the app-bar "Classic view" link, `.nhrotm-field` inputs/textarea/select, the pager's per-page `<select>`, and checkboxes. Assume it applies to the next native control too.
+
+### 14.2 Checkboxes: don't use `accent-color`, and reset `min-width` explicitly
+
+Three independent reasons checkboxes get *fully custom-drawn* (`appearance: none`, no native rendering at all) rather than themed via `accent-color`:
+
+- **`accent-color` checkboxes get a native focus halo that CSS cannot remove.** Chrome paints an extra ring around `accent-color`-styled checkboxes on focus that is *native widget paint*, not a CSS-visible layer — `outline: none` and `box-shadow: none` do nothing to it. The only fix is to stop using `accent-color` and draw the checkbox yourself.
+- **`appearance: none` does not reset non-rendering properties.** wp-admin's `input[type=checkbox]` sets `min-width: 1rem` (16px) with no matching `min-height`. `min-width` is a hard layout floor — it clamps the final rendered width regardless of which rule's `width` wins the cascade, and `appearance: none` has no effect on it (it only suppresses *native painting*, not ordinary CSS box-model properties). Forgetting `min-width: 0` here silently produces a 16×15px box instead of a 15×15 square. The same logic applies to `box-shadow` — resetting native paint via `appearance: none` does **not** reset wp-admin's plain-CSS `:focus` box-shadow; that still needs its own explicit `box-shadow: none`. (Both regressed once already when this rule was rewritten — re-verify both after *any* future edit to the checkbox block.)
+- **The checkmark glyph itself needs to be centered by construction, not by eye.** Two hand-authored approaches were tried and both left the visible ink off-centre within the checkbox even though the *box* was correctly centered: a hand-picked `clip-path` polygon, and the classic two-border "rotated L" trick. Both fail for the same reason — a checkmark is inherently asymmetric (short left stroke, long right stroke), so `place-content: center`-ing its bounding box does not center the ink drawn inside that box; only part of the box is actually visible. The fix: `background: #fff` masked with `mask-image`/`-webkit-mask-image` to a data-URI SVG using the *exact same* checkmark path already used (and already correctly centered) for the toast success icon (`Icon.js`'s `check: 'M20 6 9 17l-5-5'`, `viewBox="0 0 24 24"`) — an SVG viewBox-based shape centers reliably with `mask-size: contain; mask-position: center`, and it keeps the checkbox visually consistent with the app's own iconography instead of inventing a new, unverified glyph. Final shipped sizing on the 15×15px (12×12px content-box) checkbox: the masked `::before` is `12px × 12px` with `margin-top: 1px; margin-left: 1px` — even filling the content box outright wasn't quite centered against the checkmark's own asymmetric weighting, so this was tuned by visual inspection on top of the masking fix, not derived analytically. Re-verify by eye (zoomed screenshot, not just DOM measurements — a checkbox can measure as geometrically centered while still looking off, since what's measured is the invisible box, not the visible ink) if this value is ever touched again.
+
+### 14.3 Focus-state convention: hover darkens the border, focus changes nothing
+
+Deliberate choice for every text-like control (search field, `.nhrotm-field` inputs/textarea/select, the pager select): `:hover { border-color: var(--nhrotm-text-muted); }`, `:focus { border-color: var(--nhrotm-border-strong); outline: none; box-shadow: none; }` — i.e. focus resets back to the *resting* border colour, so there is no visible focus ring/colour change at all, just whatever wp-admin's own leaked styling would otherwise add (which is why the reset is still necessary). This was a deliberate reversal of an earlier attempt at a visible violet focus ring — keep every future text control consistent with the *no visible focus change* pattern, not the ring.
+
+The one exception: buttons/links where a focus-visible affordance matters for keyboard nav (e.g. the confirm dialog's Cancel button gets programmatic `.focus()` on open) may still want a real indicator — use judgement, but default to "no ring" for plain text/select inputs.
+
+### 14.4 `--nhrotm-*` custom properties are scoped to `.nhrotm-app` — nothing works outside it
+
+Every token (`--nhrotm-surface`, `--nhrotm-primary`, etc.) is defined on the `.nhrotm-app` selector. Anything rendered as a DOM sibling of `.nhrotm-app` — not a descendant — silently loses every token (falls back to `initial`/transparent, not an error). This bit the confirm-dialog modal: `ConfirmProvider` originally wrapped `<AppShell>` from the outside in `app.js`, so the dialog it rendered was a sibling of `.nhrotm-app`, not inside it — the modal's `background: var(--nhrotm-surface)` resolved to nothing and it rendered fully transparent over the dimmed overlay.
+
+**Rule:** any provider/portal that renders UI (modals, toasts, tooltips) must be mounted *inside* `.nhrotm-app`'s DOM subtree — nest it under `<AppShell>`'s `children`, never wrap `<AppShell>` itself. `position: fixed` still works correctly for full-viewport overlays regardless of DOM depth (confirmed no ancestor between `.nhrotm-app` and these providers uses `transform`, which would otherwise trap `position: fixed` children inside it — see the comment on `.nhrotm-screen`'s fade animation).
+
+### 14.5 Every `.nhrotm-btn` variant needs its own real border and its own `:hover`
+
+The base `.nhrotm-btn` border is `1px solid transparent` — variants that don't set a real `border-color` are shaped only by their fill colour. `--soft` originally had no border at all, so on hover its lift `box-shadow` (a similar violet tone) visually blended into the fill with no edge to anchor the button's shape. **Rule:** every new `.nhrotm-btn` variant sets an explicit, visible `border-color` (even a subtle low-opacity one) *and* its own `:hover` treatment — never rely on the transparent base border or assume a shadow alone will read as a boundary. This applies equally to icon buttons, segmented-control items, and any other clickable control: no interactive element ships without a `:hover` state (this was audited and fixed once already across `.nhrotm-segmented__item`, `.nhrotm-linkbtn`, `.nhrotm-modal__close`).
+
+### 14.6 Feedback: toasts, not inline notices; confirm dialogs, not `window.confirm`/`alert`
+
+- **Success feedback** (add/edit/delete) uses the app-wide `useToast()` hook (`ToastProvider`/`Toast.js`) — a fixed-position, auto-dismissing stack — not inline `.nhrotm-notice` text in a toolbar, which shifts layout every time it appears/disappears. Wording convention: **"X successfully."** (e.g. "Option added successfully.", "Record deleted successfully.", "Changes saved successfully.").
+- **Destructive/irreversible confirmations** use `useConfirm()` (`ConfirmProvider`/`ConfirmDialog.js`) — never `window.confirm`. Always pass a `description` explaining the consequence (either a natural second sentence split off the main message — e.g. "Restore this snapshot?" / "Current option values will be overwritten." — or the generic "This action cannot be undone." for plain deletes). A confirm dialog with only a title and no description reads as unfinished/sparse.
+- Plain error feedback (a failed request) still uses `window.alert()` — that's intentionally out of scope for the toast/confirm system (kept lightweight; not user-facing polish-critical the way success/destructive-confirmation flows are).
+
+### 14.7 General consistency checklist for any new component
+
+1. Same button height/padding/radius/shape as existing `.nhrotm-btn`/`.nhrotm-iconbtn` siblings — never one-off pixel values.
+2. Every clickable element gets an explicit `:hover`.
+3. Every native form element gets an explicit `:focus` override per §14.1/14.3 (never assume the base rule "handles" focus too).
+4. Tables: bold (`700`) headers, normal-weight (`400`) body content including name/key columns, zebra-striped rows (`nth-child(even)` using `--nhrotm-bg`) with a stronger `:hover` tint layered on top.
+5. Row actions are icon + text label, not icon-only.
+6. Sort/filter state: if a default sort exists (Browse defaults to newest-first via `id`/`desc`), check *every* code path that resets sort state (tab switches, type changes) actually preserves that default — this regressed once when `switchType` reset to `orderby: 'size'` instead of `'id'`.

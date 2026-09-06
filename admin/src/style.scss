@@ -138,6 +138,19 @@
 		&:hover {
 			background: rgba(255, 255, 255, 0.28);
 		}
+
+		// WP core's global `a:focus` rule (text colour, box-shadow ring, and
+		// 2px border-radius, themed to the admin colour scheme's accent
+		// colour) matches this link too, and otherwise wins each of those
+		// properties while focused since it's more specific than the plain
+		// `.nhrotm-appbar__btn` rule above. No focus ring here at all, so
+		// redeclare everything core's rule sets.
+		&:focus {
+			color: #fff;
+			outline: none;
+			box-shadow: none;
+			border-radius: 8px;
+		}
 	}
 
 	&__icobtn {
@@ -149,6 +162,10 @@
 	}
 
 	&__link {
+		// Matches &__icobtn's fixed 32px (the dark-theme toggle it sits next
+		// to) — the base padding alone renders shorter since it's sized to
+		// one line of 13px text, not a fixed box.
+		height: 32px;
 		text-decoration: none;
 		line-height: 1;
 
@@ -361,12 +378,99 @@
 		font-size: 13.5px;
 	}
 
+	input:hover,
+	textarea:hover,
+	select:hover {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	// Consistent with .nhrotm-browse__search: hover darkens the border, focus
+	// changes nothing at all (just resets WP core's own themed box-shadow
+	// ring and outline, which keep applying here otherwise).
 	input:focus,
 	textarea:focus,
 	select:focus {
-		outline: 2px solid var(--nhrotm-primary);
-		outline-offset: 1px;
+		outline: none;
+		border-color: var(--nhrotm-border-strong);
+		box-shadow: none;
+	}
+}
+
+// Compact, on-brand checkboxes app-wide (native ones render oversized) —
+// every checkbox in the app, not just the Browse grid's. Fully custom-drawn
+// (appearance:none + a clip-path check) rather than styled via accent-color —
+// accent-color checkboxes get a native focus halo that outline/box-shadow
+// can't touch (it's the native widget's own paint). appearance:none removes
+// that native paint, but WP core's own `:focus` box-shadow rule (a plain CSS
+// property, unrelated to native rendering) still matches and must still be
+// reset explicitly below — appearance doesn't do that part for free.
+.nhrotm-app input[type='checkbox'] {
+	appearance: none;
+	-webkit-appearance: none;
+	box-sizing: border-box;
+	// WP core's `input[type=checkbox]` sets `min-width: 1rem` (16px) with no
+	// matching min-height. min-width is a hard layout floor — it clamps the
+	// final width no matter which rule's `width` wins the cascade, so the
+	// box rendered 16x15px (clamped wide, height untouched) until this reset.
+	min-width: 0;
+	display: inline-grid;
+	place-content: center;
+	width: 15px;
+	height: 15px;
+	margin: 0;
+	vertical-align: middle;
+	border: 1.5px solid var(--nhrotm-border-strong);
+	border-radius: 4px;
+	background: var(--nhrotm-surface);
+	cursor: pointer;
+	transition: background 150ms, border-color 150ms;
+
+	// A hand-picked clip-path polygon and a rotated-border "L" were both
+	// tried here and both left the visible checkmark ink off-centre within
+	// its own box — a checkmark is inherently asymmetric (short left stroke,
+	// long right stroke), so centering the *bounding box* doesn't centre
+	// what's actually drawn. Masking with the same check-icon path already
+	// used (and already correctly centred) for the toast success icon
+	// sidesteps the problem entirely instead of re-deriving it by eye.
+	&::before {
+		content: '';
+		width: 12px;
+		height: 12px;
+		margin-top: 1px;
+		margin-left: 1px;
+		background: #fff;
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+		mask-repeat: no-repeat;
+		-webkit-mask-repeat: no-repeat;
+		mask-position: center;
+		-webkit-mask-position: center;
+		mask-size: contain;
+		-webkit-mask-size: contain;
+		transform: scale(0);
+		transition: transform 120ms ease-in-out;
+	}
+
+	&:checked {
+		background: var(--nhrotm-primary);
 		border-color: var(--nhrotm-primary);
+
+		&::before {
+			transform: scale(1);
+		}
+	}
+
+	&:hover {
+		border-color: var(--nhrotm-primary);
+	}
+
+	// appearance:none removes native widget painting, but WP core's
+	// `input[type=checkbox]:focus` box-shadow (the double white+theme-colour
+	// ring) is plain author CSS, not native paint — appearance never touched
+	// it, and dropping this reset when this rule was rewritten let it back in.
+	&:focus {
+		outline: none;
+		box-shadow: none;
 	}
 }
 
@@ -413,10 +517,43 @@
 	&--soft {
 		background: var(--nhrotm-gradient-soft);
 		color: var(--nhrotm-primary-600);
+		// The base border is transparent, so this button's shape was defined
+		// only by its soft fill colour — on hover, the lift shadow is a
+		// similar violet tone and blurs into the fill with no edge to anchor
+		// it. A real border keeps the shape crisp at rest and on hover alike.
+		// Neutral (not tinted) so it reads as one family with the other
+		// bordered controls it sits beside, e.g. .nhrotm-browse__search.
+		border-color: var(--nhrotm-border-strong);
+
+		// Same lift language as --primary, scaled down to read as the
+		// secondary action — every .nhrotm-btn variant gets a hover now.
+		&:hover {
+			box-shadow: 0 4px 12px rgba(109, 94, 252, 0.22);
+			transform: translateY(-1px);
+		}
 
 		&:disabled {
 			opacity: 0.6;
 			cursor: default;
+			transform: none;
+			box-shadow: none;
+		}
+	}
+
+	&--danger {
+		background: var(--nhrotm-danger);
+		color: #fff;
+
+		&:hover {
+			box-shadow: 0 6px 16px rgba(240, 68, 56, 0.35);
+			transform: translateY(-1px);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: default;
+			transform: none;
+			box-shadow: none;
 		}
 	}
 
@@ -658,6 +795,11 @@
 		cursor: pointer;
 		transition: background 150ms, color 150ms;
 
+		&:hover:not(.is-active) {
+			background: var(--nhrotm-hover);
+			color: var(--nhrotm-primary-600);
+		}
+
 		&.is-active {
 			background: var(--nhrotm-gradient);
 			color: #fff;
@@ -672,15 +814,97 @@
 	flex-wrap: wrap;
 }
 
-.nhrotm-browse__search {
-	padding: 8px 12px;
+// Scoped to `.nhrotm-app` (not just the bare class) so this beats WP core's
+// `input[type=search]{border-radius:2px;...}` in forms.css — that rule pairs
+// an element type with an attribute selector, which outranks a lone class
+// regardless of our stylesheet's load order. Same reasoning applies to the
+// `:hover`/`:focus` variants below against core's `input[type=search]:focus`.
+.nhrotm-app .nhrotm-browse__search {
+	// Match the segmented switcher / buttons it sits beside in the toolbar
+	// (10px radius, 9px vertical padding) rather than the smaller 8px used
+	// for form-field inputs elsewhere.
+	padding: 9px 14px;
 	border: 1px solid var(--nhrotm-border-strong);
-	border-radius: 8px;
+	border-radius: 10px;
 	min-width: 200px;
 	background: var(--nhrotm-surface);
 	color: var(--nhrotm-text);
 	font: inherit;
 	font-size: 13px;
+	transition: border-color 150ms;
+	// Reset native OS search-field chrome so the radius/border above always
+	// wins instead of the browser's own rounded/pill appearance. Chrome/Safari
+	// only respect this on `input[type=search]` via the -webkit- prefixed
+	// property — the build's autoprefixer strips a plain `none` here as a
+	// "redundant" duplicate of the standard `appearance: none` below, since
+	// current browser versions claim to support the unprefixed property. They
+	// don't fully honour it for the search-field chrome specifically, so we
+	// use `textfield` (a different value, immune to that dedup) — the same
+	// value WordPress core itself uses for this exact input type.
+	-webkit-appearance: textfield;
+	appearance: none;
+
+	&::-webkit-search-decoration,
+	&::-webkit-search-cancel-button {
+		-webkit-appearance: none;
+	}
+
+	&:hover {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	// WP core's `input[type=search]:focus` sets its own border-color and
+	// box-shadow ring (themed to the admin colour scheme's accent colour) —
+	// each is a separate declaration that keeps applying unless redeclared,
+	// even once our selector's specificity wins the cascade. No focus ring
+	// here at all — same treatment as the app-bar link.
+	&:focus {
+		border-color: var(--nhrotm-border-strong);
+		outline: none;
+		box-shadow: none;
+	}
+}
+
+// Leading magnifying-glass icon + a custom clear button on the Browse search
+// field (the native ::-webkit-search-cancel-button is switched off above so
+// it doesn't fight the icon/appearance reset — this replaces it).
+.nhrotm-app .nhrotm-search {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+
+	> svg {
+		position: absolute;
+		left: 11px;
+		color: var(--nhrotm-text-muted);
+		pointer-events: none;
+	}
+
+	.nhrotm-browse__search {
+		width: 240px;
+		padding-left: 34px;
+		padding-right: 30px;
+	}
+
+	&__clear {
+		position: absolute;
+		right: 6px;
+		display: grid;
+		place-items: center;
+		width: 22px;
+		height: 22px;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		transition: background 150ms, color 150ms;
+
+		&:hover {
+			background: var(--nhrotm-bg);
+			color: var(--nhrotm-text);
+		}
+	}
 }
 
 .nhrotm-grid__wrap {
@@ -699,7 +923,7 @@
 	width: 100%;
 	border-collapse: collapse;
 	font-size: 13px;
-	min-width: 680px;
+	min-width: 790px;
 	table-layout: fixed;
 
 	col.nhrotm-col-check {
@@ -715,7 +939,7 @@
 		width: 128px;
 	}
 	col.nhrotm-col-act {
-		width: 92px;
+		width: 210px;
 	}
 
 	th,
@@ -728,7 +952,7 @@
 
 	thead th {
 		color: var(--nhrotm-text-muted);
-		font-weight: 600;
+		font-weight: 700;
 		font-size: 11px;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
@@ -741,26 +965,19 @@
 		transition: background-color 140ms ease;
 	}
 
+	// Classic-style zebra stripe as a static anchor for scanning a wide,
+	// tall row — hover below still wins (same specificity, later in source)
+	// so it stays the stronger interaction cue on top of either stripe.
+	tbody tr:nth-child(even) {
+		background-color: var(--nhrotm-bg);
+	}
+
 	tbody tr:last-child td {
 		border-bottom: 0;
 	}
 
 	tbody tr:hover {
 		background-color: var(--nhrotm-hover);
-	}
-
-	tbody tr:hover .nhrotm-grid__actions {
-		opacity: 1;
-	}
-
-	// Compact, on-brand checkboxes (native ones render oversized).
-	input[type='checkbox'] {
-		width: 15px;
-		height: 15px;
-		margin: 0;
-		vertical-align: middle;
-		accent-color: var(--nhrotm-primary);
-		cursor: pointer;
 	}
 
 	&__sort {
@@ -796,21 +1013,47 @@
 
 	&__name {
 		font-family: var(--nhrotm-mono);
-		font-weight: 600;
+		font-weight: 400;
 		font-size: 12.5px;
 		color: var(--nhrotm-text);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		// Wrap rather than truncate — usermeta keys in particular run much
+		// longer than option names and an ellipsis was hiding them entirely.
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 
 	&__preview {
+		// A block div nested inside a plain, unstyled <td> (see BrowseScreen.js)
+		// rather than applied to the <td> itself: table cells ignore margin,
+		// and a `display: block` <td> stops stretching to the row's height,
+		// which desyncs its border-bottom from every other column's. The
+		// <td>'s own padding (the standard th/td rule above) already matches
+		// the Name/Size columns, so this div adds none of its own — only the
+		// vertical margin, which needs the div's real box model to take effect.
+		display: block;
 		color: var(--nhrotm-text-muted);
 		font-family: var(--nhrotm-mono);
 		font-size: 12px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		max-height: 90px;
+		overflow-y: auto;
+		white-space: pre-wrap;
+		word-break: break-word;
+		scrollbar-width: thin;
+		// So two tall, scrollable values in adjacent rows still read as
+		// separate blocks instead of touching.
+		margin: 3px 0;
+
+		&::-webkit-scrollbar {
+			width: 6px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: var(--nhrotm-border-strong);
+			border-radius: 3px;
+		}
 	}
 
 	&__size {
@@ -822,29 +1065,62 @@
 
 	&__actions {
 		display: flex;
-		gap: 4px;
+		gap: 6px;
 		justify-content: flex-end;
-		opacity: 0.55;
-		transition: opacity 120ms;
 	}
 }
 
+// Placeholder rows shown while a type/sort/search/page change is loading, so
+// the grid keeps roughly its prior row count instead of collapsing to a
+// single "Loading…" line and jumping back once data arrives.
+.nhrotm-skeleton {
+	display: inline-block;
+	height: 12px;
+	border-radius: 4px;
+	background: linear-gradient(
+		90deg,
+		var(--nhrotm-border) 25%,
+		var(--nhrotm-hover) 50%,
+		var(--nhrotm-border) 75%
+	);
+	background-size: 200% 100%;
+	animation: nhrotm-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes nhrotm-skeleton-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+// Row actions (Edit/Delete): icon + label, matching Classic view's text
+// links rather than icon-only glyphs that need a tooltip to read.
 .nhrotm-iconbtn {
-	display: grid;
-	place-items: center;
-	width: 28px;
-	height: 28px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
 	border: 1px solid transparent;
-	border-radius: 7px;
+	border-radius: 8px;
 	background: transparent;
 	color: var(--nhrotm-text-muted);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
 	cursor: pointer;
 	transition: color 150ms, background 150ms, border-color 150ms;
 
 	&:hover {
 		color: var(--nhrotm-primary);
 		background: var(--nhrotm-surface);
-		border-color: var(--nhrotm-border);
+		// Strong token, not the passive row-divider one — this border is
+		// hover feedback on a control, same family as the search field,
+		// inputs and checkboxes.
+		border-color: var(--nhrotm-border-strong);
 	}
 
 	&--danger:hover {
@@ -906,21 +1182,6 @@
 	padding: 2px 7px;
 }
 
-.nhrotm-linkbtn {
-	border: 0;
-	background: transparent;
-	cursor: pointer;
-	font: inherit;
-	font-size: 13px;
-	font-weight: 600;
-	color: var(--nhrotm-primary-600);
-	padding: 0;
-
-	&--danger {
-		color: var(--nhrotm-danger);
-	}
-}
-
 .nhrotm-pager {
 	display: flex;
 	align-items: center;
@@ -956,6 +1217,19 @@
 			color: var(--nhrotm-text);
 			font: inherit;
 			font-size: 12.5px;
+
+			&:hover {
+				border-color: var(--nhrotm-text-muted);
+			}
+
+			// Had no focus handling at all — WP core's default themed ring
+			// showed unmodified. Same treatment as .nhrotm-field/search: hover
+			// darkens, focus changes nothing beyond resetting WP core's ring.
+			&:focus {
+				outline: none;
+				border-color: var(--nhrotm-border-strong);
+				box-shadow: none;
+			}
 		}
 	}
 
@@ -1129,6 +1403,10 @@
 	&:focus {
 		text-decoration: underline;
 	}
+
+	&--danger {
+		color: var(--nhrotm-danger);
+	}
 }
 
 .nhrotm-activity__foot {
@@ -1281,16 +1559,34 @@
 		animation: none;
 	}
 
+	// Narrow variant for a short confirm prompt — the default 640px reads
+	// as an empty void around a title and two buttons.
+	&--sm {
+		width: min(420px, 100%);
+	}
+
+	// The confirm dialog skips the body entirely when it has no description
+	// — without this, the header's bottom border and the footer's top
+	// border would land flush against each other with no gap between.
+	&__head + &__foot {
+		border-top: 0;
+	}
+
 	&__head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 16px 20px;
+		padding: 18px 20px;
 		border-bottom: 1px solid var(--nhrotm-border);
 
+		// Matches .nhrotm-screen__title's weight/tracking (one step down in
+		// size) — plain 16px/400 read as an afterthought in a 640px-wide bar.
 		h2 {
 			margin: 0;
-			font-size: 16px;
+			font-size: 18px;
+			font-weight: 700;
+			letter-spacing: -0.1px;
+			color: var(--nhrotm-text);
 		}
 	}
 
@@ -1301,10 +1597,22 @@
 		line-height: 1;
 		cursor: pointer;
 		color: var(--nhrotm-text-muted);
+		transition: color 150ms;
+
+		&:hover {
+			color: var(--nhrotm-text);
+		}
 	}
 
 	&__body {
 		padding: 20px;
+	}
+
+	&__confirm-text {
+		margin: 0;
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--nhrotm-text);
 	}
 
 	&__foot {
@@ -1339,6 +1647,62 @@
 .nhrotm-notice {
 	color: var(--nhrotm-success);
 	font-weight: 500;
+}
+
+// ---- Toasts ----
+.nhrotm-toasts {
+	position: fixed;
+	right: 20px;
+	bottom: 20px;
+	z-index: 100010;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-width: min(360px, calc(100vw - 40px));
+}
+
+.nhrotm-toast {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 13px 18px;
+	border-radius: 10px;
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	border: 1px solid var(--nhrotm-border);
+	border-left: 3px solid var(--nhrotm-success);
+	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
+	font-size: 13px;
+	font-weight: 500;
+	animation: nhrotm-toast-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+	svg {
+		flex: 0 0 auto;
+		color: var(--nhrotm-success);
+	}
+
+	&--error {
+		border-left-color: var(--nhrotm-danger);
+
+		svg {
+			color: var(--nhrotm-danger);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		animation: none;
+	}
+}
+
+@keyframes nhrotm-toast-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
 }
 
 @media (max-width: 900px) {

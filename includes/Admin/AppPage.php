@@ -118,6 +118,10 @@ class AppPage
             // the free build's Upgrade item + feature tags. See PRD §0.2.
             'hasPro'     => (bool) apply_filters('nhrotm_has_pro', false),
             'upgradeUrl' => apply_filters('nhrotm_upgrade_url', 'https://wordpress.org/plugins/nhrrob-options-table-manager/'),
+            // Single switch for the whole PRO-awareness UI (Pro tags + Upgrade nav item).
+            // PRO doesn't exist yet, so this stays false — flip to true (one word) the
+            // day PRO ships. Independent of hasPro (which only matters once PRO exists).
+            'proAvailable' => (bool) apply_filters('nhrotm_pro_available', false),
         ]);
     }
 

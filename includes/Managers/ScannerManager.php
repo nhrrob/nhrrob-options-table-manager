@@ -18,7 +18,6 @@ class ScannerManager extends BaseTableManager
         'autoptimize_' => 'Autoptimize',
         'contact_form_7' => 'Contact Form 7',
         'elementor_' => 'Elementor',
-        'eael_' => 'Essential Addons for Elementor',
         'itsec_' => 'iThemes Security',
         'jetpack_' => 'Jetpack',
         'rank_math_' => 'Rank Math',
@@ -69,8 +68,8 @@ class ScannerManager extends BaseTableManager
         foreach ($results as $row) {
             $name = sanitize_text_field($row['option_name']);
             
-            // Remove _transient and _timeout to get the real prefix
-            $clean_name = preg_replace('/^_transient(?:_timeout)?_/', '', $name);
+            // Remove _transient/_site_transient and _timeout to get the real prefix
+            $clean_name = preg_replace('/^_(?:site_)?transient(?:_timeout)?_/', '', $name);
             
             $parts = explode('_', $clean_name);
             if (count($parts) > 1) {
@@ -155,19 +154,24 @@ class ScannerManager extends BaseTableManager
         }
 
         $pattern = $this->wpdb->esc_like($prefix) . '%';
-        
-        // Also handle transients
+
+        // Also handle transients — both the regular and network-wide scopes,
+        // matching how scan_orphans() strips the prefix when counting them.
         $transient_pattern = '_transient_' . $pattern;
         $timeout_pattern = '_transient_timeout_' . $pattern;
+        $site_transient_pattern = '_site_transient_' . $pattern;
+        $site_timeout_pattern = '_site_transient_timeout_' . $pattern;
 
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific deletion
         return $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
                 $pattern,
                 $transient_pattern,
-                $timeout_pattern
+                $timeout_pattern,
+                $site_transient_pattern,
+                $site_timeout_pattern
             )
         );
     }

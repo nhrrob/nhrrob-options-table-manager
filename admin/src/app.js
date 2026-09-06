@@ -8,6 +8,8 @@ import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 import AppShell from './components/AppShell';
+import { ConfirmProvider } from './components/ConfirmProvider';
+import { ToastProvider } from './components/ToastProvider';
 import DashboardScreen from './components/DashboardScreen';
 import BrowseScreen from './components/BrowseScreen';
 import OptimizeScreen from './components/OptimizeScreen';
@@ -61,9 +63,10 @@ export default function App( { boot } ) {
 
 	usePanelFocus( active, focus );
 
-	// The Upgrade item is the free build's only PRO surface; hide it once the
-	// PRO add-on is active (it flips boot.hasPro). See PRD §0.2 / PRD-PRO §0.
-	const showUpgrade = ! boot.hasPro;
+	// The Upgrade item is the free build's only PRO surface; hide it while PRO
+	// doesn't exist yet (boot.proAvailable), and again once the PRO add-on is
+	// active (it flips boot.hasPro). See PRD §0.2 / PRD-PRO §0.
+	const showUpgrade = !! boot.proAvailable && ! boot.hasPro;
 
 	const Screen = SCREENS[ active ] || PlaceholderScreen;
 	const current = modules.find( ( m ) => m.id === active ) || modules[ 0 ];
@@ -80,7 +83,19 @@ export default function App( { boot } ) {
 				__( 'Options Table Manager', 'nhrrob-options-table-manager' )
 			}
 		>
-			<Screen module={ current } boot={ boot } onNavigate={ navigate } />
+			{ /* Nested inside AppShell (not wrapping it) so the confirm
+			dialog's and toasts' DOM nodes stay within .nhrotm-app — that's
+			the only scope the --nhrotm-* CSS custom properties are defined
+			on, the modal's background included. */ }
+			<ConfirmProvider>
+				<ToastProvider>
+					<Screen
+						module={ current }
+						boot={ boot }
+						onNavigate={ navigate }
+					/>
+				</ToastProvider>
+			</ConfirmProvider>
 		</AppShell>
 	);
 }

@@ -1,5 +1,6 @@
 # System files
 .ai/
+CLAUDE.md
 .sass-cache
 .DS_Store
 .phpintel

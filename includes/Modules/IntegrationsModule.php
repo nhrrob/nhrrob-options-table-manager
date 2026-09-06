@@ -10,7 +10,7 @@ use Nhrotm\OptionsTableManager\Rest\IntegrationsController;
 use Nhrotm\OptionsTableManager\Services\IntegrationsService;
 
 /**
- * Integrations section — third-party tables (Better Payment, WPRM).
+ * Integrations section — third-party tables (e.g. WPRM).
  * Only registered by Bootstrap when at least one integration table exists.
  */
 class IntegrationsModule implements ModuleInterface

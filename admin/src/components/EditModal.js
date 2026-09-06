@@ -37,14 +37,22 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 	const [ autoload, setAutoload ] = useState(
 		record && record.autoload ? record.autoload : 'yes'
 	);
+	const [ expiration, setExpiration ] = useState(
+		record && record.expiration !== undefined && record.expiration !== null
+			? record.expiration
+			: 3600
+	);
 
 	const isUsermetaAdd = isNew && type === 'usermeta';
+	const isTransient = type === 'transients';
 
 	let title;
 	if ( ! isNew ) {
 		title = __( 'Edit record', 'nhrrob-options-table-manager' );
 	} else if ( type === 'usermeta' ) {
 		title = __( 'Add usermeta', 'nhrrob-options-table-manager' );
+	} else if ( isTransient ) {
+		title = __( 'Add transient', 'nhrrob-options-table-manager' );
 	} else {
 		title = __( 'Add option', 'nhrrob-options-table-manager' );
 	}
@@ -103,7 +111,6 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 								id="nhrotm-modal-userid"
 								type="number"
 								min="1"
-								className="nhrotm-browse__search"
 								value={ userId }
 								onChange={ ( e ) =>
 									setUserId( e.target.value )
@@ -127,7 +134,6 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 						<input
 							id="nhrotm-modal-name"
 							type="text"
-							className="nhrotm-browse__search"
 							value={ name }
 							disabled={ ! isNew }
 							onChange={ ( e ) => setName( e.target.value ) }
@@ -172,6 +178,32 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 							</label>
 						</div>
 					) }
+
+					{ isTransient && (
+						<div className="nhrotm-field">
+							<label htmlFor="nhrotm-modal-expiration">
+								{ __(
+									'Expires in (seconds)',
+									'nhrrob-options-table-manager'
+								) }
+							</label>
+							<input
+								id="nhrotm-modal-expiration"
+								type="number"
+								min="0"
+								value={ expiration }
+								onChange={ ( e ) =>
+									setExpiration( e.target.value )
+								}
+							/>
+							<span className="nhrotm-hint">
+								{ __(
+									'0 means the transient never expires.',
+									'nhrrob-options-table-manager'
+								) }
+							</span>
+						</div>
+					) }
 				</div>
 
 				<footer className="nhrotm-modal__foot">
@@ -194,6 +226,9 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 								format,
 								autoload,
 								user_id: userId ? parseInt( userId, 10 ) : 0,
+								expiration: isTransient
+									? parseInt( expiration, 10 ) || 0
+									: 0,
 							} )
 						}
 					>

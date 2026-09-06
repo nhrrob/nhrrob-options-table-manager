@@ -4,14 +4,16 @@
  * Server-side paginated, searchable and sortable (DataTables-style behaviour)
  * via nhrotm/v1/browse (list, get, save, delete, bulk-delete).
  */
-/* eslint-disable no-alert -- native confirm/alert used intentionally for lightweight UX. */
+/* eslint-disable no-alert -- native alert used intentionally for lightweight error UX. */
 import { useEffect, useState, useCallback, useRef } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
 import EditModal from './EditModal';
 import Icon from './Icon';
 import ScreenHeader from './ScreenHeader';
+import { useConfirm } from './ConfirmProvider';
+import { useToast } from './ToastProvider';
 
 const TYPES = [
 	{ id: 'options', label: __( 'Options', 'nhrrob-options-table-manager' ) },
@@ -22,6 +24,12 @@ const TYPES = [
 	},
 ];
 
+const ADD_LABEL = {
+	options: __( 'Add option', 'nhrrob-options-table-manager' ),
+	usermeta: __( 'Add usermeta', 'nhrrob-options-table-manager' ),
+	transients: __( 'Add transient', 'nhrrob-options-table-manager' ),
+};
+
 const PER_PAGE_OPTIONS = [ 20, 50, 100 ];
 
 const STATUS_BADGE = {
@@ -30,12 +38,28 @@ const STATUS_BADGE = {
 	active: 'success',
 };
 
+const ADDED_MESSAGE = {
+	options: __( 'Option added successfully.', 'nhrrob-options-table-manager' ),
+	usermeta: __(
+		'Usermeta added successfully.',
+		'nhrrob-options-table-manager'
+	),
+	transients: __(
+		'Transient added successfully.',
+		'nhrrob-options-table-manager'
+	),
+};
+
 export default function BrowseScreen() {
+	const confirm = useConfirm();
+	const toast = useToast();
 	const [ type, setType ] = useState( 'options' );
 	const [ search, setSearch ] = useState( '' );
 	const [ page, setPage ] = useState( 1 );
 	const [ perPage, setPerPage ] = useState( 20 );
-	const [ orderby, setOrderby ] = useState( 'size' );
+	// Newest first by default (option_id/umeta_id is the closest proxy for
+	// creation order — wp_options/wp_usermeta carry no timestamp column at all).
+	const [ orderby, setOrderby ] = useState( 'id' );
 	const [ order, setOrder ] = useState( 'desc' );
 	const [ data, setData ] = useState( { items: [], total: 0 } );
 	const [ status, setStatus ] = useState( 'loading' );
@@ -46,6 +70,11 @@ export default function BrowseScreen() {
 	// When true, the next load refreshes rows in place (no "Loading…" flash) —
 	// used after save/delete so the grid doesn't blink behind the closing modal.
 	const silentRef = useRef( false );
+	// Last known row count per type, so the loading skeleton for a tab reflects
+	// that tab's own density instead of whatever the previously active tab had
+	// (options/usermeta/transients can differ wildly in row count — reusing the
+	// wrong one is what read as a "jump/blink" when switching tabs).
+	const typeRowCountRef = useRef( {} );
 
 	const load = useCallback( () => {
 		if ( ! silentRef.current ) {
@@ -61,6 +90,7 @@ export default function BrowseScreen() {
 		} )
 			.then( ( res ) => {
 				setData( res.data );
+				typeRowCountRef.current[ type ] = res.data.items.length;
 				setStatus( 'ready' );
 			} )
 			.catch( () => setStatus( 'error' ) );
@@ -78,11 +108,21 @@ export default function BrowseScreen() {
 		setReloadTick( ( t ) => t + 1 );
 	};
 
-	const remove = ( item ) => {
+	const remove = async ( item ) => {
 		if (
-			! window.confirm(
-				__( 'Delete this record?', 'nhrrob-options-table-manager' )
-			)
+			! ( await confirm(
+				__( 'Delete this record?', 'nhrrob-options-table-manager' ),
+				{
+					description: __(
+						'This action cannot be undone.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Delete',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
 		) {
 			return;
 		}
@@ -92,7 +132,15 @@ export default function BrowseScreen() {
 			) }?type=${ type }`,
 			method: 'DELETE',
 		} )
-			.then( () => silentReload() )
+			.then( () => {
+				silentReload();
+				toast(
+					__(
+						'Record deleted successfully.',
+						'nhrrob-options-table-manager'
+					)
+				);
+			} )
 			.catch( () =>
 				window.alert(
 					__(
@@ -103,24 +151,51 @@ export default function BrowseScreen() {
 			);
 	};
 
-	const bulkDelete = () => {
+	const bulkDelete = async () => {
+		if ( selected.length === 0 ) {
+			return;
+		}
 		if (
-			selected.length === 0 ||
-			! window.confirm(
+			! ( await confirm(
 				__(
 					'Delete the selected records?',
 					'nhrrob-options-table-manager'
-				)
-			)
+				),
+				{
+					description: __(
+						'This action cannot be undone.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Delete',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
 		) {
 			return;
 		}
+		const count = selected.length;
 		apiFetch( {
 			path: 'nhrotm/v1/browse/bulk-delete',
 			method: 'POST',
 			data: { type, ids: selected.map( String ) },
 		} )
-			.then( () => silentReload() )
+			.then( () => {
+				silentReload();
+				toast(
+					sprintf(
+						/* translators: %s: number of deleted records. */
+						_n(
+							'%s record deleted successfully.',
+							'%s records deleted successfully.',
+							count,
+							'nhrrob-options-table-manager'
+						),
+						count
+					)
+				);
+			} )
 			.catch( () =>
 				window.alert(
 					__( 'Bulk delete failed.', 'nhrrob-options-table-manager' )
@@ -162,8 +237,21 @@ export default function BrowseScreen() {
 					setOrderby( 'id' );
 					setOrder( 'desc' );
 					setReloadTick( ( t ) => t + 1 );
+					toast(
+						ADDED_MESSAGE[ type ] ||
+							__(
+								'Record added successfully.',
+								'nhrrob-options-table-manager'
+							)
+					);
 				} else {
 					silentReload();
+					toast(
+						__(
+							'Changes saved successfully.',
+							'nhrrob-options-table-manager'
+						)
+					);
 				}
 			} )
 			.catch( ( e ) =>
@@ -188,7 +276,7 @@ export default function BrowseScreen() {
 		setType( id );
 		setPage( 1 );
 		setSearch( '' );
-		setOrderby( 'size' );
+		setOrderby( 'id' );
 		setOrder( 'desc' );
 	};
 
@@ -232,10 +320,41 @@ export default function BrowseScreen() {
 		</tr>
 	);
 
+	// Bar widths approximate each column's real content so the placeholder
+	// reads as a row shape rather than a random smear.
+	const skeletonRow = ( key ) => (
+		<tr key={ 'skeleton-' + key } aria-hidden="true">
+			<td />
+			<td>
+				<span className="nhrotm-skeleton" style={ { width: '70%' } } />
+			</td>
+			<td>
+				<span className="nhrotm-skeleton" style={ { width: '85%' } } />
+			</td>
+			<td style={ { textAlign: 'right' } }>
+				<span className="nhrotm-skeleton" style={ { width: '36px' } } />
+			</td>
+			<td>
+				<span className="nhrotm-skeleton" style={ { width: '48px' } } />
+			</td>
+			<td style={ { textAlign: 'right' } }>
+				<span className="nhrotm-skeleton" style={ { width: '40px' } } />
+			</td>
+		</tr>
+	);
+
 	const renderRows = () => {
 		if ( status === 'loading' ) {
-			return messageRow(
-				__( 'Loading…', 'nhrrob-options-table-manager' )
+			// Match the row count this tab last had (falling back to a sane
+			// default the first time a tab is visited) so switching tabs,
+			// sorting or searching doesn't collapse the grid to one line and
+			// then snap back — that's what read as a "jump/blink".
+			const rowCount =
+				typeRowCountRef.current[ type ] > 0
+					? typeRowCountRef.current[ type ]
+					: Math.min( perPage, 8 );
+			return Array.from( { length: rowCount }, ( _, i ) =>
+				skeletonRow( i )
 			);
 		}
 		if ( data.items.length === 0 ) {
@@ -246,7 +365,7 @@ export default function BrowseScreen() {
 		return data.items.map( ( item ) => (
 			<tr key={ item.id }>
 				<td>
-					{ ! item.protected && type !== 'transients' && (
+					{ ! item.protected && (
 						<input
 							type="checkbox"
 							checked={ selected.includes( item.id ) }
@@ -269,8 +388,8 @@ export default function BrowseScreen() {
 						</span>
 					) }
 				</td>
-				<td className="nhrotm-grid__preview" title={ item.preview }>
-					{ item.preview }
+				<td title={ item.preview }>
+					<div className="nhrotm-grid__preview">{ item.preview }</div>
 				</td>
 				<td className="nhrotm-grid__size">{ item.size }</td>
 				<td>
@@ -301,38 +420,27 @@ export default function BrowseScreen() {
 				</td>
 				<td>
 					<div className="nhrotm-grid__actions">
-						{ type !== 'transients' && ! item.protected && (
+						{ ! item.protected && (
 							<button
 								type="button"
 								className="nhrotm-iconbtn"
-								title={ __(
-									'Edit',
-									'nhrrob-options-table-manager'
-								) }
-								aria-label={ __(
-									'Edit',
-									'nhrrob-options-table-manager'
-								) }
 								onClick={ () => openEdit( item ) }
 							>
 								<Icon name="edit" size={ 14 } />
+								{ __( 'Edit', 'nhrrob-options-table-manager' ) }
 							</button>
 						) }
 						{ ! item.protected && (
 							<button
 								type="button"
 								className="nhrotm-iconbtn nhrotm-iconbtn--danger"
-								title={ __(
-									'Delete',
-									'nhrrob-options-table-manager'
-								) }
-								aria-label={ __(
-									'Delete',
-									'nhrrob-options-table-manager'
-								) }
 								onClick={ () => remove( item ) }
 							>
 								<Icon name="trash" size={ 14 } />
+								{ __(
+									'Delete',
+									'nhrrob-options-table-manager'
+								) }
 							</button>
 						) }
 					</div>
@@ -384,36 +492,55 @@ export default function BrowseScreen() {
 							{ ' (' + selected.length + ')' }
 						</button>
 					) }
-					{ type !== 'transients' && (
-						<button
-							type="button"
-							className="nhrotm-btn nhrotm-btn--primary"
-							onClick={ () => setModal( { record: null } ) }
-						>
-							{ type === 'usermeta'
-								? __(
-										'Add usermeta',
-										'nhrrob-options-table-manager'
-								  )
-								: __(
-										'Add option',
-										'nhrrob-options-table-manager'
-								  ) }
-						</button>
-					) }
-					<input
-						type="search"
-						className="nhrotm-browse__search"
-						placeholder={ __(
-							'Search…',
-							'nhrrob-options-table-manager'
+					<button
+						type="button"
+						className="nhrotm-btn nhrotm-btn--primary"
+						onClick={ () => setModal( { record: null } ) }
+					>
+						{ ADD_LABEL[ type ] ||
+							__( 'Add record', 'nhrrob-options-table-manager' ) }
+					</button>
+					<span className="nhrotm-search">
+						<Icon name="search" size={ 15 } />
+						<input
+							type="search"
+							className="nhrotm-browse__search"
+							// Chrome/Safari only relinquish the native rounded
+							// search-field chrome (which otherwise overrides our
+							// border/radius) via this vendor-prefixed property —
+							// set inline because the build's autoprefixer strips
+							// it from the stylesheet as "unneeded" for its
+							// (very modern) browser target list, when in
+							// practice current Chrome/Safari still require it
+							// specifically for input[type=search].
+							style={ { WebkitAppearance: 'textfield' } }
+							placeholder={ __(
+								'Search…',
+								'nhrrob-options-table-manager'
+							) }
+							value={ search }
+							onChange={ ( e ) => {
+								setPage( 1 );
+								setSearch( e.target.value );
+							} }
+						/>
+						{ search && (
+							<button
+								type="button"
+								className="nhrotm-search__clear"
+								aria-label={ __(
+									'Clear search',
+									'nhrrob-options-table-manager'
+								) }
+								onClick={ () => {
+									setPage( 1 );
+									setSearch( '' );
+								} }
+							>
+								<Icon name="close" size={ 13 } />
+							</button>
 						) }
-						value={ search }
-						onChange={ ( e ) => {
-							setPage( 1 );
-							setSearch( e.target.value );
-						} }
-					/>
+					</span>
 				</div>
 			</div>
 

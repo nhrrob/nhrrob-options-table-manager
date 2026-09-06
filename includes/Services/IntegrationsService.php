@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Read service for third-party integration tables (Better Payment, WPRM).
+ * Read service for third-party integration tables (e.g. WPRM).
  *
  * Quarantines integration browsing here so their tables never inflate the
  * core navigation. Only tables that actually exist are exposed.
@@ -21,10 +21,6 @@ class IntegrationsService
     private function definitions()
     {
         return [
-            'better_payment' => [
-                'label'  => 'Better Payment',
-                'table'  => 'better_payment',
-            ],
             'wprm_ratings'   => [
                 'label'  => 'WP Recipe Maker',
                 'table'  => 'wprm_ratings',

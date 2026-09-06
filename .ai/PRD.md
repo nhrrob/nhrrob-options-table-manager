@@ -1,7 +1,7 @@
 # PRD — NHR Options Manager 2.0 (Free)
 
 Status: Draft for sign-off · Owner: Nazmul Hasan Robin (nhrrob) · Date: 2026-06-29
-Last revised: 2026-08-05 (PRO-awareness policy added; see §0.2)
+Last revised: 2026-09-06 (added §8.1 backlog/to-do)
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
 > PRO/monetization scope lives in a separate doc: **[PRD-PRO.md](./PRD-PRO.md)**.
@@ -30,6 +30,8 @@ Allowed (and the only allowed) PRO surfaces in the free build:
 Forbidden: dashboard banners, popups/toasts pushing PRO, "limited time" language, more than one outbound CTA per view, colored/animated nag chrome, or gating any 1.5.x-parity feature behind the tag.
 
 WP.org compliance: this is the same pattern used by compliant freemium plugins (single upgrade menu + inert feature tags). The `Upgrade` nav item and all `Pro` tags are **rendered by the free build itself** (static, no Freemius in free) so review is trivial. Author-identity/branding rules (no visible "NHR" label) still apply.
+
+**Currently OFF — PRO doesn't exist yet.** All of it (Upgrade nav item + every `Pro` tag) is gated on one flag, `apply_filters('nhrotm_pro_available', false)` in `AppPage.php`, localized to React as `boot.proAvailable`. It defaults `false`, so none of this UI renders in the shipped build today — no vaporware upsell. **To switch it on once PRO ships:** flip that one `false` to `true` in `AppPage.php` (`includes/Admin/AppPage.php`), rebuild (`npm run build`), release. No other file needs to change. This is separate from `hasPro` (`nhrotm_has_pro` filter), which stays about whether *this specific install* owns a PRO license once PRO exists.
 
 Design realization of this policy → [DESIGN.md](./DESIGN.md) §12.
 
@@ -62,7 +64,7 @@ Non-goals: changing author identity; dropping existing DB tables; breaking exist
 2. **Browse** — Options · Usermeta · Transients in one data browser with a type switcher. (merges 3 tabs; removes the duplicate transient filter on the Options tab)
 3. **Optimize** — Autoload health · Usage Tracker · Orphan Scanner · Cleanup (+ schedule). Sole owner of the autoload toggle.
 4. **Tools** — Search & Replace · Import/Export · Backups.
-5. **Integrations** — Better Payment · WPRM (conditional; quarantined so it stops inflating core nav).
+5. **Integrations** — third-party tables such as WPRM (conditional; quarantined so it stops inflating core nav).
 6. **Settings** — all settings centralized (incl. history retention, currently misplaced inside Optimizer).
 
 Plus one **de-emphasized** nav item pinned to the bottom, visually separated from the six functional sections:
@@ -111,7 +113,7 @@ Everything shipped in 1.5.x remains free and reaches parity before cutover:
 | Backups / snapshots | Local snapshots of `wp_options`, manual + daily/weekly cron, restore, last 15 pruned. |
 | Cleanup | Manual + scheduled deletion of expired transients. |
 | Option History & Rollback | Per-option change tracking + restore; retention setting moves to Settings. |
-| Integrations | Better Payment / WPRM tables, quarantined under Integrations. |
+| Integrations | Third-party tables (e.g. WPRM), quarantined under Integrations. |
 | WP-CLI | Existing `nhr-options list/delete` commands preserved. |
 
 ## 5. Migration / rollback (full-rewrite risk control)
@@ -137,8 +139,23 @@ Health score = weighted blend of: autoload size vs 1 MB, expired-transient ratio
 
 - ~~React data-grid: build vs library~~ → **Resolved: hand-rolled grid** (no `@tanstack/react-table`). Current `admin/build/index.js` is ~34 KB; a table lib would breach §0.1. Server-side pagination via REST keeps the hand-rolled grid simple.
 - ~~PRO awareness in the free UI~~ → **Resolved in §0.2**: quiet discoverability (feature tags + one Upgrade screen), not invisibility.
-- Whether Integrations (Better Payment/WPRM) should eventually move to their own free add-on.
+- Whether Integrations (WPRM and future third-party tables) should eventually move to their own free add-on.
 - Deprecation window length for legacy `nhrotm_*` option keys after the settings migration.
+
+## 8.1 Backlog / to-do (unscheduled — planned, not yet phased)
+
+Features to add. Move an item into §7 Roadmap once it's actually scheduled; don't let this list silently become the roadmap.
+
+- [ ] General DB cleanup: post revisions/auto-drafts/trash, spam/pingback comments.
+- [ ] Postmeta/commentmeta/termmeta orphan + duplicate cleanup (only usermeta today).
+- [ ] Table OPTIMIZE/REPAIR.
+- [ ] Cron job management (view/edit/delete scheduled cron events).
+- [ ] Multisite support (network-admin view, per-site vs. network-wide handling).
+- [ ] True tree/GUI value editor (vs. current JSON textarea).
+- [ ] Retire the legacy Classic (jQuery/DataTables) UI once 2.0 is proven in the wild — footprint win (~1699-line `assets/js/admin.js` removed).
+- [ ] `.husky` composer test wiring once PHP dev-deps are installed.
+- [ ] Decide whether Integrations (WPRM and future third-party tables) should move to its own free add-on (duplicate of the open question in §8).
+- [ ] Decide deprecation-window length for legacy `nhrotm_*` option keys after the settings migration (duplicate of the open question in §8).
 
 ## 9. Sources
 

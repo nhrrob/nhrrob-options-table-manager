@@ -2,7 +2,7 @@
  * Tools — backups, search & replace, export.
  * Wired to nhrotm/v1/tools/*.
  */
-/* eslint-disable no-alert -- native confirm/alert used intentionally for lightweight action UX. */
+/* eslint-disable no-alert -- native alert used intentionally for lightweight error UX. */
 import { useEffect, useState, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
@@ -10,9 +10,12 @@ import apiFetch from '@wordpress/api-fetch';
 import Panel from './Panel';
 import ProTag from './ProTag';
 import ScreenHeader from './ScreenHeader';
+import { useConfirm } from './ConfirmProvider';
 
 export default function ToolsScreen( { boot, onNavigate } ) {
+	const confirm = useConfirm();
 	const hasPro = !! ( boot && boot.hasPro );
+	const proAvailable = !! ( boot && boot.proAvailable );
 	const [ backups, setBackups ] = useState( [] );
 	const [ busy, setBusy ] = useState( false );
 	const [ label, setLabel ] = useState( '' );
@@ -54,14 +57,21 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			.finally( () => setBusy( false ) );
 	};
 
-	const restoreBackup = ( id ) => {
+	const restoreBackup = async ( id ) => {
 		if (
-			! window.confirm(
-				__(
-					'Restore this snapshot? Current option values will be overwritten.',
-					'nhrrob-options-table-manager'
-				)
-			)
+			! ( await confirm(
+				__( 'Restore this snapshot?', 'nhrrob-options-table-manager' ),
+				{
+					description: __(
+						'Current option values will be overwritten.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Restore',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
 		) {
 			return;
 		}
@@ -90,11 +100,21 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			.finally( () => setBusy( false ) );
 	};
 
-	const deleteBackup = ( id ) => {
+	const deleteBackup = async ( id ) => {
 		if (
-			! window.confirm(
-				__( 'Delete this snapshot?', 'nhrrob-options-table-manager' )
-			)
+			! ( await confirm(
+				__( 'Delete this snapshot?', 'nhrrob-options-table-manager' ),
+				{
+					description: __(
+						'This action cannot be undone.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Delete',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
 		) {
 			return;
 		}
@@ -106,18 +126,28 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			.catch( () => {} );
 	};
 
-	const runSearchReplace = ( dryRun ) => {
+	const runSearchReplace = async ( dryRun ) => {
 		if ( ! search ) {
 			return;
 		}
 		if (
 			! dryRun &&
-			! window.confirm(
+			! ( await confirm(
 				__(
-					'Run replace on the database? A safety snapshot is taken first.',
+					'Run replace on the database?',
 					'nhrrob-options-table-manager'
-				)
-			)
+				),
+				{
+					description: __(
+						'A safety snapshot is taken first.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Replace',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
 		) {
 			return;
 		}
@@ -165,17 +195,24 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			);
 	};
 
-	const runImport = () => {
+	const runImport = async () => {
 		if ( ! importJson.trim() ) {
 			return;
 		}
 		if (
-			! window.confirm(
-				__(
-					'Import options? A safety snapshot is taken first.',
-					'nhrrob-options-table-manager'
-				)
-			)
+			! ( await confirm(
+				__( 'Import options?', 'nhrrob-options-table-manager' ),
+				{
+					description: __(
+						'A safety snapshot is taken first.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Import',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
 		) {
 			return;
 		}
@@ -343,7 +380,11 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 							'nhrrob-options-table-manager'
 						) }
 					</span>
-					<ProTag hasPro={ hasPro } onNavigate={ onNavigate } />
+					<ProTag
+						hasPro={ hasPro }
+						proAvailable={ proAvailable }
+						onNavigate={ onNavigate }
+					/>
 				</div>
 			</Panel>
 
@@ -400,7 +441,11 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 							'nhrrob-options-table-manager'
 						) }
 					</span>
-					<ProTag hasPro={ hasPro } onNavigate={ onNavigate } />
+					<ProTag
+						hasPro={ hasPro }
+						proAvailable={ proAvailable }
+						onNavigate={ onNavigate }
+					/>
 				</div>
 				{ srResult && (
 					<p

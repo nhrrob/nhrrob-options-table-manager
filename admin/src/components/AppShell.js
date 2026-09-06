@@ -9,6 +9,7 @@ import { __ } from '@wordpress/i18n';
 import Icon from './Icon';
 
 const THEME_KEY = 'nhrotm-theme';
+const COLLAPSED_KEY = 'nhrotm-nav-collapsed';
 
 export default function AppShell( {
 	modules,
@@ -19,7 +20,9 @@ export default function AppShell( {
 	classicUrl,
 	children,
 } ) {
-	const [ collapsed, setCollapsed ] = useState( false );
+	// Starts collapsed so the content area gets the extra width by default;
+	// a saved preference below restores whichever state the user last left it in.
+	const [ collapsed, setCollapsed ] = useState( true );
 	const [ theme, setTheme ] = useState( '' ); // '' = follow OS
 
 	useEffect( () => {
@@ -28,8 +31,12 @@ export default function AppShell( {
 			if ( saved === 'dark' || saved === 'light' ) {
 				setTheme( saved );
 			}
+			const savedNav = window.localStorage.getItem( COLLAPSED_KEY );
+			if ( savedNav === 'expanded' || savedNav === 'collapsed' ) {
+				setCollapsed( savedNav === 'collapsed' );
+			}
 		} catch ( e ) {
-			/* localStorage unavailable — fall back to OS preference. */
+			/* localStorage unavailable — fall back to the collapsed default. */
 		}
 	}, [] );
 
@@ -85,7 +92,20 @@ export default function AppShell( {
 									'nhrrob-options-table-manager'
 							  )
 					}
-					onClick={ () => setCollapsed( ( c ) => ! c ) }
+					onClick={ () =>
+						setCollapsed( ( c ) => {
+							const next = ! c;
+							try {
+								window.localStorage.setItem(
+									COLLAPSED_KEY,
+									next ? 'collapsed' : 'expanded'
+								);
+							} catch ( e ) {
+								/* ignore persistence failure */
+							}
+							return next;
+						} )
+					}
 				>
 					<Icon name="collapse" size={ 16 } />
 				</button>

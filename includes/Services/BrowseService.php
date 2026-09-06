@@ -178,7 +178,10 @@ class BrowseService
     {
         global $wpdb;
 
-        $where = "WHERE option_name LIKE '\_transient\_%' AND option_name NOT LIKE '\_transient\_timeout\_%'";
+        // Matches both regular ("_transient_") and network-wide ("_site_transient_")
+        // scopes — the latter is where WP core actually stores update_plugins,
+        // update_core, update_themes, and can hold sizable feed/browser caches.
+        $where = 'WHERE ' . $this->transient_value_where('option_name');
         $params = [];
         if ('' !== $search) {
             $where .= ' AND option_name LIKE %s';
@@ -195,9 +198,10 @@ class BrowseService
 
         $now = time();
         $items = array_map(function ($row) use ($wpdb, $now) {
-            $transient = str_replace('_transient_', '', $row['option_name']);
+            $is_site = $this->is_site_transient($row['option_name']);
+            $transient = $this->transient_bare_name($row['option_name']);
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $timeout = (int) $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", '_transient_timeout_' . $transient));
+            $timeout = (int) $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $this->transient_timeout_name($transient, $is_site)));
             if (0 === $timeout) {
                 $status = 'persistent';
             } elseif ($timeout < $now) {
@@ -244,10 +248,14 @@ class BrowseService
         }
 
         if ('transients' === $type) {
-            if (!delete_transient((string) $id)) {
+            $name = (string) $id;
+            $deleted = $this->transient_is_site_scoped($name)
+                ? delete_site_transient($name)
+                : delete_transient($name);
+            if (!$deleted) {
                 return false;
             }
-            $this->activity->record('delete_transient', (string) $id);
+            $this->activity->record('delete_transient', $name);
             return true;
         }
 
@@ -268,8 +276,8 @@ class BrowseService
     /**
      * Fetch a single record with its full value, for the edit modal.
      *
-     * @param string     $type options | usermeta.
-     * @param int|string $id   Record id (option_id / umeta_id).
+     * @param string     $type options | usermeta | transients.
+     * @param int|string $id   Record id (option_id / umeta_id / transient name).
      * @return array|null
      */
     public function get($type, $id)
@@ -290,6 +298,26 @@ class BrowseService
                 'format'    => $analysis['format'],
                 'user_id'   => (int) $row['user_id'],
                 'protected' => in_array($row['meta_key'], $this->get_protected_usermetas(), true),
+            ];
+        }
+
+        if ('transients' === $type) {
+            $name = (string) $id;
+            $is_site = $this->transient_is_site_scoped($name);
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $row = $wpdb->get_row($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $this->transient_value_name($name, $is_site)), ARRAY_A);
+            if (!$row) {
+                return null;
+            }
+            $timeout = (int) get_option($this->transient_timeout_name($name, $is_site), 0);
+            $analysis = $this->analyze_value($row['option_value']);
+            return [
+                'id'         => $name,
+                'name'       => $name,
+                'value'      => $analysis['value'],
+                'format'     => $analysis['format'],
+                'expiration' => $timeout > 0 ? max(0, $timeout - time()) : 0,
+                'protected'  => false,
             ];
         }
 
@@ -380,7 +408,7 @@ class BrowseService
      * Create or update a record. Raw value is stored verbatim to preserve
      * serialized/JSON data exactly as entered.
      *
-     * @param array $args { type, id?, name, value, autoload? }
+     * @param array $args { type, id?, name, value, autoload?, user_id?, expiration? }
      * @return array|false Saved record, or false when protected/invalid.
      */
     public function save(array $args)
@@ -426,6 +454,32 @@ class BrowseService
             return $this->get('usermeta', $mid);
         }
 
+        if ('transients' === $type) {
+            if ('' === $name) {
+                return false;
+            }
+            // Transients need their *native* PHP value (set_transient() serializes
+            // it itself); passing the already-serialized $value above would make
+            // WP's maybe_serialize() wrap it a second time. $value/$format above
+            // already validated the JSON, so decoding here can't fail.
+            $native = in_array($format, ['json', 'serialized'], true)
+                ? json_decode($raw_value, true)
+                : $raw_value;
+            $expiration = isset($args['expiration']) ? max(0, (int) $args['expiration']) : 0;
+            // A name with no existing row yet defaults to the regular scope —
+            // there's no UI for a user to deliberately create a network-wide
+            // transient; editing an existing site-scoped one preserves its scope.
+            $is_site = $this->transient_is_site_scoped($name);
+            $existing = $this->get('transients', $name);
+            if ($is_site) {
+                set_site_transient($name, $native, $expiration);
+            } else {
+                set_transient($name, $native, $expiration);
+            }
+            $this->activity->record($existing ? 'update_transient' : 'create_transient', $name);
+            return $this->get('transients', $name);
+        }
+
         if ('' === $name) {
             return false;
         }
@@ -469,6 +523,22 @@ class BrowseService
     }
 
     /**
+     * Whether a bare transient name currently exists as a network-wide
+     * ("_site_transient_") row rather than the regular ("_transient_") scope.
+     * Used to route get/delete/save to the matching WP transient API when a
+     * name could plausibly exist in either scope.
+     *
+     * @param string $name Bare transient name.
+     * @return bool
+     */
+    private function transient_is_site_scoped($name)
+    {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (bool) $wpdb->get_var($wpdb->prepare("SELECT 1 FROM {$wpdb->options} WHERE option_name = %s", '_site_transient_' . $name));
+    }
+
+    /**
      * Delete many records, skipping protected ones.
      *
      * @param string $type options | usermeta | transients.
@@ -500,7 +570,10 @@ class BrowseService
     }
 
     /**
-     * Trim a value into a short single-line preview.
+     * Trim a value into a scrollable-length preview.
+     *
+     * Bounded (not the full raw value) so a page of rows can't balloon
+     * into a multi-megabyte response for pathologically large options.
      *
      * @param string $value Raw stored value.
      * @return string
@@ -508,9 +581,9 @@ class BrowseService
     private function preview($value)
     {
         $value = (string) $value;
-        $value = trim(preg_replace('/\s+/', ' ', $value));
-        if (strlen($value) > 80) {
-            $value = substr($value, 0, 80) . '…';
+        $value = trim($value);
+        if (strlen($value) > 4000) {
+            $value = substr($value, 0, 4000) . '…';
         }
         return $value;
     }

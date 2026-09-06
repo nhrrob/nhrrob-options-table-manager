@@ -5,7 +5,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-use Nhrotm\OptionsTableManager\Managers\BetterPaymentTableManager;
 use Nhrotm\OptionsTableManager\Managers\CommonTableManager;
 use Nhrotm\OptionsTableManager\Managers\OptionsTableManager;
 use Nhrotm\OptionsTableManager\Managers\UsermetaTableManager;
@@ -22,7 +21,6 @@ class AjaxHandler
 {
     private $options_manager;
     private $usermeta_manager;
-    private $better_payment_manager;
     private $wprm_ratings_manager;
     private $optimization_manager;
     private $scanner_manager;
@@ -37,7 +35,6 @@ class AjaxHandler
     {
         $this->options_manager = new OptionsTableManager();
         $this->usermeta_manager = new UsermetaTableManager();
-        $this->better_payment_manager = new BetterPaymentTableManager();
         $this->wprm_ratings_manager = new WprmRatingsTableManager();
         $this->optimization_manager = new OptimizationManager();
         $this->scanner_manager = new ScannerManager();
@@ -67,8 +64,6 @@ class AjaxHandler
             'nhrotm_usermeta_table_data' => 'usermeta_table_data',
             'nhrotm_edit_usermeta' => 'edit_usermeta',
             'nhrotm_delete_usermeta' => 'delete_usermeta',
-            //
-            'nhrotm_better_payment_table_data' => 'better_payment_table_data',
             //
             'nhrotm_wprm_ratings_table_data' => 'wprm_ratings_table_data',
             'nhrotm_wprm_analytics_table_data' => 'wprm_analytics_table_data',
@@ -247,16 +242,6 @@ class AjaxHandler
             } else {
                 wp_send_json_error('Failed to delete meta!');
             }
-        } catch (\Exception $e) {
-            wp_send_json_error($e->getMessage());
-        }
-    }
-
-    public function better_payment_table_data()
-    {
-        try {
-            $data = $this->better_payment_manager->get_data();
-            wp_send_json($data);
         } catch (\Exception $e) {
             wp_send_json_error($e->getMessage());
         }

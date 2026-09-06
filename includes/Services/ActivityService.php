@@ -121,6 +121,12 @@ class ActivityService
             case 'delete_transient':
                 return [__('Deleted transient', 'nhrrob-options-table-manager'), $subject, ''];
 
+            case 'create_transient':
+                return [__('Added transient', 'nhrrob-options-table-manager'), $subject, ''];
+
+            case 'update_transient':
+                return [__('Updated transient', 'nhrrob-options-table-manager'), $subject, ''];
+
             case 'disable_autoload':
                 return [__('Disabled autoload on', 'nhrrob-options-table-manager'), $subject, ''];
 

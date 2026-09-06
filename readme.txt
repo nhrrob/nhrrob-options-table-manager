@@ -1,14 +1,14 @@
 === NHR Advanced Options Table Manager & Autoload Optimizer ===
 Contributors: nhrrob  
-Tags: wp_options, transients, usermeta, optimize, database-optimization 
-Requires at least: 6.0  
+Tags: database, autoload, wp_options, transients, cleanup
+Requires at least: 6.0
 Tested up to: 7.0
-Requires PHP: 7.4  
+Requires PHP: 7.4
 Stable tag: 2.0.0
-License: GPLv2 or later  
-License URI: https://www.gnu.org/licenses/gpl-2.0.html  
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Optimize WordPress with Advanced Option History, Autoload Health Checks, and Automated Cleanup. Boost performance by reducing database bloat.
+Clean and optimize your wp_options table: track autoload bloat, delete expired transients, scan for orphaned options, and back up your database — all from one dashboard.
 
 == Description ==
 
@@ -17,8 +17,8 @@ Optimize WordPress with Advanced Option History, Autoload Health Checks, and Aut
 
 https://www.youtube.com/watch?v=le89m1qfb0U
 
-Are you fed up with the size of wp otions table? You are not alone! 
-Install this plugin and get a fine view of the table and analytics.
+Is your `wp_options` table bloated and slowing down your site? You're not alone!
+Install this plugin to get a clear view of the table, plus the tools to clean and optimize it.
 
 `<?php echo 'Small WP Options Table, Clean Database!'; ?>`
 
@@ -29,12 +29,12 @@ Tired of an overloaded `wp_options` table slowing down your WordPress site? **NH
 - **Database Health Dashboard** – An at-a-glance scorecard (0–100) summarizing autoload size, transient and orphan counts, and last backup, with prioritized one-click recommendations.
 - **Modern React Interface** – A fast, dashboard-first admin app organized into Dashboard, Browse, Optimize, Tools, Integrations, and Settings.
 - **Autoload Usage Tracker** – Records which autoloaded options are actually used on real front-end page loads, then flags the ones that are never used so you can safely turn off their autoload.
-- **Transients Manager** – Dedicated view of every transient with size, expiration and status; delete individually or in bulk by scope (expired, persistent, or all).
+- **Transients Manager** – Dedicated view of every transient with size, expiration and status; add and edit values (with expiration) directly, select rows to bulk delete, or clean up by scope (expired, persistent, or all).
 - **Scheduled Backups & Snapshots** – Create restorable snapshots of your `wp_options` table manually or on a daily/weekly schedule, with automatic snapshots taken before Search & Replace and Import.
 - **Option History & Rollback** – Track all changes to individual options and restore previous versions instantly.
 - **Autoload Health Check** – Analyze total autoloaded data size and identify heavy options that slow down your site.
 - **Automated Daily Cleanup** – Schedule automated daily deletion of expired transients via WP Cron.
-- **Scalable Tab Architecture** – Unified interface that seamlessly supports third-party tables like Better Payment and WP Recipe Maker.
+- **Scalable Tab Architecture** – Unified interface that seamlessly supports third-party tables like WP Recipe Maker.
 - **Manage Options** – Add, edit, and delete options easily using a secure, optimized modal system.
 - **Usermeta Table Support** – Edit and delete user meta entries just like options.
 - **Serialized Data Handling** – Edit serialized data seamlessly; it appears as a structured object or array.
@@ -76,8 +76,20 @@ Absolutely! Everything is managed through a user-friendly UI with modals.
 **Does it support serialized data?**  
 Yes! Serialized data is automatically formatted for easy editing and saved back in a structured format.
 
-**Can I delete expired transients?**  
+**Can I delete expired transients?**
 Yes! We have an automated daily cleanup feature and a manual delete button.
+
+**Can it find and remove leftover options from plugins I've already uninstalled?**
+Yes, the Orphan Scanner cross-references `wp_options` prefixes against your installed plugins and flags anything left behind so you can clean it up safely.
+
+**Does it help with autoloaded data specifically?**
+Yes. The Autoload Health Check shows total autoload size and your heaviest autoloaded options, and the Autoload Usage Tracker flags autoloaded options that are never read on the front end so you know which ones are safe to turn off.
+
+**Can I back up my options table before making changes?**
+Yes. You can create manual snapshots or schedule daily/weekly backups, and the plugin automatically snapshots before Search & Replace and Import operations.
+
+**Is there a command-line interface?**
+Yes, WP-CLI is supported (`wp nhr-options list`, `wp nhr-options delete`).
 
 == Screenshots ==
 
@@ -154,7 +166,6 @@ Yes! We have an automated daily cleanup feature and a manual delete button.
 
 = 1.1.5 - 14/03/2025 =
 - Added: Protected option and usermeta now having tooltip on edit and delete button
-- Added: Class exists check for Better Payment table
 - Added: Toast notification added replacing alert messages
 - Fixed: Fatal error due to PHPUnit vendor file missing
 - Fixed: Usermeta table pagination issue
@@ -164,8 +175,7 @@ Yes! We have an automated daily cleanup feature and a manual delete button.
 - Few minor bug fixing & improvements
 
 = 1.1.3 - 09/03/2025 =
-- Added: Better Payment table support added
-- Added: Security improvements 
+- Added: Security improvements
 - Few minor bug fixing & improvements
 
 = 1.1.2 - 05/01/2025 =

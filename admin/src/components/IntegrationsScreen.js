@@ -1,5 +1,5 @@
 /**
- * Integrations — read-only browser for third-party tables (Better Payment, WPRM).
+ * Integrations — read-only browser for third-party tables (e.g. WPRM).
  * Wired to nhrotm/v1/integrations.
  */
 import { useEffect, useState, useCallback } from '@wordpress/element';

@@ -2,7 +2,7 @@
  * Optimize — autoload health, usage tracker, orphan scanner, cleanup.
  * Wired to nhrotm/v1/optimize (+ action endpoints).
  */
-/* eslint-disable no-alert -- native confirm/alert used intentionally for lightweight action UX. */
+/* eslint-disable no-alert -- native alert used intentionally for lightweight error UX. */
 import { useEffect, useState, useCallback } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
@@ -10,9 +10,12 @@ import apiFetch from '@wordpress/api-fetch';
 import Panel from './Panel';
 import ProTag from './ProTag';
 import ScreenHeader from './ScreenHeader';
+import { useConfirm } from './ConfirmProvider';
 
 export default function OptimizeScreen( { boot, onNavigate } ) {
+	const confirm = useConfirm();
 	const hasPro = !! ( boot && boot.hasPro );
+	const proAvailable = !! ( boot && boot.proAvailable );
 	const [ data, setData ] = useState( null );
 	const [ status, setStatus ] = useState( 'loading' );
 	const [ busy, setBusy ] = useState( false );
@@ -218,19 +221,28 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 									type="button"
 									className="nhrotm-linkbtn nhrotm-linkbtn--danger"
 									disabled={ busy }
-									onClick={ () => {
-										if (
-											window.confirm(
-												sprintf(
-													/* translators: %s: option prefix. */
-													__(
-														'Delete all options starting with "%s"?',
-														'nhrrob-options-table-manager'
-													),
-													o.prefix
-												)
-											)
-										) {
+									onClick={ async () => {
+										const ok = await confirm(
+											sprintf(
+												/* translators: %s: option prefix. */
+												__(
+													'Delete all options starting with "%s"?',
+													'nhrrob-options-table-manager'
+												),
+												o.prefix
+											),
+											{
+												description: __(
+													'This action cannot be undone.',
+													'nhrrob-options-table-manager'
+												),
+												confirmLabel: __(
+													'Delete',
+													'nhrrob-options-table-manager'
+												),
+											}
+										);
+										if ( ok ) {
 											action( 'delete-orphans', {
 												prefix: o.prefix,
 											} );
@@ -282,15 +294,24 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 						type="button"
 						className="nhrotm-btn nhrotm-btn--soft"
 						disabled={ busy }
-						onClick={ () => {
-							if (
-								window.confirm(
-									__(
-										'Delete ALL transients (including active)?',
+						onClick={ async () => {
+							const ok = await confirm(
+								__(
+									'Delete ALL transients (including active)?',
+									'nhrrob-options-table-manager'
+								),
+								{
+									description: __(
+										'This action cannot be undone.',
 										'nhrrob-options-table-manager'
-									)
-								)
-							) {
+									),
+									confirmLabel: __(
+										'Delete',
+										'nhrrob-options-table-manager'
+									),
+								}
+							);
+							if ( ok ) {
 								action( 'clean-transients', { scope: 'all' } );
 							}
 						} }
@@ -305,7 +326,11 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 							'nhrrob-options-table-manager'
 						) }
 					</span>
-					<ProTag hasPro={ hasPro } onNavigate={ onNavigate } />
+					<ProTag
+						hasPro={ hasPro }
+						proAvailable={ proAvailable }
+						onNavigate={ onNavigate }
+					/>
 				</div>
 			</Panel>
 		</div>

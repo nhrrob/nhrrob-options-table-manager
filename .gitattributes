@@ -1,5 +1,6 @@
 # System files
 .ai/                    export-ignore
+CLAUDE.md               export-ignore
 .sass-cache             export-ignore
 .DS_Store               export-ignore
 .phpintel               export-ignore

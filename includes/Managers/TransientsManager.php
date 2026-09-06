@@ -8,8 +8,9 @@ if (!defined('ABSPATH')) {
 /**
  * Class TransientsManager
  *
- * Lists and manages regular (non-site) transients: view name, size, expiration
- * and status, delete individually or in bulk by scope.
+ * Lists and manages transients — both the regular ("_transient_") and
+ * network-wide ("_site_transient_") scopes: view name, size, expiration and
+ * status, delete individually or in bulk by scope.
  */
 class TransientsManager extends BaseTableManager
 {
@@ -24,7 +25,7 @@ class TransientsManager extends BaseTableManager
     }
 
     /**
-     * List all regular transients with status and size.
+     * List all transients (both scopes) with status and size.
      *
      * @return array
      */
@@ -36,17 +37,17 @@ class TransientsManager extends BaseTableManager
         $rows = $wpdb->get_results(
             "SELECT option_name, option_value, LENGTH(option_value) AS size_bytes
             FROM {$wpdb->options}
-            WHERE option_name LIKE '\_transient\_%'
-            AND option_name NOT LIKE '\_transient\_timeout\_%'
-            ORDER BY size_bytes DESC",
+            WHERE " . $this->transient_value_where('option_name') . '
+            ORDER BY size_bytes DESC',
             ARRAY_A
         );
 
         $now  = time();
         $data = [];
         foreach ($rows as $row) {
-            $name    = substr($row['option_name'], strlen('_transient_'));
-            $timeout = (int) get_option('_transient_timeout_' . $name, 0);
+            $is_site = $this->is_site_transient($row['option_name']);
+            $name    = $this->transient_bare_name($row['option_name']);
+            $timeout = (int) get_option($this->transient_timeout_name($name, $is_site), 0);
 
             if (0 === $timeout) {
                 $status = 'persistent';
@@ -69,6 +70,22 @@ class TransientsManager extends BaseTableManager
     }
 
     /**
+     * Whether a bare transient name currently exists as a network-wide
+     * ("_site_transient_") row rather than the regular scope.
+     *
+     * @param string $name Bare transient name.
+     * @return bool
+     */
+    private function is_site_scoped($name)
+    {
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
+        return (bool) $this->wpdb->get_var($this->wpdb->prepare(
+            "SELECT 1 FROM {$this->wpdb->options} WHERE option_name = %s",
+            '_site_transient_' . $name
+        ));
+    }
+
+    /**
      * Delete a single transient by name.
      *
      * @return bool Success status
@@ -83,7 +100,7 @@ class TransientsManager extends BaseTableManager
             throw new \Exception('Transient name is required');
         }
 
-        return delete_transient($name);
+        return $this->is_site_scoped($name) ? delete_site_transient($name) : delete_transient($name);
     }
 
     /**
@@ -104,7 +121,10 @@ class TransientsManager extends BaseTableManager
         $deleted = 0;
         foreach ($this->get_data() as $transient) {
             if ('all' === $scope || $scope === $transient['status']) {
-                if (delete_transient($transient['name'])) {
+                $removed = $this->is_site_scoped($transient['name'])
+                    ? delete_site_transient($transient['name'])
+                    : delete_transient($transient['name']);
+                if ($removed) {
                     $deleted++;
                 }
             }

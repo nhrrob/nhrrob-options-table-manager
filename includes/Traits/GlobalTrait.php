@@ -296,14 +296,94 @@ trait GlobalTrait
         ];
     }
 
-    public function is_better_payment_installed()
-    {
-        return class_exists('\Better_Payment');
-    }
-
     public function is_plugin_installed($class_name = '\WP_Recipe_Maker')
     {
         return class_exists($class_name);
+    }
+
+    /**
+     * SQL fragment matching transient *value* rows only — both the regular
+     * "_transient_" and network-wide "_site_transient_" scopes — excluding
+     * their paired timeout rows. Literal pattern, safe to interpolate
+     * directly (no user input involved).
+     *
+     * @param string $column Column reference, never user input.
+     * @return string
+     */
+    public function transient_value_where($column = 'option_name')
+    {
+        return "(($column LIKE '\_transient\_%' AND $column NOT LIKE '\_transient\_timeout\_%')"
+            . " OR ($column LIKE '\_site\_transient\_%' AND $column NOT LIKE '\_site\_transient\_timeout\_%'))";
+    }
+
+    /**
+     * SQL fragment matching transient *timeout* rows only (both scopes).
+     *
+     * @param string $column Column reference, never user input.
+     * @return string
+     */
+    public function transient_timeout_where($column = 'option_name')
+    {
+        return "($column LIKE '\_transient\_timeout\_%' OR $column LIKE '\_site\_transient\_timeout\_%')";
+    }
+
+    /**
+     * Whether a transient option_name belongs to the network-wide "site" scope.
+     *
+     * @param string $option_name Full option_name, e.g. "_site_transient_update_plugins".
+     * @return bool
+     */
+    public function is_site_transient($option_name)
+    {
+        return 0 === strpos((string) $option_name, '_site_transient_');
+    }
+
+    /**
+     * Strip whichever transient prefix applies, returning the bare transient name.
+     *
+     * @param string $option_name Full option_name.
+     * @return string
+     */
+    public function transient_bare_name($option_name)
+    {
+        $prefix = $this->is_site_transient($option_name) ? '_site_transient_' : '_transient_';
+        return substr($option_name, strlen($prefix));
+    }
+
+    /**
+     * Build the value-row option_name for a bare transient name.
+     *
+     * @param string $name    Bare transient name.
+     * @param bool   $is_site Network-wide scope?
+     * @return string
+     */
+    public function transient_value_name($name, $is_site)
+    {
+        return ($is_site ? '_site_transient_' : '_transient_') . $name;
+    }
+
+    /**
+     * Build the timeout-row option_name for a bare transient name.
+     *
+     * @param string $name    Bare transient name.
+     * @param bool   $is_site Network-wide scope?
+     * @return string
+     */
+    public function transient_timeout_name($name, $is_site)
+    {
+        return ($is_site ? '_site_transient_timeout_' : '_transient_timeout_') . $name;
+    }
+
+    /**
+     * Strip whichever transient *timeout* prefix applies, returning the bare name.
+     *
+     * @param string $timeout_option_name Full timeout option_name.
+     * @return string
+     */
+    public function transient_bare_name_from_timeout($timeout_option_name)
+    {
+        $prefix = $this->is_site_transient($timeout_option_name) ? '_site_transient_timeout_' : '_transient_timeout_';
+        return substr($timeout_option_name, strlen($prefix));
     }
 
     //

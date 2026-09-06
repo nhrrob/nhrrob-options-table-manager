@@ -19,12 +19,6 @@
                 <?php esc_html_e('Usermeta Table', 'nhrrob-options-table-manager'); ?>
             </button>
 
-            <?php if ($is_better_payment_installed): ?>
-                <button class="tablinks better_payment-table" data-tab="nhrotm-better-payment-tab">
-                    <?php esc_html_e('Better Payment Table', 'nhrrob-options-table-manager'); ?>
-                </button>
-            <?php endif; ?>
-
             <?php if ($is_wp_recipe_maker_installed): ?>
                 <button class="tablinks wprm_ratings-table" data-tab="nhrotm-wprm-ratings-tab">
                     <?php esc_html_e('WPRM Ratings Table', 'nhrrob-options-table-manager'); ?>
@@ -138,26 +132,6 @@
                 <tbody></tbody>
             </table>
         </div>
-
-        <?php if ($is_better_payment_installed): ?>
-            <div id="nhrotm-better-payment-tab" class="nhrotm-tab-content d-none">
-                <table id="nhrotm-data-table-better_payment" class="nhrotm-data-table wp-list-table widefat fixed striped">
-                    <thead>
-                        <tr>
-                            <th><?php esc_html_e('ID', 'nhrrob-options-table-manager'); ?></th>
-                            <th><?php esc_html_e('Transaction ID', 'nhrrob-options-table-manager'); ?></th>
-                            <th><?php esc_html_e('Email', 'nhrrob-options-table-manager'); ?></th>
-                            <th><?php esc_html_e('Amount', 'nhrrob-options-table-manager'); ?></th>
-                            <th><?php esc_html_e('Form Fields', 'nhrrob-options-table-manager'); ?></th>
-                            <th><?php esc_html_e('Source', 'nhrrob-options-table-manager'); ?></th>
-                            <th><?php esc_html_e('Status', 'nhrrob-options-table-manager'); ?></th>
-                            <th><?php esc_html_e('Date', 'nhrrob-options-table-manager'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        <?php endif; ?>
 
         <?php if ($is_wp_recipe_maker_installed): ?>
             <div id="nhrotm-wprm-ratings-tab" class="nhrotm-tab-content d-none">

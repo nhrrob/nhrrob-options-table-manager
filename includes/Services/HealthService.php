@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 use Nhrotm\OptionsTableManager\Managers\ScannerManager;
 use Nhrotm\OptionsTableManager\Managers\BackupManager;
 use Nhrotm\OptionsTableManager\Managers\UsageTracker;
+use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 /**
  * Computes the database health score and dashboard summary.
@@ -18,6 +19,8 @@ use Nhrotm\OptionsTableManager\Managers\UsageTracker;
  */
 class HealthService
 {
+    use GlobalTrait;
+
     const AUTOLOAD_BUDGET = 1048576; // 1 MB.
     const OPTIONS_BUDGET   = 1500;
 
@@ -52,16 +55,21 @@ class HealthService
         );
         $options_count = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->options}");
 
+        // Both the regular ("_transient_") and network-wide ("_site_transient_")
+        // scopes count — the latter is where WP core stores update_plugins,
+        // update_core, update_themes, and can hold sizable feed/browser caches.
         $transient_total = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_%' AND option_name NOT LIKE '\_transient\_timeout\_%'"
+            "SELECT COUNT(*) FROM {$wpdb->options} WHERE " . $this->transient_value_where('option_name')
         );
         $expired_transients = (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_timeout\_%' AND option_value < %d",
+                "SELECT COUNT(*) FROM {$wpdb->options} WHERE " . $this->transient_timeout_where('option_name') . ' AND option_value < %d',
                 time()
             )
         );
-        // Total bytes held by expired transients (value rows joined to their timeout rows).
+        // Total bytes held by expired transients (value rows joined to their timeout
+        // rows), summed separately per scope since each scope's bare name starts at
+        // a different offset within its own prefix.
         $expired_bytes = (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT SUM(LENGTH(o.option_value))
@@ -70,6 +78,17 @@ class HealthService
                    ON t.option_name = CONCAT('_transient_timeout_', SUBSTRING(o.option_name, 12))
                  WHERE o.option_name LIKE '\_transient\_%'
                    AND o.option_name NOT LIKE '\_transient\_timeout\_%'
+                   AND t.option_value < %d",
+                time()
+            )
+        ) + (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT SUM(LENGTH(o.option_value))
+                 FROM {$wpdb->options} o
+                 INNER JOIN {$wpdb->options} t
+                   ON t.option_name = CONCAT('_site_transient_timeout_', SUBSTRING(o.option_name, 17))
+                 WHERE o.option_name LIKE '\_site\_transient\_%'
+                   AND o.option_name NOT LIKE '\_site\_transient\_timeout\_%'
                    AND t.option_value < %d",
                 time()
             )
