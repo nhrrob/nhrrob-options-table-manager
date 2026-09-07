@@ -92,16 +92,20 @@ class UsageTracker
         }
 
         $autoloaded = wp_load_alloptions();
-        $stored     = (array) get_option(self::USED_OPTION, []);
-        $before     = count($stored);
+        // Per-option hit count, not just a seen/unseen flag — lets the UI show
+        // "used 12x" instead of a flat "Used" label. Values written before this
+        // change are the boolean `true`; `(int) true === 1`, so old data upgrades
+        // in place with no migration.
+        $stored = (array) get_option(self::USED_OPTION, []);
+        $before = $stored;
 
         foreach (array_keys($this->used) as $name) {
             if (isset($autoloaded[$name])) {
-                $stored[$name] = true;
+                $stored[$name] = (isset($stored[$name]) ? (int) $stored[$name] : 0) + 1;
             }
         }
 
-        if (count($stored) !== $before) {
+        if ($stored !== $before) {
             update_option(self::USED_OPTION, $stored, false);
         }
 
@@ -139,11 +143,12 @@ class UsageTracker
         });
 
         return [
-            'tracking'   => get_option(self::ENABLED_OPTION, 'false') === 'true',
-            'since'      => get_option(self::SINCE_OPTION, ''),
-            'seen_count' => count($used),
-            'load_count' => $this->get_load_count(),
-            'options'    => $unused,
+            'tracking'    => get_option(self::ENABLED_OPTION, 'false') === 'true',
+            'since'       => get_option(self::SINCE_OPTION, ''),
+            'seen_count'  => count($used),
+            'load_count'  => $this->get_load_count(),
+            'used_counts' => array_map('intval', $used),
+            'options'     => $unused,
         ];
     }
 

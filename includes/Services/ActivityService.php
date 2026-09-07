@@ -118,6 +118,15 @@ class ActivityService
             case 'delete_usermeta':
                 return [__('Deleted user meta', 'nhrrob-options-table-manager'), $subject, ''];
 
+            case 'delete_postmeta':
+                return [__('Deleted post meta', 'nhrrob-options-table-manager'), $subject, ''];
+
+            case 'delete_commentmeta':
+                return [__('Deleted comment meta', 'nhrrob-options-table-manager'), $subject, ''];
+
+            case 'delete_termmeta':
+                return [__('Deleted term meta', 'nhrrob-options-table-manager'), $subject, ''];
+
             case 'delete_transient':
                 return [__('Deleted transient', 'nhrrob-options-table-manager'), $subject, ''];
 

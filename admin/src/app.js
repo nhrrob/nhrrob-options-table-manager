@@ -48,17 +48,24 @@ export default function App( { boot } ) {
 	const [ focus, setFocus ] = useState( null );
 
 	/**
-	 * Switch section, optionally landing on a specific panel. Recommendations
-	 * and stat cards pass an anchor so "Scan orphans" arrives at the orphan
-	 * scanner rather than the top of Optimize.
+	 * Switch section, optionally landing on a specific panel and/or carrying
+	 * an initial filter for the target screen. Recommendations and stat cards
+	 * pass an anchor so "Scan orphans" arrives at the orphan scanner rather
+	 * than the top of Optimize; Optimize's "N expired transients" link passes
+	 * a browseFilter so it lands on Browse pre-filtered instead.
 	 *
-	 * @param {string} section Target section id.
-	 * @param {string} panel   Optional panel anchor within that section.
+	 * @param {string} section      Target section id.
+	 * @param {string} panel        Optional panel anchor within that section.
+	 * @param {Object} browseFilter Optional initial filter for Browse ({ type, status }).
 	 */
-	const navigate = ( section, panel ) => {
+	const navigate = ( section, panel, browseFilter ) => {
 		setActive( section );
-		// seq makes repeat clicks on the same target re-run the scroll.
-		setFocus( panel ? { panel, seq: Date.now() } : null );
+		// seq makes repeat clicks on the same target re-run the scroll/filter.
+		setFocus(
+			panel || browseFilter
+				? { panel, browseFilter, seq: Date.now() }
+				: null
+		);
 	};
 
 	usePanelFocus( active, focus );
@@ -93,6 +100,7 @@ export default function App( { boot } ) {
 						module={ current }
 						boot={ boot }
 						onNavigate={ navigate }
+						focus={ focus }
 					/>
 				</ToastProvider>
 			</ConfirmProvider>

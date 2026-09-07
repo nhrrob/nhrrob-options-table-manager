@@ -1,9 +1,11 @@
 /**
- * Edit/Add modal for options & usermeta records.
+ * Edit/Add modal for options, usermeta, postmeta, commentmeta & termmeta
+ * records.
  *
  * Structured values (serialized arrays / JSON) are edited as pretty JSON and
- * converted back on save; scalars stay raw. Supports adding options and
- * usermeta (usermeta add needs a user ID).
+ * converted back on save; scalars stay raw. Supports adding options, usermeta
+ * (needs a user ID), postmeta (needs a post ID), commentmeta (needs a comment
+ * ID) and termmeta (needs a term ID).
  */
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
@@ -34,6 +36,9 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 		record && record.format ? record.format : 'plain'
 	);
 	const [ userId, setUserId ] = useState( '' );
+	const [ postId, setPostId ] = useState( '' );
+	const [ commentId, setCommentId ] = useState( '' );
+	const [ termId, setTermId ] = useState( '' );
 	const [ autoload, setAutoload ] = useState(
 		record && record.autoload ? record.autoload : 'yes'
 	);
@@ -44,13 +49,28 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 	);
 
 	const isUsermetaAdd = isNew && type === 'usermeta';
+	const isPostmetaAdd = isNew && type === 'postmeta';
+	const isCommentmetaAdd = isNew && type === 'commentmeta';
+	const isTermmetaAdd = isNew && type === 'termmeta';
 	const isTransient = type === 'transients';
+	const isMetaType = [
+		'usermeta',
+		'postmeta',
+		'commentmeta',
+		'termmeta',
+	].includes( type );
 
 	let title;
 	if ( ! isNew ) {
 		title = __( 'Edit record', 'nhrrob-options-table-manager' );
 	} else if ( type === 'usermeta' ) {
 		title = __( 'Add usermeta', 'nhrrob-options-table-manager' );
+	} else if ( type === 'postmeta' ) {
+		title = __( 'Add postmeta', 'nhrrob-options-table-manager' );
+	} else if ( type === 'commentmeta' ) {
+		title = __( 'Add commentmeta', 'nhrrob-options-table-manager' );
+	} else if ( type === 'termmeta' ) {
+		title = __( 'Add termmeta', 'nhrrob-options-table-manager' );
 	} else if ( isTransient ) {
 		title = __( 'Add transient', 'nhrrob-options-table-manager' );
 	} else {
@@ -60,7 +80,10 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 	const canSave =
 		! busy &&
 		( ! isNew || name ) &&
-		( ! isUsermetaAdd || ( name && userId ) );
+		( ! isUsermetaAdd || ( name && userId ) ) &&
+		( ! isPostmetaAdd || ( name && postId ) ) &&
+		( ! isCommentmetaAdd || ( name && commentId ) ) &&
+		( ! isTermmetaAdd || ( name && termId ) );
 
 	return (
 		<div
@@ -119,9 +142,69 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 						</div>
 					) }
 
+					{ isPostmetaAdd && (
+						<div className="nhrotm-field">
+							<label htmlFor="nhrotm-modal-postid">
+								{ __(
+									'Post ID',
+									'nhrrob-options-table-manager'
+								) }
+							</label>
+							<input
+								id="nhrotm-modal-postid"
+								type="number"
+								min="1"
+								value={ postId }
+								onChange={ ( e ) =>
+									setPostId( e.target.value )
+								}
+							/>
+						</div>
+					) }
+
+					{ isCommentmetaAdd && (
+						<div className="nhrotm-field">
+							<label htmlFor="nhrotm-modal-commentid">
+								{ __(
+									'Comment ID',
+									'nhrrob-options-table-manager'
+								) }
+							</label>
+							<input
+								id="nhrotm-modal-commentid"
+								type="number"
+								min="1"
+								value={ commentId }
+								onChange={ ( e ) =>
+									setCommentId( e.target.value )
+								}
+							/>
+						</div>
+					) }
+
+					{ isTermmetaAdd && (
+						<div className="nhrotm-field">
+							<label htmlFor="nhrotm-modal-termid">
+								{ __(
+									'Term ID',
+									'nhrrob-options-table-manager'
+								) }
+							</label>
+							<input
+								id="nhrotm-modal-termid"
+								type="number"
+								min="1"
+								value={ termId }
+								onChange={ ( e ) =>
+									setTermId( e.target.value )
+								}
+							/>
+						</div>
+					) }
+
 					<div className="nhrotm-field">
 						<label htmlFor="nhrotm-modal-name">
-							{ type === 'usermeta'
+							{ isMetaType
 								? __(
 										'Meta key',
 										'nhrrob-options-table-manager'
@@ -226,6 +309,11 @@ export default function EditModal( { type, record, onSave, onClose, busy } ) {
 								format,
 								autoload,
 								user_id: userId ? parseInt( userId, 10 ) : 0,
+								post_id: postId ? parseInt( postId, 10 ) : 0,
+								comment_id: commentId
+									? parseInt( commentId, 10 )
+									: 0,
+								term_id: termId ? parseInt( termId, 10 ) : 0,
 								expiration: isTransient
 									? parseInt( expiration, 10 ) || 0
 									: 0,

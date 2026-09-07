@@ -9,6 +9,7 @@ use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 use Nhrotm\OptionsTableManager\Managers\OptimizationManager;
 use Nhrotm\OptionsTableManager\Managers\UsageTracker;
 use Nhrotm\OptionsTableManager\Managers\ScannerManager;
+use Nhrotm\OptionsTableManager\Managers\BackupManager;
 
 /**
  * Read/action service for the Optimize section.
@@ -40,19 +41,61 @@ class OptimizeService
     {
         $optimizer = new OptimizationManager();
         $tracker   = new UsageTracker();
+        $scanner   = new ScannerManager();
 
-        $heavy = array_map(function ($row) {
+        $autoload_rows = $optimizer->get_heavy_autoload_options();
+        $usage         = $tracker->get_unused_autoload_options();
+        // O(1) "is this option in the unused set" lookup — get_unused_autoload_options()
+        // already excludes protected options, so a protected-but-never-observed
+        // option reads as "used" here. Deliberate: protected options are never
+        // offered a "Disable autoload" action anyway, so their usage badge
+        // doesn't drive a decision — defaulting to the non-alarming label avoids
+        // implying a cleanup candidate that can't actually be cleaned up.
+        $unused_names = array_flip(array_column($usage['options'], 'option_name'));
+        $orphan_rows = $scanner->scan_orphans();
+        $expired_transients = $this->count_expired_transients();
+
+        $baseline   = $this->score_baseline(count($orphan_rows), $expired_transients);
+        $health     = new HealthService($this->activity);
+        $base_score = $health->score($baseline);
+
+        // The real, displayable score — unlike $baseline above, which fixes
+        // backup_age_days to null so it cancels out of every $gain() diff
+        // regardless of its true value (see score_baseline() docblock). That
+        // shortcut would misrepresent an absolute score (always assuming the
+        // worst backup-age penalty), so it's recomputed here with the real
+        // age instead of re-deriving everything via HealthService::metrics()
+        // (which would redundantly repeat the orphan scan and usage lookup
+        // already done above).
+        $display_score = $health->score(array_merge($baseline, [
+            'backup_age_days' => $this->real_backup_age_days(),
+        ]));
+
+        // Marginal score gain from taking one action, holding everything else
+        // fixed — not a static per-item constant (see HealthService::score()'s
+        // caps, e.g. orphan groups plateau at -20 past ~10 groups).
+        $gain = function (array $overrides) use ($health, $baseline, $base_score) {
+            return max(0, $health->score(array_merge($baseline, $overrides)) - $base_score);
+        };
+
+        $protected_options = $this->get_protected_options();
+
+        $autoload = array_map(function ($row) use ($usage, $unused_names, $scanner, $protected_options) {
+            if (!$usage['tracking']) {
+                $used = 'untracked';
+            } else {
+                $used = isset($unused_names[$row['option_name']]) ? 'unused' : 'used';
+            }
             return [
-                'name'     => $row['option_name'],
-                'size'     => $row['size_formatted'],
-                'autoload' => in_array($row['autoload'], ['no', 'false', '0', '', 'off'], true) ? 'no' : 'yes',
+                'name'       => $row['option_name'],
+                'size'       => $row['size_formatted'],
+                'size_bytes' => $row['size_bytes'],
+                'owner'      => $scanner->guess_owner($row['option_name']),
+                'used'       => $used,
+                'used_count' => isset($usage['used_counts'][$row['option_name']]) ? $usage['used_counts'][$row['option_name']] : 0,
+                'protected'  => in_array($row['option_name'], $protected_options, true),
             ];
-        }, $optimizer->get_heavy_autoload_options(10));
-
-        $usage = $tracker->get_unused_autoload_options();
-        $unused = array_map(function ($row) {
-            return ['name' => $row['option_name'], 'size' => $row['size_formatted']];
-        }, array_slice($usage['options'], 0, 20));
+        }, $autoload_rows);
 
         $orphans = array_map(function ($row) {
             return [
@@ -61,17 +104,96 @@ class OptimizeService
                 'source' => isset($row['possible_source']) ? $row['possible_source'] : '',
                 'risk'   => isset($row['risk']) ? $row['risk'] : '',
             ];
-        }, (new ScannerManager())->scan_orphans());
+        }, $orphan_rows);
+
+        $cleanup_gain = $gain([
+            'expired_transients' => 0,
+            'transient_total'    => max(0, $baseline['transient_total'] - $expired_transients),
+        ]);
+
+        // Joint gain from taking every actionable row in a table at once. Not
+        // a per-row figure — the health score's capped/ratio penalties (see
+        // the $gain() docblock above) mean a single row's own marginal gain
+        // is often 0 even when clearing the whole table together would move
+        // the score, so only this one whole-table number is ever shown; nothing
+        // is computed or exposed per row. Same real, single $gain() call
+        // cleanup_score_gain already uses, just with the whole table's
+        // actionable rows overridden together.
+        $actionable_autoload_bytes = array_sum(array_map(function ($row) {
+            return $row['protected'] ? 0 : $row['size_bytes'];
+        }, $autoload));
+        $autoload_total_gain = $gain([
+            'autoload_bytes' => max(0, $baseline['autoload_bytes'] - $actionable_autoload_bytes),
+        ]);
+        $orphans_total_gain = $gain(['orphan_groups' => 0]);
 
         return [
-            'autoload_total'     => $optimizer->get_total_autoload_size(),
-            'heavy'              => $heavy,
-            'usage_tracking'     => $usage['tracking'],
-            'usage_since'        => $usage['since'],
-            'usage_seen'         => $usage['seen_count'],
-            'unused'             => $unused,
-            'orphans'            => $orphans,
-            'expired_transients' => $this->count_expired_transients(),
+            'score'               => $display_score,
+            'autoload_total'      => $optimizer->get_total_autoload_size(),
+            'autoload'            => $autoload,
+            'autoload_total_gain' => $autoload_total_gain,
+            'usage_tracking'      => $usage['tracking'],
+            'usage_since'         => $usage['since'],
+            'usage_seen'          => $usage['seen_count'],
+            'usage_loads'         => $usage['load_count'],
+            'orphans'             => $orphans,
+            'orphans_total_gain'  => $orphans_total_gain,
+            'expired_transients'  => $expired_transients,
+            'cleanup_score_gain'  => $cleanup_gain,
+        ];
+    }
+
+    /**
+     * Days since the most recent backup snapshot, or null if there is none —
+     * mirrors HealthService::metrics()'s calculation without pulling in its
+     * full (redundantly heavy) metrics pass.
+     *
+     * @return int|null
+     */
+    private function real_backup_age_days()
+    {
+        $snapshots   = (new BackupManager())->get_snapshots();
+        $last_backup = !empty($snapshots) ? $snapshots[0]['created_at'] : null;
+
+        return $last_backup
+            ? (int) floor((time() - strtotime($last_backup . ' UTC')) / DAY_IN_SECONDS)
+            : null;
+    }
+
+    /**
+     * Lean metrics snapshot for score-impact math. Deliberately not
+     * HealthService::metrics() — that re-derives orphans/usage from scratch
+     * (duplicate scan_orphans()/get_plugins() work we've already done above).
+     * `options_count` and `backup_age_days` are constant across every gain
+     * diff below (no Optimize action changes a snapshot's age, and only
+     * orphan deletion changes row counts by a meaningful amount) — options_count
+     * is fetched for accuracy on that path; backup_age_days is a fixed `null`
+     * since it cancels out of every diff regardless of value.
+     *
+     * @param int $orphan_groups      Orphan group count.
+     * @param int $expired_transients Expired transient count.
+     * @return array
+     */
+    private function score_baseline($orphan_groups, $expired_transients)
+    {
+        global $wpdb;
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Dashboard analytics
+        $autoload_bytes = (int) $wpdb->get_var(
+            "SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload NOT IN ('off', 'no', 'false', '0', '')"
+        );
+        $transient_total = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->options} WHERE " . $this->transient_value_where('option_name')
+        );
+        $options_count = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->options}");
+        // phpcs:enable
+
+        return [
+            'autoload_bytes'     => $autoload_bytes,
+            'transient_total'    => $transient_total,
+            'expired_transients' => $expired_transients,
+            'orphan_groups'      => $orphan_groups,
+            'options_count'      => $options_count,
+            'backup_age_days'    => null,
         ];
     }
 

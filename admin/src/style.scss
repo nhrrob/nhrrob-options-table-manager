@@ -339,6 +339,19 @@
 
 	&__body {
 		padding: 20px;
+
+		// A lead-in <p className="nhrotm-muted"> otherwise stacks the
+		// browser's default paragraph margin on top of this padding (an
+		// oversized top gap) while leaving no gap at all below it before
+		// whatever follows (table, buttons) — reset both to one deliberate
+		// value instead.
+		> p {
+			margin: 0 0 12px;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
 	}
 
 	// Brief ring when a cross-section link lands on this panel, so the jump is
@@ -766,11 +779,32 @@
 	}
 }
 
+// ---- Optimize/Tools: jump nav (reuses .nhrotm-segmented below) ----
+// Not `position: sticky` — .nhrotm-app has `overflow: hidden` (for its
+// rounded-corner clipping), which is a scroll-containing ancestor that
+// breaks sticky for any descendant relative to the real (document-level)
+// scroll. In-flow quick-jump strip instead: still scrolls its target panel
+// into view, just doesn't stay pinned once scrolled past.
+.nhrotm-jumpnav {
+	background: var(--nhrotm-surface);
+	border-bottom: 1px solid var(--nhrotm-border);
+	padding: 10px 0;
+	margin: -8px 0 16px;
+}
+
 // ---- Browse: toolbar, segmented switcher, grid, pager ----
+// `.nhrotm-browse__tools` content varies per type (plain search vs. search +
+// transient status/owner selects vs. search + postmeta/usermeta lookup), so
+// whether it happens to fit beside the segmented switcher on one line is
+// type-dependent and viewport-dependent — letting it wrap opportunistically
+// meant the toolbar (and therefore the grid header) sat at a different
+// height per type, which read as the whole page "jumping" when switching
+// tabs. `flex-basis: 100%` on `.nhrotm-browse__tools` below forces it onto
+// its own row unconditionally, so every type gets the same two-row toolbar
+// height regardless of how wide its filters are.
 .nhrotm-browse__toolbar {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
 	gap: 12px;
 	margin-bottom: 16px;
 	flex-wrap: wrap;
@@ -812,6 +846,8 @@
 	align-items: center;
 	gap: 10px;
 	flex-wrap: wrap;
+	// Always its own row — see the comment on .nhrotm-browse__toolbar above.
+	flex-basis: 100%;
 }
 
 // Scoped to `.nhrotm-app` (not just the bare class) so this beats WP core's
@@ -862,6 +898,134 @@
 		border-color: var(--nhrotm-border-strong);
 		outline: none;
 		box-shadow: none;
+	}
+}
+
+// Transients-only status filter — same visual weight as the search field it
+// sits beside (9px/14px padding, 10px radius), same hover/focus treatment.
+.nhrotm-app .nhrotm-browse__statusfilter {
+	padding: 9px 14px;
+	border: 1px solid var(--nhrotm-border-strong);
+	border-radius: 10px;
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	font: inherit;
+	font-size: 13px;
+
+	&:hover {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	&:focus {
+		outline: none;
+		border-color: var(--nhrotm-border-strong);
+		box-shadow: none;
+	}
+}
+
+// Postmeta/usermeta-only "filter by post/user" search-and-pick combobox
+// (IdLookupFilter) — same leading-icon/clear-button shape as .nhrotm-search
+// beside it, plus a dropdown result panel.
+.nhrotm-app .nhrotm-lookup {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+
+	> svg {
+		position: absolute;
+		left: 11px;
+		color: var(--nhrotm-text-muted);
+		pointer-events: none;
+	}
+
+	&__input {
+		width: 200px;
+		padding: 9px 30px 9px 34px;
+		border: 1px solid var(--nhrotm-border-strong);
+		border-radius: 10px;
+		background: var(--nhrotm-surface);
+		color: var(--nhrotm-text);
+		font: inherit;
+		font-size: 13px;
+
+		&:hover {
+			border-color: var(--nhrotm-text-muted);
+		}
+
+		&:focus {
+			outline: none;
+			border-color: var(--nhrotm-border-strong);
+			box-shadow: none;
+		}
+	}
+
+	&__clear {
+		position: absolute;
+		right: 6px;
+		display: grid;
+		place-items: center;
+		width: 22px;
+		height: 22px;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		transition: background 150ms, color 150ms;
+
+		&:hover {
+			background: var(--nhrotm-bg);
+			color: var(--nhrotm-text);
+		}
+	}
+
+	&__panel {
+		position: absolute;
+		top: calc(100% + 6px);
+		left: 0;
+		z-index: 20;
+		width: 260px;
+		max-height: 240px;
+		overflow-y: auto;
+		padding: 6px;
+		border: 1px solid var(--nhrotm-border);
+		border-radius: 10px;
+		background: var(--nhrotm-surface);
+		box-shadow: var(--nhrotm-shadow);
+	}
+
+	&__status {
+		padding: 8px 10px;
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+	}
+
+	&__option {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		width: 100%;
+		padding: 8px 10px;
+		border: 0;
+		border-radius: 7px;
+		background: transparent;
+		color: var(--nhrotm-text);
+		font: inherit;
+		font-size: 13px;
+		text-align: left;
+		cursor: pointer;
+
+		&:hover,
+		&.is-active {
+			background: var(--nhrotm-bg);
+		}
+	}
+
+	&__id {
+		flex: 0 0 auto;
+		color: var(--nhrotm-text-muted);
+		font-size: 12px;
 	}
 }
 
@@ -929,8 +1093,28 @@
 	col.nhrotm-col-check {
 		width: 40px;
 	}
+	// Deliberately no width here. Every sibling column below is a fixed px
+	// value, and this is the one column left unset per table — under
+	// table-layout:fixed an unset column absorbs 100% of whatever's left
+	// over, so it renders at the same width convention (fixed columns
+	// pinned, text column flexes) across every table regardless of how many
+	// fixed columns that particular table has. A `%` value here previously
+	// computed against total table width independently of the other
+	// columns' real footprint, so the same "24%" rendered at a different
+	// effective width in a 4-column table vs. a 5-column one.
 	col.nhrotm-col-name {
-		width: 24%;
+		width: auto;
+	}
+	// Optimize's DataTable (Autoload health, Orphan scanner) has no second
+	// flex column to share the leftover space with — unlike Browse's Name +
+	// Value pair — so the plain flex rule above leaves it oversized next to
+	// short option/prefix names. `max-width` on a `<col>` is not honored by
+	// browsers under table-layout:fixed (only `width` is), so a real fixed
+	// width is the only way to actually stop it growing — it no longer
+	// flexes narrower than this on small screens either, but that beat
+	// silently not capping at all.
+	col.nhrotm-col-name--capped {
+		width: 220px;
 	}
 	col.nhrotm-col-size {
 		width: 84px;
@@ -938,8 +1122,29 @@
 	col.nhrotm-col-badge {
 		width: 128px;
 	}
+	// Orphan scanner's Source badge ("Unknown Plugin/Theme") runs much longer
+	// than a plain status badge — at the shared 128px width its pill left
+	// almost no buffer before the Risk column's cell boundary, so Risk read
+	// as crowded against it despite the same 16px cell padding every other
+	// column gets. Risk itself stays on the narrow `nhrotm-col-badge` width
+	// since "High"/"Medium" never need the extra room.
+	col.nhrotm-col-badge-wide {
+		width: 210px;
+	}
+	col.nhrotm-col-owner {
+		width: 150px;
+	}
+	col.nhrotm-col-usage {
+		width: 110px;
+	}
 	col.nhrotm-col-act {
 		width: 210px;
+	}
+	// Optimize's row actions are ever only one button (+ an occasional inline
+	// score-impact badge) — Browse's 210px .nhrotm-col-act was sized for its
+	// two-button (Edit + Delete) rows and left a visibly empty gutter here.
+	col.nhrotm-col-act-sm {
+		width: 168px;
 	}
 
 	th,
@@ -1063,8 +1268,67 @@
 		text-align: right;
 	}
 
+	// Health-score points a whole Optimize panel is worth if fully cleared
+	// (see OptimizeScreen.js's ScoreGainMeta) — a real, single computed
+	// number per panel, never a per-row figure (the score's capped/ratio
+	// penalties make per-row gains misleading; see OptimizeService::overview()).
+	&__gain {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		text-align: right;
+		font-weight: 700;
+		color: var(--nhrotm-success);
+	}
+
+	// Link to the owning post/user for usermeta & postmeta rows, in the same
+	// column autoload/status badges use for options/transients.
+	&__owner {
+		display: inline-block;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		vertical-align: middle;
+		font-size: 12.5px;
+		font-weight: 600;
+		color: var(--nhrotm-primary);
+		text-decoration: none;
+
+		&:hover,
+		&:focus {
+			text-decoration: underline;
+		}
+
+		&--muted {
+			color: var(--nhrotm-text-muted);
+			font-weight: 400;
+
+			&:hover,
+			&:focus {
+				text-decoration: none;
+			}
+		}
+
+		// Second line under a status/autoload badge in the same cell
+		// (transients: status badge + guessed owner).
+		&--stacked {
+			display: block;
+			margin-top: 3px;
+		}
+	}
+
+	// The header's "ACTIONS" label is plain text, so it respects the cell's
+	// text-align:right directly. This div doesn't get that for free — a
+	// block/flex box with no declared width isn't reliably stretching to
+	// the actual (table-layout:fixed, possibly browser-stretched-wider-
+	// than-declared) column width, so `justify-content:flex-end` was
+	// packing the button against the edge of a too-narrow box instead of
+	// the cell's true right edge, leaving every button visibly left of the
+	// header above it. Forcing full width removes the ambiguity.
 	&__actions {
 		display: flex;
+		width: 100%;
+		box-sizing: border-box;
 		gap: 6px;
 		justify-content: flex-end;
 	}
@@ -1129,6 +1393,21 @@
 	}
 }
 
+// "Protected" swaps in for .nhrotm-iconbtn in the same actions cell (rows
+// that can't be acted on don't get the button at all). It must share the
+// button's exact box model — same padding, border and font — or its text
+// sits flush against the cell edge while the button's text sits inset by
+// the button's own padding, so the two rows visibly fail to line up.
+.nhrotm-grid__protected {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
+	border: 1px solid transparent;
+	font-size: 12px;
+	font-weight: 600;
+}
+
 .nhrotm-badge {
 	display: inline-flex;
 	align-items: center;
@@ -1166,8 +1445,14 @@
 		background: rgba(240, 68, 56, 0.12);
 		color: var(--nhrotm-danger);
 	}
+	// Background alone is not enough here: `--nhrotm-bg` is the same token
+	// the zebra stripe uses (tbody tr:nth-child(even)), so on a striped row
+	// this badge had zero contrast against its own row and just vanished —
+	// on the plain white rows it was barely visible either. A real border
+	// makes the pill read the same way regardless of which row it lands on.
 	&--muted {
-		background: var(--nhrotm-bg);
+		background: var(--nhrotm-surface);
+		border: 1px solid var(--nhrotm-border-strong);
 		color: var(--nhrotm-text-muted);
 	}
 }
@@ -1236,50 +1521,6 @@
 	.nhrotm-btn:disabled {
 		opacity: 0.5;
 		cursor: default;
-	}
-}
-
-// ---- Optimize: option lists ----
-.nhrotm-oplist {
-	margin: 0 0 12px;
-	padding: 0;
-	list-style: none;
-}
-
-.nhrotm-oprow {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 10px 0;
-	border-bottom: 1px solid var(--nhrotm-border);
-
-	&:last-child {
-		border-bottom: 0;
-	}
-
-	&__name {
-		flex: 1;
-		font-weight: 600;
-		font-family: var(--nhrotm-mono);
-		font-size: 12.5px;
-		word-break: break-all;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-
-	&__size {
-		color: var(--nhrotm-text-muted);
-		font-size: 12.5px;
-		white-space: nowrap;
-		font-variant-numeric: tabular-nums;
-	}
-
-	&__src {
-		color: var(--nhrotm-text-muted);
-		font-style: italic;
-		font-weight: 400;
-		font-family: inherit;
 	}
 }
 

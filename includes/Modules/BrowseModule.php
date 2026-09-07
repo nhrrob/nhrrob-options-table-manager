@@ -10,7 +10,7 @@ use Nhrotm\OptionsTableManager\Rest\BrowseController;
 use Nhrotm\OptionsTableManager\Services\BrowseService;
 
 /**
- * Browse section — unified options / usermeta / transients data browser.
+ * Browse section — unified options / usermeta / postmeta / commentmeta / termmeta / transients data browser.
  */
 class BrowseModule implements ModuleInterface
 {

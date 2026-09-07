@@ -10,7 +10,8 @@ use Nhrotm\OptionsTableManager\Services\BrowseService;
 /**
  * REST endpoints for the unified data browser.
  *
- * GET    /nhrotm/v1/browse           → paginated options|usermeta|transients
+ * GET    /nhrotm/v1/browse           → paginated options|usermeta|postmeta|commentmeta|termmeta|transients
+ * GET    /nhrotm/v1/browse/lookup    → search-as-you-type post/user list for the postmeta/usermeta id filter
  * DELETE /nhrotm/v1/browse/(id)      → delete one record (core items protected)
  */
 class BrowseController extends RestController
@@ -45,6 +46,22 @@ class BrowseController extends RestController
                 'search'   => ['type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field'],
                 'orderby'  => ['type' => 'string', 'enum' => ['name', 'size', 'autoload', 'id'], 'default' => 'size'],
                 'order'    => ['type' => 'string', 'enum' => ['asc', 'desc'], 'default' => 'desc'],
+                // Transients only — ignored for every other type.
+                'status'   => ['type' => 'string', 'enum' => ['', 'active', 'expired', 'persistent'], 'default' => ''],
+                'owner'    => ['type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field'],
+                // Usermeta/postmeta only — ignored for every other type.
+                'user_id'  => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+                'post_id'  => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+            ],
+        ]);
+
+        register_rest_route(self::NAMESPACE_V1, '/browse/lookup', [
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [$this, 'lookup'],
+            'permission_callback' => [$this, 'can_manage'],
+            'args'                => [
+                'target' => ['type' => 'string', 'enum' => ['post', 'user'], 'required' => true],
+                'search' => ['type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field'],
             ],
         ]);
 
@@ -60,6 +77,9 @@ class BrowseController extends RestController
                 'format'     => ['type' => 'string', 'enum' => ['plain', 'json', 'serialized'], 'default' => 'plain'],
                 'autoload'   => ['type' => 'string', 'enum' => ['yes', 'no'], 'default' => 'yes'],
                 'user_id'    => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+                'post_id'    => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+                'comment_id' => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
+                'term_id'    => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
                 'expiration' => ['type' => 'integer', 'default' => 0, 'sanitize_callback' => 'absint'],
             ],
         ]);
@@ -108,6 +128,22 @@ class BrowseController extends RestController
     }
 
     /**
+     * Search-as-you-type lookup backing the Browse post/user filter combobox.
+     *
+     * @param \WP_REST_Request $request Request.
+     * @return \WP_REST_Response
+     */
+    public function lookup($request)
+    {
+        return $this->ok([
+            'items' => $this->browse->lookup(
+                $request->get_param('target'),
+                $request->get_param('search')
+            ),
+        ]);
+    }
+
+    /**
      * @param \WP_REST_Request $request Request.
      * @return \WP_REST_Response|\WP_Error
      */
@@ -121,6 +157,9 @@ class BrowseController extends RestController
             'format'     => $request->get_param('format'),
             'autoload'   => $request->get_param('autoload'),
             'user_id'    => $request->get_param('user_id'),
+            'post_id'    => $request->get_param('post_id'),
+            'comment_id' => $request->get_param('comment_id'),
+            'term_id'    => $request->get_param('term_id'),
             'expiration' => $request->get_param('expiration'),
         ]);
         if (false === $saved) {
@@ -152,7 +191,11 @@ class BrowseController extends RestController
             $request->get_param('per_page'),
             $request->get_param('search'),
             $request->get_param('orderby'),
-            $request->get_param('order')
+            $request->get_param('order'),
+            $request->get_param('status'),
+            $request->get_param('owner'),
+            $request->get_param('user_id'),
+            $request->get_param('post_id')
         ));
     }
 

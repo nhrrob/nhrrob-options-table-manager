@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
+import JumpNav from './JumpNav';
 import Panel from './Panel';
 import ProTag from './ProTag';
 import ScreenHeader from './ScreenHeader';
@@ -256,6 +257,29 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 					'nhrrob-options-table-manager'
 				) }
 			/>
+			<JumpNav
+				items={ [
+					{
+						id: 'backups',
+						label: __( 'Backups', 'nhrrob-options-table-manager' ),
+					},
+					{
+						id: 'search-replace',
+						label: __(
+							'Search & Replace',
+							'nhrrob-options-table-manager'
+						),
+					},
+					{
+						id: 'export',
+						label: __( 'Export', 'nhrrob-options-table-manager' ),
+					},
+					{
+						id: 'import',
+						label: __( 'Import', 'nhrrob-options-table-manager' ),
+					},
+				] }
+			/>
 			<Panel
 				anchor="backups"
 				title={ __( 'Backups', 'nhrrob-options-table-manager' ) }
@@ -373,22 +397,25 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 						</tbody>
 					</table>
 				) }
-				<div className="nhrotm-actions">
-					<span className="nhrotm-hint">
-						{ __(
-							'Local, last 15 kept. Unlimited + off-site backups & emergency recovery',
-							'nhrrob-options-table-manager'
-						) }
-					</span>
-					<ProTag
-						hasPro={ hasPro }
-						proAvailable={ proAvailable }
-						onNavigate={ onNavigate }
-					/>
-				</div>
+				{ proAvailable && ! hasPro && (
+					<div className="nhrotm-actions">
+						<span className="nhrotm-hint">
+							{ __(
+								'Local, last 15 kept. Unlimited + off-site backups & emergency recovery',
+								'nhrrob-options-table-manager'
+							) }
+						</span>
+						<ProTag
+							hasPro={ hasPro }
+							proAvailable={ proAvailable }
+							onNavigate={ onNavigate }
+						/>
+					</div>
+				) }
 			</Panel>
 
 			<Panel
+				anchor="search-replace"
 				title={ __(
 					'Search & Replace',
 					'nhrrob-options-table-manager'
@@ -435,17 +462,21 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 					>
 						{ __( 'Replace', 'nhrrob-options-table-manager' ) }
 					</button>
-					<span className="nhrotm-hint">
-						{ __(
-							'Regex & all-table replacement',
-							'nhrrob-options-table-manager'
-						) }
-					</span>
-					<ProTag
-						hasPro={ hasPro }
-						proAvailable={ proAvailable }
-						onNavigate={ onNavigate }
-					/>
+					{ proAvailable && ! hasPro && (
+						<>
+							<span className="nhrotm-hint">
+								{ __(
+									'Regex & all-table replacement',
+									'nhrrob-options-table-manager'
+								) }
+							</span>
+							<ProTag
+								hasPro={ hasPro }
+								proAvailable={ proAvailable }
+								onNavigate={ onNavigate }
+							/>
+						</>
+					) }
 				</div>
 				{ srResult && (
 					<p
@@ -475,7 +506,10 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 				) }
 			</Panel>
 
-			<Panel title={ __( 'Export', 'nhrrob-options-table-manager' ) }>
+			<Panel
+				anchor="export"
+				title={ __( 'Export', 'nhrrob-options-table-manager' ) }
+			>
 				<p className="nhrotm-muted">
 					{ __(
 						'Download all options (excluding transients) as JSON.',
@@ -491,7 +525,10 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 				</button>
 			</Panel>
 
-			<Panel title={ __( 'Import', 'nhrrob-options-table-manager' ) }>
+			<Panel
+				anchor="import"
+				title={ __( 'Import', 'nhrrob-options-table-manager' ) }
+			>
 				<div className="nhrotm-field">
 					<input
 						type="file"

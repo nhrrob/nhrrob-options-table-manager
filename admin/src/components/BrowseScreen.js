@@ -1,5 +1,6 @@
 /**
- * Browse — unified options / usermeta / transients data grid.
+ * Browse — unified options / usermeta / postmeta / commentmeta / termmeta /
+ * transients data grid.
  * Hand-rolled grid (no table library) to protect the bundle budget.
  * Server-side paginated, searchable and sortable (DataTables-style behaviour)
  * via nhrotm/v1/browse (list, get, save, delete, bulk-delete).
@@ -11,6 +12,7 @@ import apiFetch from '@wordpress/api-fetch';
 
 import EditModal from './EditModal';
 import Icon from './Icon';
+import IdLookupFilter from './IdLookupFilter';
 import ScreenHeader from './ScreenHeader';
 import { useConfirm } from './ConfirmProvider';
 import { useToast } from './ToastProvider';
@@ -18,6 +20,15 @@ import { useToast } from './ToastProvider';
 const TYPES = [
 	{ id: 'options', label: __( 'Options', 'nhrrob-options-table-manager' ) },
 	{ id: 'usermeta', label: __( 'Usermeta', 'nhrrob-options-table-manager' ) },
+	{ id: 'postmeta', label: __( 'Postmeta', 'nhrrob-options-table-manager' ) },
+	{
+		id: 'commentmeta',
+		label: __( 'Commentmeta', 'nhrrob-options-table-manager' ),
+	},
+	{
+		id: 'termmeta',
+		label: __( 'Termmeta', 'nhrrob-options-table-manager' ),
+	},
 	{
 		id: 'transients',
 		label: __( 'Transients', 'nhrrob-options-table-manager' ),
@@ -27,6 +38,9 @@ const TYPES = [
 const ADD_LABEL = {
 	options: __( 'Add option', 'nhrrob-options-table-manager' ),
 	usermeta: __( 'Add usermeta', 'nhrrob-options-table-manager' ),
+	postmeta: __( 'Add postmeta', 'nhrrob-options-table-manager' ),
+	commentmeta: __( 'Add commentmeta', 'nhrrob-options-table-manager' ),
+	termmeta: __( 'Add termmeta', 'nhrrob-options-table-manager' ),
 	transients: __( 'Add transient', 'nhrrob-options-table-manager' ),
 };
 
@@ -44,13 +58,25 @@ const ADDED_MESSAGE = {
 		'Usermeta added successfully.',
 		'nhrrob-options-table-manager'
 	),
+	postmeta: __(
+		'Postmeta added successfully.',
+		'nhrrob-options-table-manager'
+	),
+	commentmeta: __(
+		'Commentmeta added successfully.',
+		'nhrrob-options-table-manager'
+	),
+	termmeta: __(
+		'Termmeta added successfully.',
+		'nhrrob-options-table-manager'
+	),
 	transients: __(
 		'Transient added successfully.',
 		'nhrrob-options-table-manager'
 	),
 };
 
-export default function BrowseScreen() {
+export default function BrowseScreen( { focus } ) {
 	const confirm = useConfirm();
 	const toast = useToast();
 	const [ type, setType ] = useState( 'options' );
@@ -61,6 +87,21 @@ export default function BrowseScreen() {
 	// creation order — wp_options/wp_usermeta carry no timestamp column at all).
 	const [ orderby, setOrderby ] = useState( 'id' );
 	const [ order, setOrder ] = useState( 'desc' );
+	// Transients only — active | expired | persistent, '' = all.
+	const [ transientStatus, setTransientStatus ] = useState( '' );
+	// Transients only — guessed owner label ('WordPress Core', a plugin
+	// name, or 'Unknown'), '' = all. Options come from the server, which
+	// derives them from the same list the rows themselves carry.
+	const [ transientOwner, setTransientOwner ] = useState( '' );
+	const [ transientOwners, setTransientOwners ] = useState( [] );
+	// Postmeta/usermeta only — filter to a single post/user id, 0 = all.
+	// The label is kept alongside the id purely for display (IdLookupFilter
+	// shows the resolved title/name instead of a bare number) and is reset
+	// together with the id everywhere the id itself is reset.
+	const [ postIdFilter, setPostIdFilter ] = useState( 0 );
+	const [ postIdLabel, setPostIdLabel ] = useState( '' );
+	const [ userIdFilter, setUserIdFilter ] = useState( 0 );
+	const [ userIdLabel, setUserIdLabel ] = useState( '' );
 	const [ data, setData ] = useState( { items: [], total: 0 } );
 	const [ status, setStatus ] = useState( 'loading' );
 	const [ selected, setSelected ] = useState( [] );
@@ -86,21 +127,64 @@ export default function BrowseScreen() {
 			path:
 				`nhrotm/v1/browse?type=${ type }&page=${ page }` +
 				`&per_page=${ perPage }&orderby=${ orderby }&order=${ order }` +
-				`&search=${ encodeURIComponent( search ) }`,
+				`&search=${ encodeURIComponent( search ) }` +
+				( 'transients' === type && transientStatus
+					? `&status=${ transientStatus }`
+					: '' ) +
+				( 'transients' === type && transientOwner
+					? `&owner=${ encodeURIComponent( transientOwner ) }`
+					: '' ) +
+				( 'postmeta' === type && postIdFilter
+					? `&post_id=${ encodeURIComponent( postIdFilter ) }`
+					: '' ) +
+				( 'usermeta' === type && userIdFilter
+					? `&user_id=${ encodeURIComponent( userIdFilter ) }`
+					: '' ),
 		} )
 			.then( ( res ) => {
 				setData( res.data );
 				typeRowCountRef.current[ type ] = res.data.items.length;
+				setTransientOwners( res.data.owners || [] );
 				setStatus( 'ready' );
 			} )
 			.catch( () => setStatus( 'error' ) );
 		// reloadTick lets callers force a refresh even when no query param changed.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [ type, page, perPage, orderby, order, search, reloadTick ] );
+	}, [
+		type,
+		page,
+		perPage,
+		orderby,
+		order,
+		search,
+		transientStatus,
+		transientOwner,
+		postIdFilter,
+		userIdFilter,
+		reloadTick,
+	] );
 
 	useEffect( () => {
 		load();
 	}, [ load ] );
+
+	// Land pre-filtered when arriving via a link from another screen, e.g.
+	// Optimize's "N expired transients" → Browse, Transients, status=expired.
+	useEffect( () => {
+		if ( ! focus || ! focus.browseFilter ) {
+			return;
+		}
+		const { type: filterType, status: filterStatus } = focus.browseFilter;
+		if ( filterType ) {
+			setType( filterType );
+		}
+		if ( filterStatus ) {
+			setTransientStatus( filterStatus );
+		}
+		setPage( 1 );
+		setSearch( '' );
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ focus && focus.seq ] );
 
 	// Refresh rows in place without the loading flash.
 	const silentReload = () => {
@@ -278,6 +362,12 @@ export default function BrowseScreen() {
 		setSearch( '' );
 		setOrderby( 'id' );
 		setOrder( 'desc' );
+		setTransientStatus( '' );
+		setTransientOwner( '' );
+		setPostIdFilter( 0 );
+		setPostIdLabel( '' );
+		setUserIdFilter( 0 );
+		setUserIdLabel( '' );
 	};
 
 	// Click a sortable header: toggle direction if same column, else default desc.
@@ -408,15 +498,47 @@ export default function BrowseScreen() {
 						</span>
 					) }
 					{ type === 'transients' && (
-						<span
-							className={
-								'nhrotm-badge nhrotm-badge--dot nhrotm-badge--' +
-								( STATUS_BADGE[ item.status ] || 'muted' )
-							}
-						>
-							{ item.status }
-						</span>
+						<>
+							<span
+								className={
+									'nhrotm-badge nhrotm-badge--dot nhrotm-badge--' +
+									( STATUS_BADGE[ item.status ] || 'muted' )
+								}
+							>
+								{ item.status }
+							</span>
+							<span
+								className="nhrotm-grid__owner nhrotm-grid__owner--muted nhrotm-grid__owner--stacked"
+								title={ item.owner }
+							>
+								{ item.owner }
+							</span>
+						</>
 					) }
+					{ [
+						'usermeta',
+						'postmeta',
+						'commentmeta',
+						'termmeta',
+					].includes( type ) &&
+						( item.owner_url ? (
+							<a
+								href={ item.owner_url }
+								className="nhrotm-grid__owner"
+								title={ item.owner_label }
+								target="_blank"
+								rel="noreferrer"
+							>
+								{ item.owner_label }
+							</a>
+						) : (
+							<span
+								className="nhrotm-grid__owner nhrotm-grid__owner--muted"
+								title={ item.owner_label }
+							>
+								{ item.owner_label }
+							</span>
+						) ) }
 				</td>
 				<td>
 					<div className="nhrotm-grid__actions">
@@ -457,7 +579,7 @@ export default function BrowseScreen() {
 			<ScreenHeader
 				title={ __( 'Browse', 'nhrrob-options-table-manager' ) }
 				lede={ __(
-					'One data browser for options, user meta and transients. Autoload is managed in Optimize.',
+					'One data browser for options, user meta, post meta, comment meta, term meta and transients. Autoload is managed in Optimize.',
 					'nhrrob-options-table-manager'
 				) }
 			/>
@@ -500,6 +622,111 @@ export default function BrowseScreen() {
 						{ ADD_LABEL[ type ] ||
 							__( 'Add record', 'nhrrob-options-table-manager' ) }
 					</button>
+					{ type === 'transients' && (
+						<select
+							className="nhrotm-browse__statusfilter"
+							value={ transientStatus }
+							onChange={ ( e ) => {
+								setPage( 1 );
+								setTransientStatus( e.target.value );
+							} }
+							aria-label={ __(
+								'Filter by status',
+								'nhrrob-options-table-manager'
+							) }
+						>
+							<option value="">
+								{ __(
+									'All statuses',
+									'nhrrob-options-table-manager'
+								) }
+							</option>
+							<option value="active">
+								{ __(
+									'Active',
+									'nhrrob-options-table-manager'
+								) }
+							</option>
+							<option value="expired">
+								{ __(
+									'Expired',
+									'nhrrob-options-table-manager'
+								) }
+							</option>
+							<option value="persistent">
+								{ __(
+									'Persistent',
+									'nhrrob-options-table-manager'
+								) }
+							</option>
+						</select>
+					) }
+					{ type === 'transients' && transientOwners.length > 0 && (
+						<select
+							className="nhrotm-browse__statusfilter"
+							value={ transientOwner }
+							onChange={ ( e ) => {
+								setPage( 1 );
+								setTransientOwner( e.target.value );
+							} }
+							aria-label={ __(
+								'Filter by owner',
+								'nhrrob-options-table-manager'
+							) }
+						>
+							<option value="">
+								{ __(
+									'All owners',
+									'nhrrob-options-table-manager'
+								) }
+							</option>
+							{ transientOwners.map( ( label ) => (
+								<option key={ label } value={ label }>
+									{ label }
+								</option>
+							) ) }
+						</select>
+					) }
+					{ type === 'postmeta' && (
+						<IdLookupFilter
+							target="post"
+							value={ postIdFilter }
+							label={ postIdLabel }
+							placeholder={ __(
+								'Filter by post…',
+								'nhrrob-options-table-manager'
+							) }
+							ariaLabel={ __(
+								'Filter by post',
+								'nhrrob-options-table-manager'
+							) }
+							onChange={ ( id, itemLabel ) => {
+								setPage( 1 );
+								setPostIdFilter( id );
+								setPostIdLabel( itemLabel );
+							} }
+						/>
+					) }
+					{ type === 'usermeta' && (
+						<IdLookupFilter
+							target="user"
+							value={ userIdFilter }
+							label={ userIdLabel }
+							placeholder={ __(
+								'Filter by user…',
+								'nhrrob-options-table-manager'
+							) }
+							ariaLabel={ __(
+								'Filter by user',
+								'nhrrob-options-table-manager'
+							) }
+							onChange={ ( id, itemLabel ) => {
+								setPage( 1 );
+								setUserIdFilter( id );
+								setUserIdLabel( itemLabel );
+							} }
+						/>
+					) }
 					<span className="nhrotm-search">
 						<Icon name="search" size={ 15 } />
 						<input
@@ -603,6 +830,26 @@ export default function BrowseScreen() {
 										{ type === 'transients' &&
 											__(
 												'Status',
+												'nhrrob-options-table-manager'
+											) }
+										{ type === 'usermeta' &&
+											__(
+												'User',
+												'nhrrob-options-table-manager'
+											) }
+										{ type === 'postmeta' &&
+											__(
+												'Post',
+												'nhrrob-options-table-manager'
+											) }
+										{ type === 'commentmeta' &&
+											__(
+												'Comment',
+												'nhrrob-options-table-manager'
+											) }
+										{ type === 'termmeta' &&
+											__(
+												'Term',
 												'nhrrob-options-table-manager'
 											) }
 									</th>

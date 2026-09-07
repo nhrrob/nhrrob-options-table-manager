@@ -37,7 +37,7 @@ Guiding rule: **manual one-off actions stay free; automation (scheduling), scale
 
 | Capability | FREE | PRO |
 |---|---|---|
-| Browse/edit options, usermeta, transients | ✅ | ✅ |
+| Browse/edit options, usermeta, postmeta, commentmeta, termmeta, transients | ✅ | ✅ |
 | Autoload health + manual toggle | ✅ | ✅ |
 | Autoload Usage Tracker | ✅ full | + auto-disable after N days, per-page breakdown |
 | Orphan scanner | ✅ manual | Categorize by source plugin/theme; orphaned tables |

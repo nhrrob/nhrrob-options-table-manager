@@ -98,6 +98,22 @@ trait GlobalTrait
 
     public function get_protected_options()
     {
+        // Verified against WordPress core's populate_options() (wp-admin/includes/schema.php)
+        // and the relevant wp-includes sources (widgets, cron, theme, update, dashboard,
+        // upgrade). Anything core actively deletes as obsolete (its own $unusedoptions
+        // list — e.g. 'update_core', 'doing_cron', 'random_seed', 'secret',
+        // 'blacklist_keys' / 'comment_whitelist' after the 5.5.0 migration) or that never
+        // matched a real core option name has been dropped; the modern replacements and
+        // options added in later core versions have been added instead.
+        //
+        // Two entries below were wrongly dropped in an earlier pass of this same
+        // audit because they *also* appear in schema.php's $unusedoptions list —
+        // but that list is a one-time cleanup for pre-existing installs, not proof
+        // the option is dead: 'can_compress_scripts' is still read/written by
+        // wp-admin/includes/ajax-actions.php and wp-includes/script-loader.php on
+        // every request, and 'current_theme' is unconditionally rewritten by
+        // switch_theme() (wp-includes/theme.php) on every theme change. Checked
+        // against a full checkout of core, not just one file, before restoring.
         $core_options = array(
             'siteurl',
             'home',
@@ -111,7 +127,6 @@ trait GlobalTrait
             'require_name_email',
             'comments_notify',
             'posts_per_rss',
-            'rss_excerpt_length',
             'rss_use_excerpt',
             'mailserver_url',
             'mailserver_login',
@@ -121,39 +136,26 @@ trait GlobalTrait
             'default_comment_status',
             'default_ping_status',
             'default_pingback_flag',
-            'default_post_edit_rows',
             'posts_per_page',
-            'what_to_show',
             'date_format',
             'time_format',
             'links_updated_date_format',
-            'links_recently_updated_prepend',
-            'links_recently_updated_append',
-            'links_recently_updated_time',
             'comment_moderation',
             'moderation_notify',
             'permalink_structure',
-            'gzipcompression',
             'hack_file',
             'blog_charset',
             'moderation_keys',
             'active_plugins',
-            'home',
             'category_base',
             'ping_sites',
-            'advanced_edit',
             'comment_max_links',
             'gmt_offset',
             'default_email_category',
             'recently_edited',
-            'use_linksupdate',
             'template',
             'stylesheet',
-            'comment_whitelist',
-            'blacklist_keys',
             'comment_registration',
-            'open_proxy_check',
-            'rss_language',
             'html_type',
             'use_trackback',
             'default_role',
@@ -161,30 +163,31 @@ trait GlobalTrait
             'wp_user_roles',
             'uploads_use_yearmonth_folders',
             'upload_path',
-            'secret',
             'blog_public',
             'default_link_category',
             'show_on_front',
-            'default_link_category',
             'cron',
-            'doing_cron',
             'sidebars_widgets',
             'widget_pages',
             'widget_calendar',
             'widget_archives',
             'widget_meta',
             'widget_categories',
-            'widget_recent_entries',
             'widget_text',
             'widget_rss',
-            'widget_recent_comments',
-            'widget_wholinked',
-            'widget_polls',
+            'widget_search',
+            'widget_tag_cloud',
+            'widget_nav_menu',
+            'widget_custom_html',
+            'widget_block',
+            'widget_links',
+            'widget_media_image',
+            'widget_media_audio',
+            'widget_media_video',
+            'widget_media_gallery',
             'tag_base',
             'page_on_front',
             'page_for_posts',
-            'page_uris',
-            'page_attachment_uris',
             'show_avatars',
             'avatar_rating',
             'upload_url_path',
@@ -193,15 +196,13 @@ trait GlobalTrait
             'thumbnail_crop',
             'medium_size_w',
             'medium_size_h',
+            'medium_large_size_w',
+            'medium_large_size_h',
             'dashboard_widget_options',
-            'current_theme',
             'auth_salt',
             'avatar_default',
-            'enable_app',
-            'enable_xmlrpc',
             'logged_in_salt',
             'recently_activated',
-            'random_seed',
             'large_size_w',
             'large_size_h',
             'image_default_link_type',
@@ -218,29 +219,47 @@ trait GlobalTrait
             'use_ssl',
             'sticky_posts',
             'dismissed_update_core',
-            'update_themes',
             'nonce_salt',
-            'update_core',
             'uninstall_plugins',
-            'wporg_popular_tags',
             'stats_options',
             'stats_cache',
             'rewrite_rules',
-            'update_plugins',
-            'category_children',
             'timezone_string',
-            'can_compress_scripts',
             'db_upgraded',
-            'widget_search',
             'default_post_format',
             'link_manager_enabled',
             'initial_db_version',
-            'theme_switched'
+            'theme_switched',
+            'disallowed_keys',
+            'comment_previously_approved',
+            'auto_plugin_theme_update_emails',
+            'finished_splitting_shared_terms',
+            'site_icon',
+            'wp_page_for_privacy_policy',
+            'show_comments_cookies_opt_in',
+            'admin_email_lifespan',
+            'auto_update_core_dev',
+            'auto_update_core_minor',
+            'auto_update_core_major',
+            'wp_force_deactivated_plugins',
+            'wp_attachment_pages_enabled',
+            'wp_notes_notify',
+            'can_compress_scripts',
+            'current_theme',
+            'recovery_mode_email_last_sent',
+            // Set by wp-admin/includes/upgrade.php and actively read/written by
+            // wp-includes/comment.php as part of the background comment_type
+            // migration job — missed in the first pass because it's only
+            // referenced in comment.php, not schema.php.
+            'finished_updating_comment_type',
         );
 
         $default_options = array(
             '_site_transient_timeout_theme_roots',
             '_site_transient_theme_roots',
+            '_site_transient_update_core',
+            '_site_transient_update_plugins',
+            '_site_transient_update_themes',
             '_transient_doing_cron',
             '_transient_plugins_delete_result_1',
             '_transient_plugin_slugs',
@@ -250,7 +269,7 @@ trait GlobalTrait
             '_transient_update_plugins',
             '_transient_update_themes',
             'widget_recent-posts',
-            'widget_recent-comments'
+            'widget_recent-comments',
         );
 
         return array_merge($core_options, $default_options);
@@ -287,6 +306,34 @@ trait GlobalTrait
         );
 
         return array_merge($core_usermetas, $default_usermetas);
+    }
+
+    public function get_protected_postmetas()
+    {
+        return array(
+            '_edit_lock',
+            '_edit_last',
+            '_wp_page_template',
+            '_thumbnail_id',
+            '_wp_trash_meta_status',
+            '_wp_trash_meta_time',
+            '_wp_desired_post_slug',
+            '_wp_old_slug',
+            '_wp_old_date',
+        );
+    }
+
+    public function get_protected_commentmetas()
+    {
+        return array(
+            '_wp_trash_meta_status',
+            '_wp_trash_meta_time',
+        );
+    }
+
+    public function get_protected_termmetas()
+    {
+        return array();
     }
 
     public function exceptional_option_names()

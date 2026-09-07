@@ -27,16 +27,17 @@ Tired of an overloaded `wp_options` table slowing down your WordPress site? **NH
 
 ### ✨ Key Features
 - **Database Health Dashboard** – An at-a-glance scorecard (0–100) summarizing autoload size, transient and orphan counts, and last backup, with prioritized one-click recommendations.
+- **Recent Activity Feed** – A paginated log of every change made through the plugin (edits, deletes, cleanups, restores) right on the Dashboard.
 - **Modern React Interface** – A fast, dashboard-first admin app organized into Dashboard, Browse, Optimize, Tools, Integrations, and Settings.
-- **Autoload Usage Tracker** – Records which autoloaded options are actually used on real front-end page loads, then flags the ones that are never used so you can safely turn off their autoload.
-- **Transients Manager** – Dedicated view of every transient with size, expiration and status; add and edit values (with expiration) directly, select rows to bulk delete, or clean up by scope (expired, persistent, or all).
+- **Autoload Usage Tracker** – Records which autoloaded options are actually used on real front-end page loads, then flags the ones that are never used so you can safely turn off their autoload; filter the list by usage status and bulk-disable every unused option at once.
+- **Transients Manager** – Dedicated view of every transient with size, expiration, status, and its guessed owner (a plugin, theme, or WordPress core); filter by status or owner, add and edit values (with expiration) directly, and select rows to bulk delete.
 - **Scheduled Backups & Snapshots** – Create restorable snapshots of your `wp_options` table manually or on a daily/weekly schedule, with automatic snapshots taken before Search & Replace and Import.
 - **Option History & Rollback** – Track all changes to individual options and restore previous versions instantly.
 - **Autoload Health Check** – Analyze total autoloaded data size and identify heavy options that slow down your site.
 - **Automated Daily Cleanup** – Schedule automated daily deletion of expired transients via WP Cron.
 - **Scalable Tab Architecture** – Unified interface that seamlessly supports third-party tables like WP Recipe Maker.
 - **Manage Options** – Add, edit, and delete options easily using a secure, optimized modal system.
-- **Usermeta Table Support** – Edit and delete user meta entries just like options.
+- **Usermeta, Postmeta, Commentmeta & Termmeta Support** – Browse, add, edit, and delete user, post, comment, and term meta entries just like options; narrow usermeta or postmeta to a single user or post by searching its name/title in a type-ahead picker.
 - **Serialized Data Handling** – Edit serialized data seamlessly; it appears as a structured object or array.
 - **Options Usage Analytics** – Get visual insights into which prefixes dominate your options table.
 - **Live Search & Pagination** – High-performance DataTables with server-side processing.
@@ -105,12 +106,16 @@ Yes, WP-CLI is supported (`wp nhr-options list`, `wp nhr-options delete`).
 = 2.0.0 - 06/07/2026 =
 - New: Complete React interface rewrite — a dashboard-first admin app with Dashboard, Browse, Optimize, Tools, Integrations, and Settings sections.
 - New: Database Health Dashboard with a 0–100 score, stat cards, and prioritized recommendations.
-- New: Unified Browse view for options, usermeta, and transients with add, inline edit (structured serialized/JSON editing), bulk delete, and search.
+- New: Unified Browse view for options, usermeta, postmeta, commentmeta, termmeta, and transients with add, inline edit (structured serialized/JSON editing), bulk delete, and search.
 - New: REST API backend (nhrotm/v1) with centralized settings.
 - Improved: Consolidated the interface; the previous DataTables view remains available as "Options Table (Classic)".
 - Added: Autoload Usage Tracker – flags autoloaded options never used on front-end page loads, with one-click autoload disable.
 - Added: Transients Manager tab – view all transients (size, expiration, status) and bulk delete by scope.
 - Added: Scheduled Backups & Snapshots of the wp_options table (manual, daily/weekly cron) with restore; automatic snapshot before Search & Replace and Import.
+- Fixed: Owner/Source attribution wrongly matched every un-prefixed option name (no underscore, e.g. a bare test option) to whichever plugin happened to sort first alphabetically, instead of showing "Unknown".
+- Fixed: Owner attribution for short, generic option prefixes (3 characters or less, e.g. a legacy `nhr_smm_settings`-style name) could match the wrong plugin by loose substring; now resolved against known brand prefixes first and otherwise left as "Unknown" rather than guessed.
+- Added: Usage filter on the Autoload health table (All/Unused/Untracked/Used) to select and bulk-disable autoload for every unused option at once, plus explicit in-app guidance on what's safe to disable.
+- Added: Filter Browse's postmeta/usermeta tabs to a single post or user via a search-as-you-type name/title picker.
 
 = 1.4.3 - 14/05/2026 =
 - Enhancement: Add GitHub Actions workflow for automated plugin checks

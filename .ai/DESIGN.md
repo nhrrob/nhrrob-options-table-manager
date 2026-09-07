@@ -70,7 +70,7 @@ Single admin page under **Tools → Options Table**. React SPA mounts one root; 
 
 ## 3. Browse
 
-Unified data browser merging Options · Usermeta · Transients.
+Unified data browser merging Options · Usermeta · Postmeta · Commentmeta · Termmeta · Transients.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -85,12 +85,13 @@ Unified data browser merging Options · Usermeta · Transients.
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Type switcher** (Options / Usermeta / Transients) as a dropdown or segmented control; drives which REST collection loads.
+- **Type switcher** (Options / Usermeta / Postmeta / Commentmeta / Termmeta / Transients) as a dropdown or segmented control; drives which REST collection loads.
 - **Data grid**: hand-rolled or minimal `@tanstack/react-table`, **server-side paginated** via `nhrotm/v1` (replaces DataTables). Columns: select, name, value preview, size, autoload badge, row actions.
 - **Autoload column is read-only here** — a badge with a "Manage in Optimize →" link (PRD duplication rule). No toggle on this screen.
 - **Row actions**: Edit (modal), Delete (confirm) as **compact icon buttons**, right-aligned, revealed/emphasised on row hover (not stacked red/black text links — that read as unfinished). Core-protected options show a muted `protected` label and expose **Edit only**, no Delete.
 - **Edit modal**: serialized/JSON values shown as a structured, editable tree (parity with 1.5.x); "Allow HTML in values" setting respected.
-- Transients view: shows status (persistent/expired/active) + expiry; delete individually. Bulk-by-scope lives in Optimize/Cleanup, not here (one home rule) — Browse keeps only per-row delete.
+- Transients view: shows status (persistent/expired/active), expiry, and a guessed owner (plugin/theme/WordPress core, via `ScannerManager::guess_owner()`); filterable by both status and owner. Select rows and bulk delete here — this is the only place a transient that hasn't expired yet can be deleted, so it's owner-filterable specifically to make that safe. Optimize/Cleanup only ever offers the risk-free "Delete expired" one-click action.
+- Usermeta/Postmeta views: a "Filter by user…" / "Filter by post…" combobox (`IdLookupFilter`, 2026-09-07) beside the search box narrows the grid to one user's or post's rows exactly — handy when a specific post or user has hundreds of meta rows the free-text search alone can't isolate. It's a search-as-you-type picker, not a raw id field: focusing it shows the 20 most recent posts/users as a browsable default, typing live-searches post titles / usernames+display names via `GET nhrotm/v1/browse/lookup` (debounced 300ms, same `get_posts()`/`WP_User_Query()` search WP core's own admin list tables use), and picking a result resolves to its id. The actual server-side filter stays a cheap, combinable `WHERE user_id = %d` / `WHERE post_id = %d` — the combobox only exists to make choosing that id possible without memorizing it.
 
 ### 3.1 Table typography & density (the grid must read as a pro data tool)
 
@@ -123,7 +124,7 @@ Sole owner of autoload editing + cleanup.
 │   7 options look like leftovers from removed plugins                   │
 ├──────────────────────────────────────────────────────────────────────┤
 │  Cleanup                                                                │
-│   Expired transients: 41 (220 KB)   [Delete expired] [Delete all] …    │
+│   Expired transients: 41 (220 KB)   [Delete expired]                   │
 │   Auto-cleanup:  ◯ off  ● daily                                        │
 └──────────────────────────────────────────────────────────────────────┘
 ```
@@ -131,7 +132,7 @@ Sole owner of autoload editing + cleanup.
 - Four stacked panels: **Autoload health**, **Usage Tracker**, **Orphan scanner**, **Cleanup**. Each panel is a module-owned card so it stays independent.
 - Autoload budget bar: green→amber→red vs the 1 MB budget.
 - Usage Tracker copy states plainly that it samples real front-end loads and never disables anything automatically (auto-disable is a PRO capability — but the free UI shows **no** PRO badge/upsell; it simply omits it).
-- Bulk transient delete lives here (scope: expired / persistent / all).
+- Cleanup only offers "Delete expired" — a single risk-free action, no confirm dialog needed since it can never remove a still-valid cache entry. Deleting active/persistent transients (or a scoped subset by owner) is a deliberate Browse action instead: filter, select, bulk delete, confirm — never a single click here.
 
 ## 5. Tools
 
@@ -350,3 +351,9 @@ The base `.nhrotm-btn` border is `1px solid transparent` — variants that don't
 4. Tables: bold (`700`) headers, normal-weight (`400`) body content including name/key columns, zebra-striped rows (`nth-child(even)` using `--nhrotm-bg`) with a stronger `:hover` tint layered on top.
 5. Row actions are icon + text label, not icon-only.
 6. Sort/filter state: if a default sort exists (Browse defaults to newest-first via `id`/`desc`), check *every* code path that resets sort state (tab switches, type changes) actually preserves that default — this regressed once when `switchType` reset to `orderby: 'size'` instead of `'id'`.
+
+### 14.8 A toolbar row that wraps *opportunistically* is a layout-jump bug waiting to surface
+
+`.nhrotm-browse__toolbar` used to be a single `flex-wrap: wrap` row with the segmented type switcher on the left and `.nhrotm-browse__tools` (Add button + type-specific filters + search) on the right, wrapping onto a second line only when the two together didn't fit the available width. Because `.nhrotm-browse__tools` is a different width per type (Options/Commentmeta/Termmeta: just search; Transients: two selects + search; Usermeta/Postmeta: `IdLookupFilter` + search), whether it wrapped was type- *and* viewport-dependent — some tabs got a one-row toolbar, others a two-row one, so the grid header sat at a different height depending which tab you were on, and switching tabs read as the whole page "jumping." This is the same class of bug as the skeleton-row-count jump the loading state already guards against (see the `typeRowCountRef` comment in `BrowseScreen.js`), just triggered by toolbar width instead of row count — and it came back when the Usermeta/Postmeta id-lookup filter was added, because that pushed those two tabs' tools width past the wrap threshold while Options/Commentmeta/Termmeta stayed under it (Transients was *already* over it, silently, before that change).
+
+**Fix:** `.nhrotm-browse__tools` always carries `flex-basis: 100%`, forcing it onto its own row unconditionally rather than only when it doesn't fit. Every type now gets the same two-row toolbar height regardless of how wide its filters are. **Rule:** don't let a toolbar/header row's line count depend on how much content happens to fit — if row count varies by tab/state, either give every state the same row count outright (what we did here) or explicitly reserve the taller height for all states. Never leave it to `flex-wrap` to decide per case.

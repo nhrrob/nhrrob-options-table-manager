@@ -48,10 +48,10 @@ class HealthService
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Dashboard analytics
         $autoload_bytes = (int) $wpdb->get_var(
-            "SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload NOT IN ('no', 'false', '0', '')"
+            "SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload NOT IN ('off', 'no', 'false', '0', '')"
         );
         $autoload_count = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->options} WHERE autoload NOT IN ('no', 'false', '0', '')"
+            "SELECT COUNT(*) FROM {$wpdb->options} WHERE autoload NOT IN ('off', 'no', 'false', '0', '')"
         );
         $options_count = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->options}");
 
@@ -149,12 +149,13 @@ class HealthService
     }
 
     /**
-     * Weighted 0–100 score.
+     * Weighted 0–100 score. Public so callers (e.g. OptimizeService) can
+     * simulate a metrics delta and diff the result for a "score impact" hint.
      *
      * @param array $m Metrics.
      * @return int
      */
-    private function score(array $m)
+    public function score(array $m)
     {
         $penalty = 0;
 
@@ -444,7 +445,9 @@ class HealthService
                 'lede'     => __('reviewing unused autoloads', 'nhrrob-options-table-manager'),
                 'action'   => __('Review in Optimize', 'nhrrob-options-table-manager'),
                 'section'  => 'optimize',
-                'focus'    => 'usage',
+                // Usage Tracker was folded into the Autoload health table
+                // (same underlying data, one table now).
+                'focus'    => 'autoload',
             ];
         }
 

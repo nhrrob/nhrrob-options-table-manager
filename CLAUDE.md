@@ -19,7 +19,9 @@ Always run `npm run lint` (fixing anything it flags) **and** `npm run build` aft
 ## Architecture
 
 - Main plugin class: `Nhrotm_Options_Table_Manager` (prefix `Nhrotm_`, namespace `Nhrotm\OptionsTableManager\`, PSR-4 → `includes/`).
-- REST namespace: `nhrotm/v1` (routes: `nhrotm/v1/browse`, `nhrotm/v1/browse/save`, `nhrotm/v1/browse/bulk-delete`, `nhrotm/v1/optimize`, `nhrotm/v1/tools/*`, `nhrotm/v1/settings`).
+- REST namespace: `nhrotm/v1` (routes: `nhrotm/v1/dashboard`, `nhrotm/v1/dashboard/activity`, `nhrotm/v1/browse`, `nhrotm/v1/browse/lookup`, `nhrotm/v1/browse/save`, `nhrotm/v1/browse/bulk-delete`, `nhrotm/v1/browse/{id}`, `nhrotm/v1/optimize` + `/disable-autoload` + `/delete-orphans` + `/reset-usage` + `/clean-transients`, `nhrotm/v1/tools/backups*`, `nhrotm/v1/tools/search-replace`, `nhrotm/v1/tools/export`, `nhrotm/v1/tools/import`, `nhrotm/v1/integrations` + `/{slug}`, `nhrotm/v1/settings`).
+- Browse covers six record types: `options`, `usermeta`, `postmeta`, `commentmeta`, `termmeta`, `transients` — same CRUD + protected-key pattern across all of them (`BrowseService`).
+- Usermeta/postmeta tabs have a "filter by user/post" search-as-you-type combobox (`admin/src/components/IdLookupFilter.js`) that resolves a typed name/title to an id via `GET nhrotm/v1/browse/lookup?target=post|user&search=`; the actual grid filter is always a plain `WHERE user_id = %d` / `WHERE post_id = %d` in `BrowseService::query_usermeta()`/`query_postmeta()` — the combobox exists only so a user isn't expected to know that id.
 - Admin React SPA (`@wordpress/scripts`, no CSS framework, hand-rolled components) mounts at `#nhrotm-app` on `Tools → Options Table`. Source in `admin/src/`, compiled output in `admin/build/` (the only thing actually enqueued — `AppPage.php::enqueue()` reads `admin/build/index.asset.php` for the content-hash version, so cache-busting is automatic on every build; a stale-looking browser is almost never a caching bug, verify against a fresh build before assuming so).
 - CSS: single hand-authored `admin/src/style.scss`, all custom properties (`--nhrotm-*`) scoped under `.nhrotm-app`. See **§14.4 below** — anything rendered outside that DOM subtree loses every token silently.
 - `includes/Services/BrowseService.php` queries `wp_options`/`wp_usermeta` directly (prepared statements, whitelisted `ORDER BY` via `resolve_order()`). Note: `wp_options` has **no timestamp column** — `option_id`/`umeta_id` (auto-increment) is the only available proxy for "creation order," used for the default newest-first sort.
@@ -38,6 +40,18 @@ This is the condensed, load-bearing checklist distilled from a full UI/UX polish
 8. **Destructive/irreversible actions → `useConfirm()`.** Never `window.confirm`. Always pass a `description` (either a natural second sentence, or "This action cannot be undone." for plain deletes) — a confirm dialog with only a title reads as unfinished.
 9. **Tables:** bold (`700`) headers, normal-weight (`400`) body content including name/key columns, zebra-striped rows (`nth-child(even)`, `--nhrotm-bg`) with a stronger `:hover` tint layered on top. Row actions are icon + text label, never icon-only.
 10. **If a screen has default sort/filter state, check every code path that can reset it** (tab switches, type changes, not just the initial `useState`) — this regressed once when a tab-switch handler reset sort to a different default than the one on mount.
+11. **A toolbar/header row's line count must never depend on whether its content happens to fit.** If different tabs/states render different amounts of toolbar content (Browse: some types have 0 extra filters, some 1, Transients has 2), letting `flex-wrap` decide per case means each type wraps at a different width, so the grid header sits at a different height per tab and switching tabs "jumps." Force a fixed row count instead (Browse's `.nhrotm-browse__tools` now carries `flex-basis: 100%` so it's always its own row on every type). See DESIGN.md §14.8 — this bit us once already via the loading-skeleton row count (`typeRowCountRef`) and came back in a new form when the Usermeta/Postmeta id-lookup filter was added.
+
+## Documentation sync — required after every fix or feature change
+
+Per the global doc-sync rule (`~/.claude/CLAUDE.md`): in the same turn as any fix or feature change here, update every doc that describes the changed behavior — before reporting the task done. For this plugin that means checking:
+
+- `readme.txt` — the **Key Features / Description list**, not just the changelog entry.
+- `.ai/PRD.md`, `.ai/PRD-PRO.md`, `.ai/DESIGN.md` — feature specs, Browse type/tab lists, comparison tables, roadmap/backlog.
+- This file (`CLAUDE.md`) — the REST route list and Architecture section above.
+- `README.md` — currently a stub; skip unless it grows real content.
+
+Grep for the old state (old tab list, old route list, old feature name) across all of these in one pass rather than fixing one file and waiting to be pointed at the next stale one.
 
 ## Skills
 

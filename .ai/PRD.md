@@ -1,7 +1,7 @@
 # PRD — NHR Options Manager 2.0 (Free)
 
 Status: Draft for sign-off · Owner: Nazmul Hasan Robin (nhrrob) · Date: 2026-06-29
-Last revised: 2026-09-06 (added §8.1 backlog/to-do)
+Last revised: 2026-09-07 (Browse gained postmeta/commentmeta/termmeta parity with usermeta, plus a search-as-you-type post/user filter on those two tabs — see §4, §8.1)
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
 > PRO/monetization scope lives in a separate doc: **[PRD-PRO.md](./PRD-PRO.md)**.
@@ -61,7 +61,7 @@ Non-goals: changing author identity; dropping existing DB tables; breaking exist
 11 tabs → 6 sections:
 
 1. **Dashboard** — health score (0–100), recommendations feed, quick actions, recent activity. (NEW)
-2. **Browse** — Options · Usermeta · Transients in one data browser with a type switcher. (merges 3 tabs; removes the duplicate transient filter on the Options tab)
+2. **Browse** — Options · Usermeta · Postmeta · Commentmeta · Termmeta · Transients in one data browser with a type switcher. (merges 3 tabs; removes the duplicate transient filter on the Options tab)
 3. **Optimize** — Autoload health · Usage Tracker · Orphan Scanner · Cleanup (+ schedule). Sole owner of the autoload toggle.
 4. **Tools** — Search & Replace · Import/Export · Backups.
 5. **Integrations** — third-party tables such as WPRM (conditional; quarantined so it stops inflating core nav).
@@ -104,9 +104,9 @@ Everything shipped in 1.5.x remains free and reaches parity before cutover:
 
 | Feature | Notes for 2.0 |
 |---|---|
-| Browse/edit options, usermeta, transients | Single data browser w/ type switcher; React data-grid, REST-paginated. |
+| Browse/edit options, usermeta, postmeta, commentmeta, termmeta, transients | Single data browser w/ type switcher; React data-grid, REST-paginated. Postmeta/commentmeta/termmeta added 2026-09-07, same CRUD + protected-key pattern as usermeta. Usermeta/postmeta filterable to one user/post via a search-as-you-type name/title picker (added 2026-09-07). |
 | Autoload health + manual toggle | Sole owner of autoload toggle; size analysis vs 1 MB budget. |
-| **Autoload Usage Tracker** | Fully free. Records used autoloaded options on real front-end loads; flags never-used ones with one-click disable. Front-end-only sampling (non-admin/ajax/cron/REST). |
+| **Autoload Usage Tracker** | Fully free. Records used autoloaded options on real front-end loads; flags never-used ones with one-click disable, filterable (All/Unused/Untracked/Used) with bulk-disable across the filtered set. Front-end-only sampling (non-admin/ajax/cron/REST). |
 | Orphan scanner | Manual scan for leftovers from uninstalled plugins. |
 | Search & Replace | Manual, with dry-run preview; auto-snapshot before a live run. |
 | Import / Export | JSON portability between sites; auto-snapshot before import. |
@@ -141,13 +141,16 @@ Health score = weighted blend of: autoload size vs 1 MB, expired-transient ratio
 - ~~PRO awareness in the free UI~~ → **Resolved in §0.2**: quiet discoverability (feature tags + one Upgrade screen), not invisibility.
 - Whether Integrations (WPRM and future third-party tables) should eventually move to their own free add-on.
 - Deprecation window length for legacy `nhrotm_*` option keys after the settings migration.
+- Whether to expose an MCP (Model Context Protocol) server so AI agents can query/edit the options table directly. No prior art in this plugin. In tension with the §0.1 minimal-footprint constraint for the free plugin, and it's a new write-access surface (an agent mutating `wp_options`/usermeta/postmeta/etc.) that needs its own auth story — needs real scoping before it's worth building, likely a PRO/companion-add-on candidate rather than free-core.
 
 ## 8.1 Backlog / to-do (unscheduled — planned, not yet phased)
 
 Features to add. Move an item into §7 Roadmap once it's actually scheduled; don't let this list silently become the roadmap.
 
 - [ ] General DB cleanup: post revisions/auto-drafts/trash, spam/pingback comments.
-- [ ] Postmeta/commentmeta/termmeta orphan + duplicate cleanup (only usermeta today).
+- [x] Postmeta/commentmeta/termmeta browse+edit parity with usermeta (2026-09-07) — Browse now covers all four WP meta tables (options/usermeta/postmeta/commentmeta/termmeta) + transients.
+- [x] Filter Browse's usermeta/postmeta tabs to a single user/post via a search-as-you-type name/title picker, backed by a new `nhrotm/v1/browse/lookup` endpoint (2026-09-07).
+- [ ] Orphan + duplicate meta-row scanner (postmeta/commentmeta/termmeta/usermeta) — finds meta rows pointing at deleted posts/comments/terms/users, plus exact-duplicate meta rows, with bulk delete. Doesn't exist for any meta type yet — the existing Optimize orphan scanner (`ScannerManager`) only scans `wp_options` prefixes, not meta tables; not the same feature as the browse parity above.
 - [ ] Table OPTIMIZE/REPAIR.
 - [ ] Cron job management (view/edit/delete scheduled cron events).
 - [ ] Multisite support (network-admin view, per-site vs. network-wide handling).
@@ -156,6 +159,7 @@ Features to add. Move an item into §7 Roadmap once it's actually scheduled; don
 - [ ] `.husky` composer test wiring once PHP dev-deps are installed.
 - [ ] Decide whether Integrations (WPRM and future third-party tables) should move to its own free add-on (duplicate of the open question in §8).
 - [ ] Decide deprecation-window length for legacy `nhrotm_*` option keys after the settings migration (duplicate of the open question in §8).
+- [ ] Retake WP.org screenshots (`.wordpress-org/screenshot-1..6`, dated Jan 2026) — they still show the pre-2.0 DataTables UI, predating both the React rewrite (2026-09-06) and the postmeta/commentmeta/termmeta Browse tabs (2026-09-07). Must ship updated before the 2.0.0 WP.org release; readme.txt Screenshots section copy also needs rewriting to match (currently describes "DataTable view of the wp_options table" etc., not the new Dashboard/Browse/Optimize screens).
 
 ## 9. Sources
 
