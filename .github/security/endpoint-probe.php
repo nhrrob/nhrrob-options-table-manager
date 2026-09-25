@@ -21,6 +21,10 @@
 
 // phpcs:ignoreFile -- dev tooling, not part of the plugin.
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Only ever runs inside WordPress via `wp eval-file`.
+}
+
 $nhrprobe_args   = isset( $args ) ? $args : [];
 $nhrprobe_mode   = isset( $nhrprobe_args[0] ) ? $nhrprobe_args[0] : 'list';
 $nhrprobe_plugin = realpath( getenv( 'PROBE_PLUGIN_DIR' ) ?: dirname( __DIR__, 2 ) );
