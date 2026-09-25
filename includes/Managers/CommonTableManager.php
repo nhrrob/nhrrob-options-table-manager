@@ -60,14 +60,22 @@ class CommonTableManager extends BaseTableManager {
 		$length             = isset( $_GET['length'] ) ? intval( $_GET['length'] ) : 10;
 		$search             = isset( $_GET['search']['value'] ) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
 		$order_column_index = isset( $_GET['order'][0]['column'] ) ? intval( $_GET['order'][0]['column'] ) : 0;
-		$order_direction    = isset( $_GET['order'][0]['dir'] ) && in_array( $_GET['order'][0]['dir'], [ 'asc', 'desc' ], true ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
+		// Built from literals, never from the request value itself, so no user data reaches ORDER BY.
+		$order_direction = isset( $_GET['order'][0]['dir'] ) && 'desc' === $_GET['order'][0]['dir'] ? 'desc' : 'asc';
 
 		$columns = $this->get_searchable_columns();
 		if ( $order_column_index < 0 || $order_column_index >= count( $columns ) ) {
 			$order_column_index = 0;
 		}
-		$order_column = $columns[ $order_column_index ];
-		$table        = $this->table_name;
+		// Pick the column by comparison against the fixed list rather than
+		// indexing with the request value — only whitelisted names reach ORDER BY.
+		$order_column = reset( $columns );
+		foreach ( $columns as $index => $column ) {
+			if ( $index === $order_column_index ) {
+				$order_column = $column;
+			}
+		}
+		$table = $this->table_name;
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		$total_records = $wpdb->get_var( "SELECT COUNT(*) FROM $table" );

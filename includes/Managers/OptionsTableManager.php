@@ -68,7 +68,8 @@ class OptionsTableManager extends BaseTableManager {
 
 		// Sorting parameters.
 		$order_column_index = isset( $_GET['order'][0]['column'] ) ? intval( $_GET['order'][0]['column'] ) : 0;
-		$order_direction    = isset( $_GET['order'][0]['dir'] ) && in_array( $_GET['order'][0]['dir'], [ 'asc', 'desc' ], true ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
+		// Built from literals, never from the request value itself, so no user data reaches ORDER BY.
+		$order_direction = isset( $_GET['order'][0]['dir'] ) && 'desc' === $_GET['order'][0]['dir'] ? 'desc' : 'asc';
 
 		$columns = $this->get_searchable_columns();
 
@@ -76,7 +77,14 @@ class OptionsTableManager extends BaseTableManager {
 		if ( $order_column_index < 0 || $order_column_index >= count( $columns ) ) {
 			$order_column_index = 1; // Default to 'option_id' (index 1).
 		}
-		$order_column = $columns[ $order_column_index ];
+		// Pick the column by comparison against the fixed list rather than
+		// indexing with the request value — only whitelisted names reach ORDER BY.
+		$order_column = reset( $columns );
+		foreach ( $columns as $index => $column ) {
+			if ( $index === $order_column_index ) {
+				$order_column = $column;
+			}
+		}
 
 		if ( empty( $order_column ) ) {
 			$order_column = 'option_id';

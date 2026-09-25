@@ -142,6 +142,8 @@ Deleting the plugin removes its own settings, history, and backup tables. It nev
 - Security: The Classic view's orphan scan now requires a valid nonce and the `manage_options` capability; it previously returned option-name prefixes to any logged-in user.
 - Security: Import skips WordPress core options and rejects values containing serialized PHP objects (other than plain stdClass), so a crafted import file can't plant an object-injection payload.
 - Security: Search & Replace and snapshot/history restore no longer instantiate PHP classes when reading serialized option values.
+- Fixed: Searching the WP Recipe Maker ratings table in the Classic view caused a fatal error.
+- Security: The Classic view's table queries now build sorting and search SQL only from whitelisted values and single prepared statements.
 - Developer: The whole PHP codebase now passes WordPress Coding Standards.
 - Developer: Renamed the menu capability filter from `nhrotm-options-table-manager/menu/capability` to `nhrotm_menu_capability` to follow WordPress hook naming. If you filtered the old name, update your callback.
 

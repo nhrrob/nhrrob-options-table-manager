@@ -132,7 +132,7 @@ final class Nhrotm_Options_Table_Manager {
 
 		new Nhrotm\OptionsTableManager\Assets();
 
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+		if ( wp_doing_ajax() ) {
 			new Nhrotm\OptionsTableManager\Ajax\AjaxHandler();
 		}
 

@@ -50,37 +50,48 @@ class UsermetaTableManager extends BaseTableManager {
 		$length             = isset( $_GET['length'] ) ? intval( $_GET['length'] ) : 10;
 		$search             = isset( $_GET['search']['value'] ) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
 		$order_column_index = isset( $_GET['order'][0]['column'] ) ? intval( $_GET['order'][0]['column'] ) : 0;
-		$order_direction    = isset( $_GET['order'][0]['dir'] ) && in_array( $_GET['order'][0]['dir'], [ 'asc', 'desc' ], true ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
+		// Built from literals, never from the request value itself, so no user data reaches ORDER BY.
+		$order_direction = isset( $_GET['order'][0]['dir'] ) && 'desc' === $_GET['order'][0]['dir'] ? 'desc' : 'asc';
 
 		$columns = $this->get_searchable_columns();
 		if ( $order_column_index < 0 || $order_column_index >= count( $columns ) ) {
 			$order_column_index = 0;
 		}
-		$order_column = $columns[ $order_column_index ];
-		$table        = $this->table_name;
+		// Pick the column by comparison against the fixed list rather than
+		// indexing with the request value — only whitelisted names reach ORDER BY.
+		$order_column = reset( $columns );
+		foreach ( $columns as $index => $column ) {
+			if ( $index === $order_column_index ) {
+				$order_column = $column;
+			}
+		}
+		$table = $this->table_name;
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		$total_records = $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
 
-		$where_sql = '';
+		// Placeholders only — the search term travels as a prepare() argument,
+		// never inside the SQL string (and is prepared exactly once).
+		$where_sql  = '';
+		$where_args = [];
 		if ( ! empty( $search ) ) {
 			$search_like = '%' . $wpdb->esc_like( $search ) . '%';
-			// Build WHERE clause separately to satisfy literal requirements.
-			$where_sql = $wpdb->prepare( ' WHERE (meta_key LIKE %s OR meta_value LIKE %s)', $search_like, $search_like );
+			$where_sql   = ' WHERE (meta_key LIKE %s OR meta_value LIKE %s)';
+			$where_args  = [ $search_like, $search_like ];
 		}
 
 		// Count filtered records.
         // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}usermeta {$where_sql}";
-		$filtered_records     = $this->wpdb->get_var( $filtered_records_sql );
+		$filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}usermeta{$where_sql}";
+		$filtered_records     = $where_args ? $this->wpdb->get_var( $this->wpdb->prepare( $filtered_records_sql, $where_args ) ) : $this->wpdb->get_var( $filtered_records_sql );
 
 		// SQL for ordering.
 		$order_sql = "ORDER BY {$order_column} {$order_direction}";
 
 		// Get data with search, order, and pagination.
-		$data_sql = "SELECT * FROM {$this->wpdb->prefix}usermeta {$where_sql} {$order_sql} LIMIT %d, %d";
+		$data_sql = "SELECT * FROM {$this->wpdb->prefix}usermeta{$where_sql} {$order_sql} LIMIT %d, %d";
 		$data     = $this->wpdb->get_results(
-			$this->wpdb->prepare( $data_sql, $start, $length ),
+			$this->wpdb->prepare( $data_sql, array_merge( $where_args, [ $start, $length ] ) ),
 			ARRAY_A
 		);
         // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
