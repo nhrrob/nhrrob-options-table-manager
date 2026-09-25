@@ -38,5 +38,7 @@ delete_option( 'nhrotm_used_autoload_options' );
 delete_option( 'nhrotm_usage_tracking_since' );
 delete_option( 'nhrotm_usage_load_count' );
 delete_option( 'nhrotm_backup_frequency' );
+delete_option( 'nhrotm_history_retention_days' );
+delete_option( 'nhrotm_settings' );
 
 // Add any other options to be deleted here, e.g. delete_option( 'nhrotm_version' ).

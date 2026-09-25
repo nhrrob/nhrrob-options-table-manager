@@ -413,7 +413,7 @@ trait GlobalTrait {
 	/**
 	 * Whether a transient option_name belongs to the network-wide "site" scope.
 	 *
-	 * @param string $option_name Full option_name, e.g. "_site_transient_update_plugins".
+	 * @param string $option_name Full option_name, e.g. "_site_transient_theme_roots".
 	 * @return bool
 	 */
 	public function is_site_transient( $option_name ) {

@@ -17,6 +17,8 @@ composer run phpcbf         # auto-fix what PHPCS can
 composer run test:unit      # PHPUnit (WP_Mock, no DB)
 ```
 
+`vendor/composer/*` is committed, but a local `composer install` rewrites it with dev-only packages (PHPUnit, Mockery, …) that `.gitignore`/`.distignore` exclude — a zip built from that fatals on load. The tag-deploy workflow therefore runs `composer install --no-dev` before the 10up deploy step; never remove that step, and never hand-build a release zip without `--no-dev`.
+
 Always run `npm run lint` (fixing anything it flags) **and** `npm run build` after any change under `admin/src/` — the compiled `admin/build/` output is what actually ships and renders; editing `admin/src/` alone changes nothing live.
 
 ## Pre-commit gate
