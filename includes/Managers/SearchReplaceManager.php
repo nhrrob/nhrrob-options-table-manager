@@ -70,7 +70,7 @@ class SearchReplaceManager extends BaseTableManager {
 		}
 
 		global $wpdb;
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-specific search operation; $this->excluded_from_replace_where() is a literal fragment, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Plugin-specific search operation; $this->excluded_from_replace_where() is a literal fragment, never user input
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_value LIKE %s AND {$this->excluded_from_replace_where()}",
@@ -115,7 +115,7 @@ class SearchReplaceManager extends BaseTableManager {
 		global $wpdb;
 		$search_like = '%' . $wpdb->esc_like( $search ) . '%';
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-specific query; $this->excluded_from_replace_where() is a literal fragment, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Plugin-specific query; $this->excluded_from_replace_where() is a literal fragment, never user input
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_value LIKE %s AND {$this->excluded_from_replace_where()} LIMIT 100",

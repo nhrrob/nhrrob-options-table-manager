@@ -132,6 +132,10 @@ class BackupManager {
 		return array_map(
 			function ( $row ) {
 				$row['size_formatted'] = size_format( $row['size_bytes'] );
+				// created_at is stored in site-local time (current_time('mysql'))
+				// and replaced below by a date-only display string — keep an exact
+				// GMT copy for age calculations (HealthService's "Last backup").
+				$row['created_at_gmt'] = get_gmt_from_date( $row['created_at'] );
 				// Same date-formatting convention as CommonTableManager/WprmRatingsTableManager
 				// — was shown as the raw, unformatted MySQL datetime before this.
 				$row['created_at'] = esc_html( wp_date( get_option( 'date_format' ), strtotime( $row['created_at'] ) ) );

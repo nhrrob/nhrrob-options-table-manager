@@ -467,7 +467,7 @@ class OptionsTableManager extends BaseTableManager {
 	public function perform_cleanup() {
 		global $wpdb;
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- transient_timeout_where() returns a literal WHERE fragment, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- transient_timeout_where() returns a literal WHERE fragment, never user input
 		$transients = $wpdb->get_results(
 			"SELECT option_name FROM {$wpdb->prefix}options WHERE " . $this->transient_timeout_where( 'option_name' ),
 			ARRAY_A

@@ -49,7 +49,7 @@ class IntegrationsService {
 			$table = $wpdb->prefix . $def['table'];
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table is a hard-coded definitions() entry, verified to exist via SHOW TABLES
 				$count       = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `$table`" );
 				$available[] = [
 					'slug'  => $slug,
@@ -107,7 +107,7 @@ class IntegrationsService {
 		$per_page = min( 100, max( 1, (int) $per_page ) );
 		$offset   = ( $page - 1 ) * $per_page;
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table is a hard-coded definitions() entry, verified to exist via SHOW TABLES
 		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `$table`" );
 		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `$table` ORDER BY 1 DESC LIMIT %d, %d", $offset, $per_page ), ARRAY_A );
 		// Read the schema directly rather than inferring from $rows[0] — an

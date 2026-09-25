@@ -37,7 +37,7 @@ class TransientsManager extends BaseTableManager {
 	public function get_data() {
 		global $wpdb;
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- transient_value_where() returns a literal WHERE fragment, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- transient_value_where() returns a literal WHERE fragment, never user input
 		$rows = $wpdb->get_results(
 			"SELECT option_name, option_value, LENGTH(option_value) AS size_bytes
             FROM {$wpdb->options}
@@ -82,7 +82,7 @@ class TransientsManager extends BaseTableManager {
 	 * @return bool
 	 */
 	private function is_site_scoped( $name ) {
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- properly prepared via $this->wpdb->prepare(); sniff doesn't recognize the $this->wpdb property-access pattern
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- properly prepared via $this->wpdb->prepare(); sniff doesn't recognize the $this->wpdb property-access pattern
 		return (bool) $this->wpdb->get_var(
 			$this->wpdb->prepare(
 				"SELECT 1 FROM {$this->wpdb->options} WHERE option_name = %s",

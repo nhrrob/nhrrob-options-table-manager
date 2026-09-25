@@ -31,54 +31,81 @@ class ScannerManager extends BaseTableManager {
 	 * @var array
 	 */
 	private $prefix_map = [
-		'akismet_'       => 'Akismet',
-		'autoptimize_'   => 'Autoptimize',
-		'contact_form_7' => 'Contact Form 7',
-		'eael_'          => 'Essential Addons for Elementor',
-		'elementor_'     => 'Elementor',
-		'itsec_'         => 'iThemes Security',
-		'jetpack_'       => 'Jetpack',
-		'nhrada_'        => 'AI Developer Assistant',
+		'akismet_'                => 'Akismet',
+		'autoptimize_'            => 'Autoptimize',
+		'contact_form_7'          => 'Contact Form 7',
+		'wpcf7_'                  => 'Contact Form 7',
+		'eael_'                   => 'Essential Addons for Elementor',
+		'elementor_'              => 'Elementor',
+		'itsec_'                  => 'iThemes Security',
+		'jetpack_'                => 'Jetpack',
+		'nhrada_'                 => 'AI Developer Assistant',
 		// Sibling nhr-branded plugins — their abbreviated prefixes (nhrotm,
 		// nhrsmm, nhrcc…) aren't substrings of the real plugin directory
 		// slug (nhrrob-options-table-manager, nhrrob-smart-media-manager…),
 		// so the directory-guessing fallback below can never bridge them by
 		// itself; each one needs an explicit entry here, same as nhrada_.
-		'nhrotm_'        => 'Options Table Manager',
-		'nhrsmm_'        => 'Smart Media Manager',
-		'nhrcc_'         => 'Core Contributions',
-		'nhrfm_'         => 'File Manager',
+		'nhrotm_'                 => 'Options Table Manager',
+		'nhrsmm_'                 => 'Smart Media Manager',
+		'nhrcc_'                  => 'Core Contributions',
+		'nhrfm_'                  => 'File Manager',
 		// No 'nhrrob-smart-sync'-style folder exists on disk to confirm the exact
 		// display name against — inferred from the option name itself
 		// ('nhrst_smartsync_table_*'); correct this if the real plugin name differs.
-		'nhrst_'         => 'SmartSync',
+		'nhrst_'                  => 'SmartSync',
 		// Pre-rename leftovers: AI Developer Assistant's menu slug is still
 		// literally 'wpad-settings' from before it became 'nhrada'; current
 		// code writes 'nhrada_claude_api_key', so any 'wpad_*' row is an
 		// orphan from that old prefix, not something current code reads.
-		'wpad_'          => 'AI Developer Assistant (old prefix)',
-		'rank_math_'     => 'Rank Math',
-		'smush_'         => 'Smush',
-		'updraftplus_'   => 'UpdraftPlus',
-		'w3tc_'          => 'W3 Total Cache',
-		'woocommerce_'   => 'WooCommerce',
-		'wordfence_'     => 'Wordfence',
-		'wpforms_'       => 'WPForms',
-		'wp_rocket_'     => 'WP Rocket',
-		'wprm_'          => 'WP Recipe Maker',
-		'wpseo_'         => 'Yoast SEO',
-		'wpmudev_'       => 'WPMU DEV',
+		'wpad_'                   => 'AI Developer Assistant (old prefix)',
+		'rank_math_'              => 'Rank Math',
+		'smush_'                  => 'Smush',
+		'updraftplus_'            => 'UpdraftPlus',
+		'w3tc_'                   => 'W3 Total Cache',
+		// WooCommerce writes both 'woocommerce_*' and the short 'wc_*' form
+		// (e.g. 'wc_blocks_*', the 'wc_count_comments' transient); 'wc' shares
+		// no 4+ character substring with its 'woocommerce' directory slug.
+		'wc_'                     => 'WooCommerce',
+		'woocommerce_'            => 'WooCommerce',
+		'wordfence_'              => 'Wordfence',
+		'wpforms_'                => 'WPForms',
+		'wp_rocket_'              => 'WP Rocket',
+		'wprm_'                   => 'WP Recipe Maker',
+		'wpseo_'                  => 'Yoast SEO',
+		'wpmudev_'                => 'WPMU DEV',
 		// Doesn't substring-match its own directory slug ('safe-redirect-manager'
 		// contains no contiguous 'srm') — needs the same explicit treatment as
 		// nhrada_/nhrotm_ above, not just an $abbreviated_prefix_dirs entry,
 		// since guess_owner() checks this map before it ever reaches the
 		// directory-substring fallback.
-		'srm_'           => 'Safe Redirect Manager',
+		'srm_'                    => 'Safe Redirect Manager',
 		// WordPress Beta Tester's own site transient key ('current_wp_release',
 		// wp-content/plugins/wordpress-beta-tester/src/WPBT/WPBT_Core.php) shares
 		// no substring with its directory slug ('wordpress-beta-tester') — same
 		// gap as srm_/nhrada_ above.
-		'current_'       => 'WordPress Beta Tester',
+		'current_'                => 'WordPress Beta Tester',
+		'rsssl_'                  => 'Really Simple Security',
+		'yoast_'                  => 'Yoast SEO',
+		// Action Scheduler ships inside WooCommerce (and other plugins) as well
+		// as standalone; its rows use these three prefixes.
+		'as_'                     => 'Action Scheduler',
+		'action_'                 => 'Action Scheduler',
+		'schema-ActionScheduler_' => 'Action Scheduler',
+		// WooCommerce's product taxonomy/query-cache rows ('product_cat_children',
+		// 'product_query-transient-version').
+		'product_'                => 'WooCommerce',
+	];
+
+	/**
+	 * Individual option names whose prefix bucket belongs to someone else
+	 * (a core 'default_*' family, Beta Tester's 'current_') — owner label and
+	 * the plugin directories that make them "installed" for the orphan scan.
+	 *
+	 * @var array
+	 */
+	private $named_options = [
+		'default_product_cat'                => [ 'WooCommerce', [ 'woocommerce' ] ],
+		'current_theme_supports_woocommerce' => [ 'WooCommerce', [ 'woocommerce' ] ],
 	];
 
 	/**
@@ -92,24 +119,36 @@ class ScannerManager extends BaseTableManager {
 	 * @var array
 	 */
 	private $abbreviated_prefix_dirs = [
-		'eael_'    => 'essential-addons-for-elementor-lite',
-		'wprm_'    => 'wp-recipe-maker',
-		'nhrada_'  => 'nhrrob-ai-developer-assistant',
-		'srm_'     => 'safe-redirect-manager',
+		'eael_'                   => 'essential-addons-for-elementor-lite',
+		'wprm_'                   => 'wp-recipe-maker',
+		'wc_'                     => 'woocommerce',
+		'nhrada_'                 => 'nhrrob-ai-developer-assistant',
+		'srm_'                    => 'safe-redirect-manager',
 		// Same "abbreviated prefix, no substring overlap with the real
 		// directory slug" gap as nhrada_ above — mirrors $prefix_map's
 		// existing nhrotm_/nhrsmm_/nhrcc_/nhrfm_/nhrst_ entries so the orphan
 		// scanner's installed-plugin check can bridge these too, not just
 		// the owner-label lookup.
-		'nhrotm_'  => 'nhrrob-options-table-manager',
-		'nhrsmm_'  => 'nhrrob-smart-media-manager',
-		'nhrcc_'   => 'nhrrob-core-contributions',
-		'nhrfm_'   => 'nhrrob-file-manager',
-		'nhrst_'   => 'nhrrob-smart-sync',
+		'nhrotm_'                 => 'nhrrob-options-table-manager',
+		'nhrsmm_'                 => 'nhrrob-smart-media-manager',
+		'nhrcc_'                  => 'nhrrob-core-contributions',
+		'nhrfm_'                  => 'nhrrob-file-manager',
+		'nhrst_'                  => 'nhrrob-smart-sync',
 		// Same abbreviated-prefix gap as the nhr*/eael_/wprm_/srm_ entries above —
 		// 'current_' (from the 'current_wp_release' site transient) shares no
 		// substring with 'wordpress-beta-tester'.
-		'current_' => 'wordpress-beta-tester',
+		'current_'                => 'wordpress-beta-tester',
+		// Values may list several directories: bundled libraries (Action
+		// Scheduler, Jetpack's connection packages) are "installed" when any
+		// plugin that ships them is.
+		'product_'                => 'woocommerce',
+		'wpseo_'                  => 'wordpress-seo',
+		'yoast_'                  => 'wordpress-seo',
+		'wpcf7_'                  => 'contact-form-7',
+		'as_'                     => [ 'action-scheduler', 'woocommerce' ],
+		'action_'                 => [ 'action-scheduler', 'woocommerce' ],
+		'schema-ActionScheduler_' => [ 'action-scheduler', 'woocommerce' ],
+		'jetpack_'                => [ 'jetpack', 'woocommerce' ],
 	];
 
 	/**
@@ -188,6 +227,20 @@ class ScannerManager extends BaseTableManager {
 			$protected_names[ preg_replace( '/^_(?:site_)?transient(?:_timeout)?_/', '', $protected_name ) ] = true;
 		}
 
+		// Installed plugin directories (active and inactive) — needed while
+		// bucketing, to skip named options whose plugin is installed.
+		$all_plugins = get_plugins();
+		$plugin_dirs = [];
+		foreach ( array_keys( $all_plugins ) as $plugin_file ) {
+			$parts = explode( '/', $plugin_file );
+			if ( count( $parts ) > 1 ) {
+				$plugin_dirs[] = $parts[0];
+			} else {
+				// For single file plugins like hello.php.
+				$plugin_dirs[] = str_replace( '.php', '', $plugin_file );
+			}
+		}
+
 		$prefixes = [];
 		foreach ( $results as $row ) {
 			$name = sanitize_text_field( $row['option_name'] );
@@ -196,6 +249,9 @@ class ScannerManager extends BaseTableManager {
 			$clean_name = preg_replace( '/^_(?:site_)?transient(?:_timeout)?_/', '', $name );
 
 			if ( isset( $protected_names[ $clean_name ] ) ) {
+				continue;
+			}
+			if ( isset( $this->named_options[ $clean_name ] ) && array_intersect( $this->named_options[ $clean_name ][1], $plugin_dirs ) ) {
 				continue;
 			}
 
@@ -236,19 +292,6 @@ class ScannerManager extends BaseTableManager {
 			}
 		}
 
-		// 2. Get list of active and inactive plugins
-		$all_plugins = get_plugins();
-		$plugin_dirs = [];
-		foreach ( array_keys( $all_plugins ) as $plugin_file ) {
-			$parts = explode( '/', $plugin_file );
-			if ( count( $parts ) > 1 ) {
-				$plugin_dirs[] = $parts[0];
-			} else {
-				// For single file plugins like hello.php.
-				$plugin_dirs[] = str_replace( '.php', '', $plugin_file );
-			}
-		}
-
 		// 3. Identification logic
 		// Known WP core option prefixes this heuristic would otherwise flag —
 		// e.g. 'users_' (plural) guards `users_can_register`, distinct from
@@ -271,7 +314,9 @@ class ScannerManager extends BaseTableManager {
 		// recurse_dirsize() (wp-includes/functions.php). All four are hashed or
 		// fixed core transient keys with no owning plugin to match against, so
 		// without this they fall straight through to "Unknown Plugin/Theme".
-		$protected_prefixes = [ 'wp_', 'user_', 'users_', 'widget_', 'theme_', 'rss_', 'sticky_', 'connectors_', 'feed_', 'browser_', 'php_', 'dash_', 'dirsize_' ];
+		// 'fresh_' and 'recovery_' are core's single-row 'fresh_site' and
+		// 'recovery_keys' / 'recovery_mode_email_last_sent' options.
+		$protected_prefixes = [ 'wp_', 'user_', 'users_', 'widget_', 'theme_', 'rss_', 'sticky_', 'connectors_', 'feed_', 'browser_', 'php_', 'dash_', 'dirsize_', 'fresh_', 'recovery_' ];
 
 		foreach ( $prefixes as $prefix => $info ) {
 			$count        = $info['count'];
@@ -299,7 +344,7 @@ class ScannerManager extends BaseTableManager {
 			// Known abbreviated prefixes (no textual overlap with their
 			// plugin's directory slug) — check the actual installed slug.
 			if ( ! $found && isset( $this->abbreviated_prefix_dirs[ $prefix ] ) ) {
-				$found = in_array( $this->abbreviated_prefix_dirs[ $prefix ], $plugin_dirs, true );
+				$found = (bool) array_intersect( (array) $this->abbreviated_prefix_dirs[ $prefix ], $plugin_dirs );
 			}
 
 			if ( ! $found ) {
@@ -348,7 +393,7 @@ class ScannerManager extends BaseTableManager {
 		// 'browser_'/'php_'/'dash_'/'dirsize_' — see the matching comment in
 		// scan_orphans() above; kept in sync here so the Autoload screen's Owner
 		// column agrees with the Orphan scanner instead of calling these Unknown.
-		$protected_prefixes = [ 'wp_', 'user_', 'users_', 'widget_', 'theme_', 'rss_', 'sticky_', 'connectors_', 'feed_', 'browser_', 'php_', 'dash_', 'dirsize_' ];
+		$protected_prefixes = [ 'wp_', 'user_', 'users_', 'widget_', 'theme_', 'rss_', 'sticky_', 'connectors_', 'feed_', 'browser_', 'php_', 'dash_', 'dirsize_', 'fresh_', 'recovery_' ];
 
 		$clean_name   = preg_replace( '/^_(?:site_)?transient(?:_timeout)?_/', '', $option_name );
 		$is_transient = $option_name !== $clean_name;
@@ -375,6 +420,9 @@ class ScannerManager extends BaseTableManager {
 		];
 		if ( $is_transient && in_array( $clean_name, $core_transient_names, true ) ) {
 			return __( 'WordPress Core', 'nhrrob-options-table-manager' );
+		}
+		if ( isset( $this->named_options[ $clean_name ] ) ) {
+			return $this->named_options[ $clean_name ][0];
 		}
 
 		// Checked unconditionally, and first: get_protected_options() is a
@@ -446,7 +494,9 @@ class ScannerManager extends BaseTableManager {
 		// option to whichever plugin happens to sort first from get_plugins()
 		// (alphabetically 'aaa-...'), regardless of the option's real owner.
 		if ( '' === $prefix ) {
-			return __( 'Unknown', 'nhrrob-options-table-manager' );
+			// A single-word name that is itself a known brand prefix (Yoast's
+			// bare 'wpseo' main settings row) still has a reliable owner.
+			return isset( $this->prefix_map[ $clean_name . '_' ] ) ? $this->prefix_map[ $clean_name . '_' ] : __( 'Unknown', 'nhrrob-options-table-manager' );
 		}
 
 		// Legacy malformed naming: some options were written as 'nhr_' plus a

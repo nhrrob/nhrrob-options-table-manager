@@ -243,7 +243,7 @@ class OptimizeService {
 	 */
 	private function real_backup_age_days() {
 		$snapshots   = ( new BackupManager() )->get_snapshots();
-		$last_backup = ! empty( $snapshots ) ? $snapshots[0]['created_at'] : null;
+		$last_backup = ! empty( $snapshots ) ? $snapshots[0]['created_at_gmt'] : null;
 
 		return $last_backup
 			? (int) floor( ( time() - strtotime( $last_backup . ' UTC' ) ) / DAY_IN_SECONDS )
@@ -266,7 +266,7 @@ class OptimizeService {
 	 */
 	private function score_baseline( $orphan_groups, $expired_transients ) {
 		global $wpdb;
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Dashboard analytics; transient_value_where() returns a literal WHERE fragment, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dashboard analytics; transient_value_where() returns a literal WHERE fragment, never user input
 		$autoload_bytes  = (int) $wpdb->get_var(
 			"SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload NOT IN ('off', 'no', 'false', '0', '')"
 		);
@@ -354,7 +354,7 @@ class OptimizeService {
 
 		// Expired only: remove timeouts in the past plus their value rows
 		// (both the regular and network-wide scopes).
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- transient_timeout_where() returns a literal WHERE fragment, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- transient_timeout_where() returns a literal WHERE fragment, never user input
 		$expired = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT option_name FROM {$wpdb->options} WHERE " . $this->transient_timeout_where( 'option_name' ) . ' AND option_value < %d',
@@ -386,7 +386,7 @@ class OptimizeService {
 	 */
 	private function count_expired_transients() {
 		global $wpdb;
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- transient_timeout_where() returns a literal WHERE fragment, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- transient_timeout_where() returns a literal WHERE fragment, never user input
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->options} WHERE " . $this->transient_timeout_where( 'option_name' ) . ' AND option_value < %d',

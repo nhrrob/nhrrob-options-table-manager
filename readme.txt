@@ -135,6 +135,9 @@ Deleting the plugin removes its own settings, history, and backup tables. It nev
 - Improved: Search & Replace dry run now lists every matching option, and WordPress core cache/transient data is excluded by default.
 - Improved: Owner attribution and the Orphan Scanner are more accurate — real WordPress core options are no longer flagged as orphans, and hyphenated plugin prefixes are recognized.
 - Improved: Tools → Import has a drag-and-drop file dropzone.
+- Fixed: The Orphan Scanner no longer flags data from active plugins it couldn't match by folder name (WooCommerce's `wc_`/`product_` options, Yoast SEO's `wpseo_`/`yoast_`, the bundled Action Scheduler and Jetpack packages) or WordPress core's `fresh_site`/`recovery_keys` as orphans.
+- Fixed: "Last backup" on the Dashboard showed the wrong age (measured from midnight of the backup day).
+- Improved: The plugin's own settings no longer autoload on every front-end page load.
 - Fixed: Uninstall now removes every option the plugin creates.
 - Developer: The whole PHP codebase now passes WordPress Coding Standards.
 - Developer: Renamed the menu capability filter from `nhrotm-options-table-manager/menu/capability` to `nhrotm_menu_capability` to follow WordPress hook naming. If you filtered the old name, update your callback.

@@ -240,7 +240,7 @@ class BrowseService {
 			];
 		};
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
 		// Owner facet: every owner label present among options matching the
 		// current search, regardless of the owner filter itself — so picking
 		// one owner never removes the others from the dropdown. Only the
@@ -370,7 +370,7 @@ class BrowseService {
 		}
 		$where = $conditions ? ( 'WHERE ' . implode( ' AND ', $conditions ) ) : '';
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
 		$count_sql = "SELECT COUNT(*) FROM {$wpdb->usermeta} $where";
 		$total     = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
 
@@ -430,7 +430,7 @@ class BrowseService {
 		}
 		$where = $conditions ? ( 'WHERE ' . implode( ' AND ', $conditions ) ) : '';
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
 		$count_sql = "SELECT COUNT(*) FROM {$wpdb->postmeta} $where";
 		$total     = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
 
@@ -485,7 +485,7 @@ class BrowseService {
 			$params[] = '%' . $wpdb->esc_like( $search ) . '%';
 		}
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
 		$count_sql = "SELECT COUNT(*) FROM {$wpdb->commentmeta} $where";
 		$total     = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
 
@@ -540,7 +540,7 @@ class BrowseService {
 			$params[] = '%' . $wpdb->esc_like( $search ) . '%';
 		}
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
 		$count_sql = "SELECT COUNT(*) FROM {$wpdb->termmeta} $where";
 		$total     = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
 
@@ -623,7 +623,7 @@ class BrowseService {
 			$params[] = '%' . $wpdb->esc_like( $search ) . '%';
 		}
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where/$order_sql are built from placeholders + a whitelisted column map (resolve_order()), never raw user input
 		// Status ('active'/'expired'/'persistent') and owner (guessed from the
 		// name) only exist once each row is inspected below, so neither can be
 		// filtered in SQL. With either filter, fetch every matching row (no

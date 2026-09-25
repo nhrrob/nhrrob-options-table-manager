@@ -57,7 +57,7 @@ class HealthService {
 	public function metrics() {
 		global $wpdb;
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Dashboard analytics; transient_value_where()/transient_timeout_where() return literal WHERE fragments, never user input
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dashboard analytics; transient_value_where()/transient_timeout_where() return literal WHERE fragments, never user input
 		$autoload_bytes = (int) $wpdb->get_var(
 			"SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload NOT IN ('off', 'no', 'false', '0', '')"
 		);
@@ -117,7 +117,7 @@ class HealthService {
 
 		$snapshots       = ( new BackupManager() )->get_snapshots();
 		$snapshot_count  = is_array( $snapshots ) ? count( $snapshots ) : 0;
-		$last_backup     = ! empty( $snapshots ) ? $snapshots[0]['created_at'] : null;
+		$last_backup     = ! empty( $snapshots ) ? $snapshots[0]['created_at_gmt'] : null;
 		$backup_age_days = $last_backup
 			? floor( ( time() - strtotime( $last_backup . ' UTC' ) ) / DAY_IN_SECONDS )
 			: null;

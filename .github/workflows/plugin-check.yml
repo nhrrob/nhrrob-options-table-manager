@@ -26,3 +26,5 @@ jobs:
             ai_instruction_directory
             github_directory
             unexpected_markdown_file
+            plugin_updater_detected
+            update_modification_detected

@@ -78,3 +78,7 @@ Grep for the old state (old tab list, old route list, old feature name) across a
 ## Skills
 
 - `.ai/skills/release_plugin.md` — version bump, PR, tag, publish procedure.
+
+## WP.org screenshots
+
+`.wordpress-org/screenshot-1..8.png` (1600×1000, app on a soft violet canvas) must match the readme's `== Screenshots ==` captions. Never capture them from the nhrrob-dev site — its options hold real API keys and test junk. They were generated from a throwaway clean install (`~/Sites/otm-shots`, Valet `otm-shots.test`) with WooCommerce, Yoast SEO, Contact Form 7 and WP Recipe Maker active, plus Elementor/WPForms/Really Simple Security deleted to leave real orphans. Captured with Playwright (WP admin chrome hidden, any site URL masked to example.com).

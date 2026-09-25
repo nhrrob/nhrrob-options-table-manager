@@ -92,7 +92,8 @@ class SettingsService {
 		$merged = wp_parse_args( $values, $this->all() );
 		// Keep only known keys to avoid unbounded growth.
 		$merged = array_intersect_key( $merged, $this->defaults );
-		update_option( self::OPTION, $merged );
+		// Admin-only settings — never autoload them on front-end requests.
+		update_option( self::OPTION, $merged, false );
 		$this->cache = $merged;
 		return $merged;
 	}
@@ -116,7 +117,12 @@ class SettingsService {
 			}
 		}
 
-		update_option( self::OPTION, wp_parse_args( $settings, $this->defaults ) );
+		update_option( self::OPTION, wp_parse_args( $settings, $this->defaults ), false );
+		// update_option() only changes autoload when the value changes too, so
+		// flip rows created by earlier versions explicitly (WP 6.4+).
+		if ( function_exists( 'wp_set_option_autoload' ) ) {
+			wp_set_option_autoload( self::OPTION, false );
+		}
 		$this->cache = null;
 	}
 }
