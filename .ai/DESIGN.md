@@ -231,7 +231,7 @@ The look is branded and vibrant, delivered entirely through a small set of CSS c
 - Every async view has **loading (skeleton) · empty · error · success** states.
 - Empty states are encouraging and actionable, never dead ends.
 - Errors show the REST message + a retry; never a blank screen.
-- Breakpoints: ≥1200 full · 960–1199 icons-only nav · <960 nav becomes a top dropdown, grid → stacked cards.
+- Breakpoints (CSS-only, `style.scss` bottom): **>900px** full · **≤900px** nav auto-collapses to the icon rail · **≤600px** phone pass. `.nhrotm-app` is `overflow: hidden` (rounded corners), so anything wider than a phone viewport is *clipped*, not scrollable — the phone pass exists to keep every control inside the width: segmented switchers (Browse types, Optimize, Tools) swipe sideways, panel headers and pager controls wrap, form fields and Browse's toolbar drop their 200px minimums and go full-row, the app bar tightens, and fixed-layout grids get `min-width: 1000px` so the flexible Name/Value columns aren't squeezed to ~90px inside their horizontal scroller. Every `.nhrotm-grid` must sit inside a `.nhrotm-grid__scroll` (Tools → Backups was the one that didn't).
 
 ## 12. PRO awareness — visual realization (PRD §0.2)
 

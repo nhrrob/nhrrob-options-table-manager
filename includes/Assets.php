@@ -20,7 +20,6 @@ class Assets extends App {
 	 * Class constructor
 	 */
 	public function __construct() {
-		add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'register_assets' ] );
 	}
 
@@ -69,9 +68,18 @@ class Assets extends App {
 	/**
 	 * Register scripts and styles
 	 *
+	 * Only the Classic page (Menu::enqueue_assets()) uses these handles, and the
+	 * localized data costs a nonce plus several option reads — so skip all of
+	 * it on every other admin screen.
+	 *
+	 * @param string $hook Current admin page hook.
 	 * @return void
 	 */
-	public function register_assets() {
+	public function register_assets( $hook ) {
+		if ( 'tools_page_nhrotm-classic' !== $hook ) {
+			return;
+		}
+
 		$scripts = $this->get_scripts();
 		$styles  = $this->get_styles();
 

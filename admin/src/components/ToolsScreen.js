@@ -366,112 +366,114 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 						) }
 					</p>
 				) : (
-					<table className="nhrotm-grid">
-						<colgroup>
-							<col className="nhrotm-col-name" />
-							<col className="nhrotm-col-badge" />
-							<col className="nhrotm-col-count" />
-							<col className="nhrotm-col-size" />
-							<col className="nhrotm-col-date" />
-							<col className="nhrotm-col-act" />
-						</colgroup>
-						<thead>
-							<tr>
-								<th>
-									{ __(
-										'Label',
-										'nhrrob-options-table-manager'
-									) }
-								</th>
-								<th>
-									{ __(
-										'Type',
-										'nhrrob-options-table-manager'
-									) }
-								</th>
-								<th>
-									{ __(
-										'Options',
-										'nhrrob-options-table-manager'
-									) }
-								</th>
-								<th style={ { textAlign: 'right' } }>
-									{ __(
-										'Size',
-										'nhrrob-options-table-manager'
-									) }
-								</th>
-								<th>
-									{ __(
-										'Created',
-										'nhrrob-options-table-manager'
-									) }
-								</th>
-								<th style={ { textAlign: 'right' } }>
-									{ __(
-										'Actions',
-										'nhrrob-options-table-manager'
-									) }
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							{ backups.map( ( b ) => (
-								<tr key={ b.id }>
-									<td className="nhrotm-grid__name">
-										{ b.label }
-									</td>
-									<td>
-										<span className="nhrotm-badge nhrotm-badge--muted">
-											{ b.type }
-										</span>
-									</td>
-									<td>{ b.option_count }</td>
-									<td className="nhrotm-grid__size">
-										{ b.size_formatted }
-									</td>
-									<td>{ b.created_at }</td>
-									<td>
-										<div className="nhrotm-grid__actions">
-											<button
-												type="button"
-												className="nhrotm-iconbtn"
-												disabled={ busy }
-												onClick={ () =>
-													restoreBackup( b.id )
-												}
-											>
-												<Icon
-													name="refresh"
-													size={ 14 }
-												/>
-												{ __(
-													'Restore',
-													'nhrrob-options-table-manager'
-												) }
-											</button>
-											<button
-												type="button"
-												className="nhrotm-iconbtn nhrotm-iconbtn--danger"
-												onClick={ () =>
-													deleteBackup( b.id )
-												}
-											>
-												<Icon
-													name="trash"
-													size={ 14 }
-												/>
-												{ __(
-													'Delete',
-													'nhrrob-options-table-manager'
-												) }
-											</button>
-										</div>
-									</td>
+					<div className="nhrotm-grid__scroll">
+						<table className="nhrotm-grid">
+							<colgroup>
+								<col className="nhrotm-col-name" />
+								<col className="nhrotm-col-badge" />
+								<col className="nhrotm-col-count" />
+								<col className="nhrotm-col-size" />
+								<col className="nhrotm-col-date" />
+								<col className="nhrotm-col-act" />
+							</colgroup>
+							<thead>
+								<tr>
+									<th>
+										{ __(
+											'Label',
+											'nhrrob-options-table-manager'
+										) }
+									</th>
+									<th>
+										{ __(
+											'Type',
+											'nhrrob-options-table-manager'
+										) }
+									</th>
+									<th>
+										{ __(
+											'Options',
+											'nhrrob-options-table-manager'
+										) }
+									</th>
+									<th style={ { textAlign: 'right' } }>
+										{ __(
+											'Size',
+											'nhrrob-options-table-manager'
+										) }
+									</th>
+									<th>
+										{ __(
+											'Created',
+											'nhrrob-options-table-manager'
+										) }
+									</th>
+									<th style={ { textAlign: 'right' } }>
+										{ __(
+											'Actions',
+											'nhrrob-options-table-manager'
+										) }
+									</th>
 								</tr>
-							) ) }
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{ backups.map( ( b ) => (
+									<tr key={ b.id }>
+										<td className="nhrotm-grid__name">
+											{ b.label }
+										</td>
+										<td>
+											<span className="nhrotm-badge nhrotm-badge--muted">
+												{ b.type }
+											</span>
+										</td>
+										<td>{ b.option_count }</td>
+										<td className="nhrotm-grid__size">
+											{ b.size_formatted }
+										</td>
+										<td>{ b.created_at }</td>
+										<td>
+											<div className="nhrotm-grid__actions">
+												<button
+													type="button"
+													className="nhrotm-iconbtn"
+													disabled={ busy }
+													onClick={ () =>
+														restoreBackup( b.id )
+													}
+												>
+													<Icon
+														name="refresh"
+														size={ 14 }
+													/>
+													{ __(
+														'Restore',
+														'nhrrob-options-table-manager'
+													) }
+												</button>
+												<button
+													type="button"
+													className="nhrotm-iconbtn nhrotm-iconbtn--danger"
+													onClick={ () =>
+														deleteBackup( b.id )
+													}
+												>
+													<Icon
+														name="trash"
+														size={ 14 }
+													/>
+													{ __(
+														'Delete',
+														'nhrrob-options-table-manager'
+													) }
+												</button>
+											</div>
+										</td>
+									</tr>
+								) ) }
+							</tbody>
+						</table>
+					</div>
 				) }
 				{ proAvailable && ! hasPro && (
 					<div className="nhrotm-actions">
