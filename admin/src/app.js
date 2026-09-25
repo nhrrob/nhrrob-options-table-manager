@@ -17,6 +17,7 @@ import ToolsScreen from './components/ToolsScreen';
 import IntegrationsScreen from './components/IntegrationsScreen';
 import SettingsScreen from './components/SettingsScreen';
 import UpgradeScreen from './components/UpgradeScreen';
+import ActivityScreen from './components/ActivityScreen';
 import PlaceholderScreen from './components/PlaceholderScreen';
 import usePanelFocus from './components/usePanelFocus';
 
@@ -28,6 +29,10 @@ const SCREENS = {
 	integrations: IntegrationsScreen,
 	settings: SettingsScreen,
 	upgrade: UpgradeScreen,
+	// Not a listed module (no permanent sidebar item) — reached only via
+	// Dashboard's "View all" activity link, same pattern as 'upgrade' having
+	// its own dedicated nav trigger outside the modules loop.
+	activity: ActivityScreen,
 };
 
 export default function App( { boot } ) {

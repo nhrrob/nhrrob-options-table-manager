@@ -26,6 +26,9 @@ const PATHS = {
 	database:
 		'M12 5c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3zM3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3',
 	lock: 'M5 13a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM11 16a1 1 0 1 0 2 0 1 1 0 0 0-2 0zM8 11V7a4 4 0 1 1 8 0v4',
+	arrowRight: 'M5 12h14M13 6l6 6-6 6',
+	arrowLeft: 'M19 12H5M11 6l-6 6 6 6',
+	upload: 'M12 16V4M7 9l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3',
 };
 
 export default function Icon( { name, size = 18, className = '' } ) {

@@ -6,6 +6,15 @@
  */
 
 @mixin dark-tokens {
+	// Brand violet is documented as theme-invariant (DESIGN.md §13), but that
+	// was only ever true for backgrounds/borders — as *text* (`.nhrotm-btn--soft`,
+	// `.nhrotm-linkbtn`, panel links) it was designed against a light surface.
+	// `--nhrotm-gradient-soft` does flip dark below, so the unremapped
+	// primary/primary-600 text sitting on top of it lost most of its contrast
+	// (~2.6:1, well under the 4.5:1 the docs call for). Lightened here the
+	// same way `--nhrotm-pro-text` already was for the identical pairing.
+	--nhrotm-primary: #8a7cff;
+	--nhrotm-primary-600: #b9adff;
 	--nhrotm-gradient-soft: linear-gradient(135deg, #242a4d 0%, #2c2350 100%);
 	--nhrotm-card-autoload: rgba(46, 144, 250, 0.14);
 	--nhrotm-card-options: rgba(109, 94, 252, 0.16);
@@ -59,10 +68,25 @@
 	--nhrotm-hover: #f5f3ff;
 
 	--nhrotm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	// Explicit base stack (matches WP admin's own current default) rather than
+	// silently inheriting whatever wp-admin's CSS happens to cascade down —
+	// this app had never declared one, so it was consistent only by accident
+	// of inheritance, with no anchor of its own against a future core/theme
+	// font change.
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
 
 	// Horizontal insets come from .wrap alone, so the app lines up with the
 	// admin notices above it instead of sitting 20px further from the right edge.
 	margin: 20px 0 0;
+	// A closed <select>'s box takes its colours from our CSS, but the open
+	// option list's hover/selected highlight is native browser chrome our
+	// `color`/`background` can't touch — the browser picks that highlight
+	// colour from `color-scheme`, which defaults to light when undeclared.
+	// In dark mode that left our light option text sitting on the browser's
+	// still-light native hover row. Declared per theme state below so the
+	// native highlight actually matches which palette is showing.
+	color-scheme: light;
 	color: var(--nhrotm-text);
 	background: var(--nhrotm-bg);
 	border-radius: var(--nhrotm-radius);
@@ -84,11 +108,30 @@
 // Dark: follow OS unless the user explicitly chose light; explicit dark always wins.
 @media (prefers-color-scheme: dark) {
 	.nhrotm-app:not([data-theme='light']) {
+		color-scheme: dark;
 		@include dark-tokens;
 	}
 }
 .nhrotm-app[data-theme='dark'] {
+	color-scheme: dark;
 	@include dark-tokens;
+}
+
+// `.nhrotm-wrap` is core's plain `.wrap` div — a *parent* of `.nhrotm-app`,
+// so the `--nhrotm-*` tokens scoped to `.nhrotm-app` never reach it (§14.4).
+// Left alone it stays whatever colour wp-admin's canvas is (white/near-white
+// in every core colour scheme), so the rounded dark card above sat inside a
+// visible white margin. `:has()` reads the theme state from the child
+// instead of duplicating AppShell's toggle logic up onto the static PHP
+// wrapper. Hex matches dark-tokens' `--nhrotm-bg` — can't reference the var
+// itself since it isn't in scope here.
+.nhrotm-wrap:has(.nhrotm-app[data-theme='dark']) {
+	background: #14161f;
+}
+@media (prefers-color-scheme: dark) {
+	.nhrotm-wrap:has(.nhrotm-app:not([data-theme='light'])) {
+		background: #14161f;
+	}
 }
 
 // ---- App bar (gradient hero strip) ----
@@ -354,12 +397,14 @@
 		}
 	}
 
-	// Brief ring when a cross-section link lands on this panel, so the jump is
-	// legible instead of looking like a random scroll position.
+	// Brief flash when a cross-section link lands on this panel, so the jump is
+	// legible instead of looking like a random scroll position. Border-only —
+	// no box-shadow — matches this app's restrained no-glow interaction
+	// language elsewhere (a translucent ring next to a solid border read as
+	// washed-out rather than a clean ring).
 	&.is-focused {
 		border-color: var(--nhrotm-primary);
-		box-shadow: 0 0 0 3px rgba(109, 94, 252, 0.18);
-		transition: box-shadow 250ms, border-color 250ms;
+		transition: border-color 250ms;
 	}
 }
 
@@ -373,6 +418,12 @@
 		gap: 8px;
 		font-size: 14px;
 		font-weight: 500;
+	}
+
+	&__hint {
+		margin: 4px 0 0;
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
 	}
 
 	input[type='text'],
@@ -397,15 +448,35 @@
 		border-color: var(--nhrotm-text-muted);
 	}
 
-	// Consistent with .nhrotm-browse__search: hover darkens the border, focus
-	// changes nothing at all (just resets WP core's own themed box-shadow
-	// ring and outline, which keep applying here otherwise).
+	// Focus gets the same darkened border as hover (reverted from the earlier
+	// "focus changes nothing" convention per user request) — still resets WP
+	// core's own themed box-shadow ring and outline, which keep applying here
+	// otherwise, and still no box-shadow ring of our own.
 	input:focus,
 	textarea:focus,
 	select:focus {
 		outline: none;
-		border-color: var(--nhrotm-border-strong);
+		border-color: var(--nhrotm-text-muted);
 		box-shadow: none;
+	}
+}
+
+// Pairs of .nhrotm-field side by side in one row (e.g. Search & Replace's
+// search/replace-with inputs) instead of stacking — every other toolbar in
+// the app (.nhrotm-actions, .nhrotm-browse__tools) is a flex row already.
+.nhrotm-fieldrow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 16px;
+
+	.nhrotm-field {
+		flex: 1 1 220px;
+		margin-bottom: 0;
+
+		input {
+			width: 100%;
+		}
 	}
 }
 
@@ -493,6 +564,13 @@
 	gap: 12px;
 	margin-top: 8px;
 	flex-wrap: wrap;
+
+	// Acts as a table toolbar (e.g. Tools → Backups) when a grid immediately
+	// follows it — give it the same bottom spacing Browse's own toolbar
+	// (.nhrotm-browse__toolbar) has, rather than sitting flush against the table.
+	&:has(+ .nhrotm-grid__wrap, + .nhrotm-grid) {
+		margin-bottom: 16px;
+	}
 }
 
 // ---- Buttons ----
@@ -702,16 +780,21 @@
 	background: var(--nhrotm-surface);
 	box-shadow: var(--nhrotm-shadow);
 
-	&--autoload {
+	// Previously tinted the whole card — busier than the rest of the app,
+	// which never uses tinted card backgrounds elsewhere. Colour now lives
+	// only in the small icon badge below (still the same theme-aware
+	// --nhrotm-card-* tokens, already reused for badge backgrounds
+	// elsewhere, so dark mode's translucent variants keep working here too).
+	&--autoload .nhrotm-card__ico {
 		background: var(--nhrotm-card-autoload);
 	}
-	&--options {
+	&--options .nhrotm-card__ico {
 		background: var(--nhrotm-card-options);
 	}
-	&--transients {
+	&--transients .nhrotm-card__ico {
 		background: var(--nhrotm-card-transients);
 	}
-	&--backup {
+	&--backup .nhrotm-card__ico {
 		background: var(--nhrotm-card-backup);
 	}
 
@@ -770,26 +853,59 @@
 	}
 }
 
-[data-theme='dark'] .nhrotm-card__ico {
+// Cleanup panel body (Optimize): description + action beside a stat tile.
+// Reuses the plain .nhrotm-card component (same one the Dashboard's
+// autoload/options/transients/backup tiles use) instead of a one-off — the
+// panel previously had only a description, a count line and a button, all
+// left-aligned, leaving the whole right half of the (full-width) panel
+// visibly blank next to sibling panels that fill the width with a table.
+.nhrotm-cleanup {
+	display: flex;
+	// The copy column (paragraph + one button) is much shorter than the stat
+	// card (icon row + label + metric + subtext + button) — center-align so
+	// leftover height distributes around the shorter column instead of
+	// pooling below it as dead space.
+	align-items: center;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+.nhrotm-cleanup__copy {
+	flex: 1 1 320px;
+	min-width: 0;
+}
+
+.nhrotm-cleanup__stat {
+	flex: 0 0 220px;
+}
+
+// Dark-mode fallback for a .nhrotm-card__ico with none of the 4 tint
+// modifiers below (none exists today, but every icon badge should still get
+// a visible chip rather than falling through to the light-mode translucent
+// white, which would nearly disappear against a dark surface).
+[data-theme='dark'] .nhrotm-card:not([class*='nhrotm-card--']) .nhrotm-card__ico {
 	background: rgba(255, 255, 255, 0.08);
 }
 @media (prefers-color-scheme: dark) {
-	.nhrotm-app:not([data-theme='light']) .nhrotm-card__ico {
+	.nhrotm-app:not([data-theme='light'])
+		.nhrotm-card:not([class*='nhrotm-card--'])
+		.nhrotm-card__ico {
 		background: rgba(255, 255, 255, 0.08);
 	}
 }
 
 // ---- Optimize/Tools: jump nav (reuses .nhrotm-segmented below) ----
-// Not `position: sticky` — .nhrotm-app has `overflow: hidden` (for its
-// rounded-corner clipping), which is a scroll-containing ancestor that
-// breaks sticky for any descendant relative to the real (document-level)
-// scroll. In-flow quick-jump strip instead: still scrolls its target panel
-// into view, just doesn't stay pinned once scrolled past.
+// Bare — no background/border/padding of its own — so this sits exactly like
+// Browse's segmented type switcher (.nhrotm-browse__toolbar > .nhrotm-segmented):
+// directly under the screen header, same 16px bottom margin, nothing framing
+// it. It used to carry its own surface-coloured strip with a bottom border,
+// which read as a boxed "tab bar" distinct from Browse's bare pill — same
+// underlying control, two different visual treatments. The strip's vertical
+// padding also had no horizontal counterpart, so the pill's left edge sat
+// flush against the strip's edge instead of getting the inset every other
+// bordered surface in the app gets.
 .nhrotm-jumpnav {
-	background: var(--nhrotm-surface);
-	border-bottom: 1px solid var(--nhrotm-border);
-	padding: 10px 0;
-	margin: -8px 0 16px;
+	margin: 0 0 16px;
 }
 
 // ---- Browse: toolbar, segmented switcher, grid, pager ----
@@ -848,6 +964,16 @@
 	flex-wrap: wrap;
 	// Always its own row — see the comment on .nhrotm-browse__toolbar above.
 	flex-basis: 100%;
+
+	// Bulk action / Add / filters render first in markup (left group); the
+	// search box is always last, and this margin pushes it to the row's right
+	// edge — isolating free-text search from the structured controls beside
+	// it, without a wrapper div per side. Falls back to wrapping onto its own
+	// line (still right-edge-anchored via the same auto margin) on narrow
+	// viewports rather than fighting flex-wrap.
+	.nhrotm-search {
+		margin-left: auto;
+	}
 }
 
 // Scoped to `.nhrotm-app` (not just the bare class) so this beats WP core's
@@ -892,10 +1018,10 @@
 	// WP core's `input[type=search]:focus` sets its own border-color and
 	// box-shadow ring (themed to the admin colour scheme's accent colour) —
 	// each is a separate declaration that keeps applying unless redeclared,
-	// even once our selector's specificity wins the cascade. No focus ring
-	// here at all — same treatment as the app-bar link.
+	// even once our selector's specificity wins the cascade. Focus gets the
+	// same darkened border as hover, no box-shadow ring of our own.
 	&:focus {
-		border-color: var(--nhrotm-border-strong);
+		border-color: var(--nhrotm-text-muted);
 		outline: none;
 		box-shadow: none;
 	}
@@ -918,7 +1044,7 @@
 
 	&:focus {
 		outline: none;
-		border-color: var(--nhrotm-border-strong);
+		border-color: var(--nhrotm-text-muted);
 		box-shadow: none;
 	}
 }
@@ -954,7 +1080,7 @@
 
 		&:focus {
 			outline: none;
-			border-color: var(--nhrotm-border-strong);
+			border-color: var(--nhrotm-text-muted);
 			box-shadow: none;
 		}
 	}
@@ -1134,8 +1260,12 @@
 	col.nhrotm-col-owner {
 		width: 150px;
 	}
+	// A high-traffic option's real hit count (e.g. "15044 usages") is wider
+	// than a flat status word — 110px only fit short labels like "Unused"/
+	// "Untracked" and forced the pill to wrap onto a second line for any
+	// option with a large tracked count.
 	col.nhrotm-col-usage {
-		width: 110px;
+		width: 150px;
 	}
 	col.nhrotm-col-act {
 		width: 210px;
@@ -1145,6 +1275,16 @@
 	// two-button (Edit + Delete) rows and left a visibly empty gutter here.
 	col.nhrotm-col-act-sm {
 		width: 168px;
+	}
+	// A plain numeric count (e.g. Backups' "Options" column) — narrower than
+	// a badge, wider than a bare 2-3 digit number needs to avoid feeling cramped.
+	col.nhrotm-col-count {
+		width: 90px;
+	}
+	// A formatted date (e.g. Backups' "Created" column, wp_date()'s
+	// site-configured date_format) — no existing column needed this before.
+	col.nhrotm-col-date {
+		width: 170px;
 	}
 
 	th,
@@ -1334,6 +1474,25 @@
 	}
 }
 
+// Every other .nhrotm-grid table (Browse, Optimize, Backups) has a known,
+// fixed set of columns and renders an explicit <colgroup> of nhrotm-col-*
+// widths that add up sensibly under the base table-layout:fixed above.
+// Integrations' table doesn't — its columns come straight from a third-party
+// plugin's own DB schema (Better Payment's table alone has 15+), so there's
+// no <colgroup> and no per-column width to give it. Under table-layout:fixed
+// with no <colgroup>, the browser still has to divide the table's fixed
+// 100%-of-container width across however many columns showed up, so each
+// one gets a sliver far narrower than its (nowrap) header text — which then
+// overflows out of its cell and on top of the neighbours instead of wrapping
+// or scrolling. table-layout:auto here lets the table size itself to its
+// content instead and grow past the container, so .nhrotm-grid__scroll's
+// existing overflow-x:auto can actually do its job.
+.nhrotm-grid--fluid {
+	table-layout: auto;
+	width: auto;
+	min-width: 100%;
+}
+
 // Placeholder rows shown while a type/sort/search/page change is loading, so
 // the grid keeps roughly its prior row count instead of collapsing to a
 // single "Loading…" line and jumping back once data arrives.
@@ -1418,6 +1577,12 @@
 	font-weight: 600;
 	line-height: 1.6;
 	text-transform: capitalize;
+	// A pill shape wrapping onto a second line reads as broken (the rounded
+	// background stretches into an oval around two stacked lines instead of
+	// hugging one) — every badge label in this app is short by design, so
+	// force it to one line and let the column width (not the badge) decide
+	// when content is genuinely too long.
+	white-space: nowrap;
 
 	// Optional leading status dot (autoload On/Off, transient status).
 	&--dot::before {
@@ -1507,12 +1672,11 @@
 				border-color: var(--nhrotm-text-muted);
 			}
 
-			// Had no focus handling at all — WP core's default themed ring
-			// showed unmodified. Same treatment as .nhrotm-field/search: hover
-			// darkens, focus changes nothing beyond resetting WP core's ring.
+			// Focus gets the same darkened border as hover, beyond resetting
+			// WP core's own themed ring/outline.
 			&:focus {
 				outline: none;
-				border-color: var(--nhrotm-border-strong);
+				border-color: var(--nhrotm-text-muted);
 				box-shadow: none;
 			}
 		}
@@ -1630,6 +1794,9 @@
 
 // Text link used in a panel header, e.g. "View all →".
 .nhrotm-linkbtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
 	border: 0;
 	padding: 0;
 	background: none;
@@ -1874,6 +2041,105 @@
 		resize: vertical;
 		background: var(--nhrotm-surface);
 		color: var(--nhrotm-text);
+	}
+}
+
+// Tools → Import's file picker — a clickable, custom-bordered dropzone
+// (same border/radius treatment as every other input) that also accepts
+// drag-and-drop, wrapping a visually-hidden native <input type="file">
+// underneath for accessibility rather than replacing it outright.
+.nhrotm-dropzone {
+	position: relative;
+	border: 1px dashed var(--nhrotm-border-strong);
+	border-radius: 10px;
+	padding: 20px;
+	text-align: center;
+	cursor: pointer;
+	background: var(--nhrotm-surface);
+	transition: border-color 150ms, background-color 150ms;
+
+	&:hover,
+	&:focus-visible {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	&:focus-visible {
+		outline: none;
+	}
+
+	&.is-active {
+		border-color: var(--nhrotm-primary);
+		background: var(--nhrotm-hover);
+	}
+
+	&__input {
+		// Visually hidden but still keyboard/AT-reachable — not display:none,
+		// which would drop it from the accessibility tree entirely.
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	&__empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		color: var(--nhrotm-text-muted);
+		font-size: 13px;
+
+		svg {
+			opacity: 0.7;
+		}
+	}
+
+	&__file {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		color: var(--nhrotm-text);
+		font-size: 13px;
+		font-weight: 500;
+
+		span {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			max-width: 320px;
+		}
+	}
+
+	&__clear {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		flex: 0 0 auto;
+
+		&:hover {
+			background: var(--nhrotm-bg);
+			color: var(--nhrotm-text);
+		}
+	}
+
+	&__divider {
+		margin: 12px 0;
+		text-align: center;
+		color: var(--nhrotm-text-muted);
+		font-size: 12px;
 	}
 }
 

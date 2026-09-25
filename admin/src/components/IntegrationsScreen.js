@@ -86,6 +86,12 @@ export default function IntegrationsScreen() {
 			<Panel
 				title={ __( 'Integrations', 'nhrrob-options-table-manager' ) }
 			>
+				<p className="nhrotm-muted">
+					{ __(
+						'Read-only. Browse the tables of supported third-party plugins directly — no editing or deleting here.',
+						'nhrrob-options-table-manager'
+					) }
+				</p>
 				<div className="nhrotm-segmented">
 					{ list.map( ( it ) => (
 						<button
@@ -106,7 +112,7 @@ export default function IntegrationsScreen() {
 				</div>
 
 				<div className="nhrotm-grid__scroll">
-					<table className="nhrotm-grid">
+					<table className="nhrotm-grid nhrotm-grid--fluid">
 						<thead>
 							<tr>
 								{ rows.columns.map( ( c ) => (
@@ -131,10 +137,7 @@ export default function IntegrationsScreen() {
 								rows.items.map( ( row, i ) => (
 									<tr key={ i }>
 										{ rows.columns.map( ( c ) => (
-											<td
-												key={ c }
-												className="nhrotm-grid__preview"
-											>
+											<td key={ c }>
 												{ String( row[ c ] ).slice(
 													0,
 													60

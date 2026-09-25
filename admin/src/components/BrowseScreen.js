@@ -11,8 +11,8 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
 import EditModal from './EditModal';
+import FilterControl from './FilterControl';
 import Icon from './Icon';
-import IdLookupFilter from './IdLookupFilter';
 import ScreenHeader from './ScreenHeader';
 import { useConfirm } from './ConfirmProvider';
 import { useToast } from './ToastProvider';
@@ -79,8 +79,15 @@ const ADDED_MESSAGE = {
 export default function BrowseScreen( { focus } ) {
 	const confirm = useConfirm();
 	const toast = useToast();
-	const [ type, setType ] = useState( 'options' );
-	const [ search, setSearch ] = useState( '' );
+	// Seeded from focus.browseFilter (if arriving pre-filtered, e.g. Optimize's
+	// orphan-count or expired-transients links) so the very first load already
+	// carries the filter — deriving it via a separate effect after mount would
+	// fire a second, racy load() (unfiltered first, then filtered) where
+	// whichever response lands last wins, sometimes leaving the grid showing
+	// unfiltered rows under a search box that already reads e.g. "default_".
+	const initialBrowseFilter = ( focus && focus.browseFilter ) || {};
+	const [ type, setType ] = useState( initialBrowseFilter.type || 'options' );
+	const [ search, setSearch ] = useState( initialBrowseFilter.search || '' );
 	const [ page, setPage ] = useState( 1 );
 	const [ perPage, setPerPage ] = useState( 20 );
 	// Newest first by default (option_id/umeta_id is the closest proxy for
@@ -88,12 +95,20 @@ export default function BrowseScreen( { focus } ) {
 	const [ orderby, setOrderby ] = useState( 'id' );
 	const [ order, setOrder ] = useState( 'desc' );
 	// Transients only — active | expired | persistent, '' = all.
-	const [ transientStatus, setTransientStatus ] = useState( '' );
+	const [ transientStatus, setTransientStatus ] = useState(
+		initialBrowseFilter.status || ''
+	);
 	// Transients only — guessed owner label ('WordPress Core', a plugin
 	// name, or 'Unknown'), '' = all. Options come from the server, which
 	// derives them from the same list the rows themselves carry.
 	const [ transientOwner, setTransientOwner ] = useState( '' );
 	const [ transientOwners, setTransientOwners ] = useState( [] );
+	// Options tab's own owner filter — same shape as transients' above, kept
+	// as a separate pair of state so switching tabs doesn't mix the two
+	// facets (an option owner label and a transient owner label can differ
+	// even when both are non-empty, since each is scoped to its own query).
+	const [ optionOwner, setOptionOwner ] = useState( '' );
+	const [ optionOwners, setOptionOwners ] = useState( [] );
 	// Postmeta/usermeta only — filter to a single post/user id, 0 = all.
 	// The label is kept alongside the id purely for display (IdLookupFilter
 	// shows the resolved title/name instead of a bare number) and is reset
@@ -134,6 +149,9 @@ export default function BrowseScreen( { focus } ) {
 				( 'transients' === type && transientOwner
 					? `&owner=${ encodeURIComponent( transientOwner ) }`
 					: '' ) +
+				( 'options' === type && optionOwner
+					? `&owner=${ encodeURIComponent( optionOwner ) }`
+					: '' ) +
 				( 'postmeta' === type && postIdFilter
 					? `&post_id=${ encodeURIComponent( postIdFilter ) }`
 					: '' ) +
@@ -145,6 +163,7 @@ export default function BrowseScreen( { focus } ) {
 				setData( res.data );
 				typeRowCountRef.current[ type ] = res.data.items.length;
 				setTransientOwners( res.data.owners || [] );
+				setOptionOwners( res.data.owners || [] );
 				setStatus( 'ready' );
 			} )
 			.catch( () => setStatus( 'error' ) );
@@ -159,6 +178,7 @@ export default function BrowseScreen( { focus } ) {
 		search,
 		transientStatus,
 		transientOwner,
+		optionOwner,
 		postIdFilter,
 		userIdFilter,
 		reloadTick,
@@ -168,13 +188,18 @@ export default function BrowseScreen( { focus } ) {
 		load();
 	}, [ load ] );
 
-	// Land pre-filtered when arriving via a link from another screen, e.g.
-	// Optimize's "N expired transients" → Browse, Transients, status=expired.
+	// Re-applies the filter on a repeat click of the same deep link while
+	// already mounted (initial arrival is handled by the lazy useState
+	// initializers above, which avoid firing a second, racy load()).
 	useEffect( () => {
 		if ( ! focus || ! focus.browseFilter ) {
 			return;
 		}
-		const { type: filterType, status: filterStatus } = focus.browseFilter;
+		const {
+			type: filterType,
+			status: filterStatus,
+			search: filterSearch,
+		} = focus.browseFilter;
 		if ( filterType ) {
 			setType( filterType );
 		}
@@ -182,7 +207,7 @@ export default function BrowseScreen( { focus } ) {
 			setTransientStatus( filterStatus );
 		}
 		setPage( 1 );
-		setSearch( '' );
+		setSearch( filterSearch || '' );
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ focus && focus.seq ] );
 
@@ -364,6 +389,7 @@ export default function BrowseScreen( { focus } ) {
 		setOrder( 'desc' );
 		setTransientStatus( '' );
 		setTransientOwner( '' );
+		setOptionOwner( '' );
 		setPostIdFilter( 0 );
 		setPostIdLabel( '' );
 		setUserIdFilter( 0 );
@@ -402,9 +428,14 @@ export default function BrowseScreen( { focus } ) {
 		);
 	};
 
+	// Options has an extra Owner column (see the colgroup/thead above) that no
+	// other type carries — column counts below branch on that everywhere a
+	// fixed count would otherwise silently misalign colSpan or skeleton cells.
+	const columnCount = type === 'options' ? 7 : 6;
+
 	const messageRow = ( text ) => (
 		<tr>
-			<td colSpan={ 6 } className="nhrotm-muted">
+			<td colSpan={ columnCount } className="nhrotm-muted">
 				{ text }
 			</td>
 		</tr>
@@ -418,6 +449,14 @@ export default function BrowseScreen( { focus } ) {
 			<td>
 				<span className="nhrotm-skeleton" style={ { width: '70%' } } />
 			</td>
+			{ type === 'options' && (
+				<td>
+					<span
+						className="nhrotm-skeleton"
+						style={ { width: '60%' } }
+					/>
+				</td>
+			) }
 			<td>
 				<span className="nhrotm-skeleton" style={ { width: '85%' } } />
 			</td>
@@ -478,6 +517,15 @@ export default function BrowseScreen( { focus } ) {
 						</span>
 					) }
 				</td>
+				{ type === 'options' && (
+					<td title={ item.owner }>
+						{ 'Unknown' === item.owner ? (
+							<span className="nhrotm-muted">{ item.owner }</span>
+						) : (
+							item.owner
+						) }
+					</td>
+				) }
 				<td title={ item.preview }>
 					<div className="nhrotm-grid__preview">{ item.preview }</div>
 				</td>
@@ -574,6 +622,145 @@ export default function BrowseScreen( { focus } ) {
 	const from = data.total === 0 ? 0 : ( page - 1 ) * perPage + 1;
 	const to = Math.min( page * perPage, data.total );
 
+	// One toolbar filter set per type, as plain descriptors FilterControl
+	// renders — adding a filter to a type (or a filter to a new type) is a
+	// config entry here, not a new hand-rolled `{ type === 'x' && <select>… }`
+	// block below.
+	const TYPE_FILTERS = {
+		options: [
+			...( optionOwners.length > 0
+				? [
+						{
+							key: 'owner',
+							label: __(
+								'Filter by owner',
+								'nhrrob-options-table-manager'
+							),
+							options: [
+								{
+									value: '',
+									label: __(
+										'All owners',
+										'nhrrob-options-table-manager'
+									),
+								},
+								...optionOwners.map( ( label ) => ( {
+									value: label,
+									label,
+								} ) ),
+							],
+							value: optionOwner,
+							onChange: ( v ) => {
+								setPage( 1 );
+								setOptionOwner( v );
+							},
+						},
+				  ]
+				: [] ),
+		],
+		transients: [
+			{
+				key: 'status',
+				label: __( 'Filter by status', 'nhrrob-options-table-manager' ),
+				options: [
+					{
+						value: '',
+						label: __(
+							'All statuses',
+							'nhrrob-options-table-manager'
+						),
+					},
+					{
+						value: 'active',
+						label: __( 'Active', 'nhrrob-options-table-manager' ),
+					},
+					{
+						value: 'expired',
+						label: __( 'Expired', 'nhrrob-options-table-manager' ),
+					},
+					{
+						value: 'persistent',
+						label: __(
+							'Persistent',
+							'nhrrob-options-table-manager'
+						),
+					},
+				],
+				value: transientStatus,
+				onChange: ( v ) => {
+					setPage( 1 );
+					setTransientStatus( v );
+				},
+			},
+			...( transientOwners.length > 0
+				? [
+						{
+							key: 'owner',
+							label: __(
+								'Filter by owner',
+								'nhrrob-options-table-manager'
+							),
+							options: [
+								{
+									value: '',
+									label: __(
+										'All owners',
+										'nhrrob-options-table-manager'
+									),
+								},
+								...transientOwners.map( ( label ) => ( {
+									value: label,
+									label,
+								} ) ),
+							],
+							value: transientOwner,
+							onChange: ( v ) => {
+								setPage( 1 );
+								setTransientOwner( v );
+							},
+						},
+				  ]
+				: [] ),
+		],
+		postmeta: [
+			{
+				key: 'post',
+				type: 'lookup',
+				target: 'post',
+				label: __( 'Filter by post', 'nhrrob-options-table-manager' ),
+				placeholder: __(
+					'Filter by post…',
+					'nhrrob-options-table-manager'
+				),
+				value: { id: postIdFilter, label: postIdLabel },
+				onChange: ( { id, label } ) => {
+					setPage( 1 );
+					setPostIdFilter( id );
+					setPostIdLabel( label );
+				},
+			},
+		],
+		usermeta: [
+			{
+				key: 'user',
+				type: 'lookup',
+				target: 'user',
+				label: __( 'Filter by user', 'nhrrob-options-table-manager' ),
+				placeholder: __(
+					'Filter by user…',
+					'nhrrob-options-table-manager'
+				),
+				value: { id: userIdFilter, label: userIdLabel },
+				onChange: ( { id, label } ) => {
+					setPage( 1 );
+					setUserIdFilter( id );
+					setUserIdLabel( label );
+				},
+			},
+		],
+	};
+	const activeFilters = TYPE_FILTERS[ type ] || [];
+
 	return (
 		<div className="nhrotm-browse">
 			<ScreenHeader
@@ -622,111 +809,14 @@ export default function BrowseScreen( { focus } ) {
 						{ ADD_LABEL[ type ] ||
 							__( 'Add record', 'nhrrob-options-table-manager' ) }
 					</button>
-					{ type === 'transients' && (
-						<select
-							className="nhrotm-browse__statusfilter"
-							value={ transientStatus }
-							onChange={ ( e ) => {
-								setPage( 1 );
-								setTransientStatus( e.target.value );
-							} }
-							aria-label={ __(
-								'Filter by status',
-								'nhrrob-options-table-manager'
-							) }
-						>
-							<option value="">
-								{ __(
-									'All statuses',
-									'nhrrob-options-table-manager'
-								) }
-							</option>
-							<option value="active">
-								{ __(
-									'Active',
-									'nhrrob-options-table-manager'
-								) }
-							</option>
-							<option value="expired">
-								{ __(
-									'Expired',
-									'nhrrob-options-table-manager'
-								) }
-							</option>
-							<option value="persistent">
-								{ __(
-									'Persistent',
-									'nhrrob-options-table-manager'
-								) }
-							</option>
-						</select>
-					) }
-					{ type === 'transients' && transientOwners.length > 0 && (
-						<select
-							className="nhrotm-browse__statusfilter"
-							value={ transientOwner }
-							onChange={ ( e ) => {
-								setPage( 1 );
-								setTransientOwner( e.target.value );
-							} }
-							aria-label={ __(
-								'Filter by owner',
-								'nhrrob-options-table-manager'
-							) }
-						>
-							<option value="">
-								{ __(
-									'All owners',
-									'nhrrob-options-table-manager'
-								) }
-							</option>
-							{ transientOwners.map( ( label ) => (
-								<option key={ label } value={ label }>
-									{ label }
-								</option>
-							) ) }
-						</select>
-					) }
-					{ type === 'postmeta' && (
-						<IdLookupFilter
-							target="post"
-							value={ postIdFilter }
-							label={ postIdLabel }
-							placeholder={ __(
-								'Filter by post…',
-								'nhrrob-options-table-manager'
-							) }
-							ariaLabel={ __(
-								'Filter by post',
-								'nhrrob-options-table-manager'
-							) }
-							onChange={ ( id, itemLabel ) => {
-								setPage( 1 );
-								setPostIdFilter( id );
-								setPostIdLabel( itemLabel );
-							} }
+					{ activeFilters.map( ( f ) => (
+						<FilterControl
+							key={ f.key }
+							descriptor={ f }
+							value={ f.value }
+							onChange={ f.onChange }
 						/>
-					) }
-					{ type === 'usermeta' && (
-						<IdLookupFilter
-							target="user"
-							value={ userIdFilter }
-							label={ userIdLabel }
-							placeholder={ __(
-								'Filter by user…',
-								'nhrrob-options-table-manager'
-							) }
-							ariaLabel={ __(
-								'Filter by user',
-								'nhrrob-options-table-manager'
-							) }
-							onChange={ ( id, itemLabel ) => {
-								setPage( 1 );
-								setUserIdFilter( id );
-								setUserIdLabel( itemLabel );
-							} }
-						/>
-					) }
+					) ) }
 					<span className="nhrotm-search">
 						<Icon name="search" size={ 15 } />
 						<input
@@ -785,6 +875,9 @@ export default function BrowseScreen( { focus } ) {
 							<colgroup>
 								<col className="nhrotm-col-check" />
 								<col className="nhrotm-col-name" />
+								{ type === 'options' && (
+									<col className="nhrotm-col-owner" />
+								) }
 								<col />
 								<col className="nhrotm-col-size" />
 								<col className="nhrotm-col-badge" />
@@ -802,6 +895,17 @@ export default function BrowseScreen( { focus } ) {
 											sortKey="name"
 										/>
 									</th>
+									{ type === 'options' && (
+										<th>
+											<SortHeader
+												label={ __(
+													'Owner',
+													'nhrrob-options-table-manager'
+												) }
+												sortKey="owner"
+											/>
+										</th>
+									) }
 									<th>
 										{ __(
 											'Value',

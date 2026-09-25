@@ -1,582 +1,626 @@
 <?php
+/**
+ * DataTables-backed manager for the wp_options table.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager\Managers;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Exception;
 
-class OptionsTableManager extends BaseTableManager
-{
+/**
+ * Class OptionsTableManager
+ *
+ * DataTables view over wp_options with server-side search, sort and
+ * pagination, plus add/edit/delete, bulk delete, expired-transient cleanup and
+ * usage analytics. Every write is logged to HistoryManager so it can be
+ * restored, and protected core options are blocked from edits and deletes.
+ */
+class OptionsTableManager extends BaseTableManager {
 
-    private $history_manager;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->table_name = ($this->wpdb && property_exists($this->wpdb, 'prefix'))
-            ? $this->wpdb->prefix . 'options'
-            : 'wp_options';
+	/**
+	 * Change log used to record and restore option writes.
+	 *
+	 * @var HistoryManager
+	 */
+	private $history_manager;
 
-        $this->history_manager = new HistoryManager();
-    }
+	/**
+	 * Bind the manager to the wp_options table and its history log.
+	 */
+	public function __construct() {
+		parent::__construct();
+		$this->table_name = ( $this->wpdb && property_exists( $this->wpdb, 'prefix' ) )
+			? $this->wpdb->prefix . 'options'
+			: 'wp_options';
 
-    /**
-     * Retrieve options data
-     * 
-     * @return array Options data
-     */
-    public function get_data()
-    {
-        // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+		$this->history_manager = new HistoryManager();
+	}
 
-        $this->validate_permissions();
+	/**
+	 * Retrieve options data
+	 *
+	 * @return array Options data
+	 * @throws \Exception When the nonce is missing/invalid or the user lacks permission.
+	 */
+	public function get_data() {
+		// Verify nonce.
+		if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        global $wpdb;
+		$this->validate_permissions();
 
-        $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
-        $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
+		global $wpdb;
 
-        // Search parameter
-        $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
-        $option_type_filter = isset($_GET['optionTypeFilter']) && in_array($_GET['optionTypeFilter'], ['all-options', 'all-transients', 'active-transients', 'expired-transients']) ? sanitize_text_field(wp_unslash($_GET['optionTypeFilter'])) : 'all-options';
+		$start  = isset( $_GET['start'] ) ? intval( $_GET['start'] ) : 0;
+		$length = isset( $_GET['length'] ) ? intval( $_GET['length'] ) : 10;
 
-        // Sorting parameters
-        $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower(sanitize_text_field(wp_unslash($_GET['order'][0]['dir']))) : 'asc';
+		// Search parameter.
+		$search             = isset( $_GET['search']['value'] ) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
+		$option_type_filter = isset( $_GET['optionTypeFilter'] ) && in_array( $_GET['optionTypeFilter'], [ 'all-options', 'all-transients', 'active-transients', 'expired-transients' ], true ) ? sanitize_text_field( wp_unslash( $_GET['optionTypeFilter'] ) ) : 'all-options';
 
-        $columns = $this->get_searchable_columns();
+		// Sorting parameters.
+		$order_column_index = isset( $_GET['order'][0]['column'] ) ? intval( $_GET['order'][0]['column'] ) : 0;
+		$order_direction    = isset( $_GET['order'][0]['dir'] ) && in_array( $_GET['order'][0]['dir'], [ 'asc', 'desc' ], true ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['order'][0]['dir'] ) ) ) : 'asc';
 
-        // Ensure order column is valid using whitelist approach
-        if ($order_column_index < 0 || $order_column_index >= count($columns)) {
-            $order_column_index = 1; // Default to 'option_id' (index 1)
-        }
-        $order_column = $columns[$order_column_index];
+		$columns = $this->get_searchable_columns();
 
-        if (empty($order_column)) {
-            $order_column = 'option_id';
-        }
+		// Ensure order column is valid using whitelist approach.
+		if ( $order_column_index < 0 || $order_column_index >= count( $columns ) ) {
+			$order_column_index = 1; // Default to 'option_id' (index 1).
+		}
+		$order_column = $columns[ $order_column_index ];
 
-        $table = $this->table_name;
+		if ( empty( $order_column ) ) {
+			$order_column = 'option_id';
+		}
+
+		$table = $this->table_name;
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+		$total_records = $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
         // phpcs:enable
 
-        // Get column search values
-        $column_search = [];
-        if (isset($_GET['columns']) && is_array($_GET['columns'])) {
+		// Get column search values.
+		$column_search = [];
+		if ( isset( $_GET['columns'] ) && is_array( $_GET['columns'] ) ) {
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $columns = $this->validation_service->sanitize_recursive(wp_unslash($_GET['columns']));
+			$columns = $this->validation_service->sanitize_recursive( wp_unslash( $_GET['columns'] ) );
 
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            foreach ($_GET['columns'] as $column) {
-                if (isset($column['search']['value'])) {
-                    $column_search[] = sanitize_text_field(wp_unslash($column['search']['value']));
-                } else {
-                    $column_search[] = '';
-                }
-            }
-        }
+			foreach ( $_GET['columns'] as $column ) {
+				if ( isset( $column['search']['value'] ) ) {
+					$column_search[] = sanitize_text_field( wp_unslash( $column['search']['value'] ) );
+				} else {
+					$column_search[] = '';
+				}
+			}
+		}
 
-        // Build WHERE clause for search conditions
-        $where_clauses = [];
+		// Build WHERE clause for search conditions.
+		$where_clauses = [];
 
-        // Global search
-        if (!empty($search)) {
-            $search_like = '%' . $this->wpdb->esc_like($search) . '%';
-            $where_clauses[] = $this->wpdb->prepare(
-                "(option_name LIKE %s OR option_value LIKE %s)",
-                $search_like,
-                $search_like
-            );
-        }
+		// Global search.
+		if ( ! empty( $search ) ) {
+			$search_like     = '%' . $this->wpdb->esc_like( $search ) . '%';
+			$where_clauses[] = $this->wpdb->prepare(
+				'(option_name LIKE %s OR option_value LIKE %s)',
+				$search_like,
+				$search_like
+			);
+		}
 
-        // Individual column searches
-        if (!empty($column_search)) {
-            // checkbox column (index 0) - Ignore/Not searchable via specific field in this implementation
+		// Individual column searches.
+		if ( ! empty( $column_search ) ) {
+			// checkbox column (index 0) - Ignore/Not searchable via specific field in this implementation.
 
-            // option_id column (index 1)
-            if (!empty($column_search[1])) {
-                // For numeric column, use exact match or range
-                if (is_numeric($column_search[1])) {
-                    $where_clauses[] = $this->wpdb->prepare("option_id = %d", intval($column_search[1]));
-                }
-            }
+			// option_id column (index 1).
+			if ( ! empty( $column_search[1] ) ) {
+				// For numeric column, use exact match or range.
+				if ( is_numeric( $column_search[1] ) ) {
+					$where_clauses[] = $this->wpdb->prepare( 'option_id = %d', intval( $column_search[1] ) );
+				}
+			}
 
-            // option_name column (index 2)
-            if (!empty($column_search[2])) {
-                $where_clauses[] = $this->wpdb->prepare(
-                    "option_name LIKE %s",
-                    '%' . $this->wpdb->esc_like($column_search[2]) . '%'
-                );
-            }
+			// option_name column (index 2).
+			if ( ! empty( $column_search[2] ) ) {
+				$where_clauses[] = $this->wpdb->prepare(
+					'option_name LIKE %s',
+					'%' . $this->wpdb->esc_like( $column_search[2] ) . '%'
+				);
+			}
 
-            // option_value column (index 3)
-            if (!empty($column_search[3])) {
-                $where_clauses[] = $this->wpdb->prepare(
-                    "option_value LIKE %s",
-                    '%' . $this->wpdb->esc_like($column_search[3]) . '%'
-                );
-            }
+			// option_value column (index 3).
+			if ( ! empty( $column_search[3] ) ) {
+				$where_clauses[] = $this->wpdb->prepare(
+					'option_value LIKE %s',
+					'%' . $this->wpdb->esc_like( $column_search[3] ) . '%'
+				);
+			}
 
-            // autoload column (index 4)
-            if (!empty($column_search[4])) {
-                $where_clauses[] = $this->wpdb->prepare(
-                    "autoload LIKE %s",
-                    '%' . $this->wpdb->esc_like($column_search[4]) . '%'
-                );
-            }
-        }
+			// autoload column (index 4).
+			if ( ! empty( $column_search[4] ) ) {
+				$where_clauses[] = $this->wpdb->prepare(
+					'autoload LIKE %s',
+					'%' . $this->wpdb->esc_like( $column_search[4] ) . '%'
+				);
+			}
+		}
 
-        // Combine WHERE clauses
-        $where_sql = ' WHERE 1=1';
-        if (!empty($where_clauses)) {
-            $where_sql .= ' AND ' . implode(' AND ', $where_clauses);
-        }
+		// Combine WHERE clauses.
+		$where_sql = ' WHERE 1=1';
+		if ( ! empty( $where_clauses ) ) {
+			$where_sql .= ' AND ' . implode( ' AND ', $where_clauses );
+		}
 
-        // Count filtered records
+		// Count filtered records.
         // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
-        $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}options {$where_sql}";
-        $filtered_records = $this->wpdb->get_var($filtered_records_sql);
+		$filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}options {$where_sql}";
+		$filtered_records     = $this->wpdb->get_var( $filtered_records_sql );
 
-        // SQL for ordering
-        $order_sql = " ORDER BY $order_column $order_direction";
+		// SQL for ordering.
+		$order_sql = " ORDER BY $order_column $order_direction";
 
-        // Get data with search, order, and pagination
-        $data_sql = "SELECT * FROM {$this->wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
-        $data = $this->wpdb->get_results(
-            $this->wpdb->prepare($data_sql, $start, $length),
-            ARRAY_A
-        );
+		// Get data with search, order, and pagination.
+		$data_sql = "SELECT * FROM {$this->wpdb->prefix}options {$where_sql} {$order_sql} LIMIT %d, %d";
+		$data     = $this->wpdb->get_results(
+			$this->wpdb->prepare( $data_sql, $start, $length ),
+			ARRAY_A
+		);
         // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
 
-        // Wrap the option_value in the scrollable-cell div
-        foreach ($data as &$row) {
-            $is_protected = in_array($row['option_name'], $this->get_protected_options());
-            $protected_attr = $is_protected ? sprintf('title="%s" disabled', esc_attr__('Protected', 'nhrrob-options-table-manager')) : '';
+		// Wrap the option_value in the scrollable-cell div.
+		foreach ( $data as &$row ) {
+			$is_protected   = in_array( $row['option_name'], $this->get_protected_options(), true );
+			$protected_attr = $is_protected ? sprintf( 'title="%s" disabled', esc_attr__( 'Protected', 'nhrrob-options-table-manager' ) ) : '';
 
-            if ('all-transients' === $option_type_filter) {
-                // all options are transients
-                $transient_name = str_replace('_transient_', '', $row['option_name']);
-                $transient_value = get_transient($transient_name);
+			if ( 'all-transients' === $option_type_filter ) {
+				// all options are transients.
+				$transient_name  = str_replace( '_transient_', '', $row['option_name'] );
+				$transient_value = get_transient( $transient_name );
 
-                $transient_status = $transient_value ? '[active]' : '[expired]';
-                $row['option_name'] = esc_html($transient_status . $row['option_name']);
-            }
+				$transient_status   = $transient_value ? '[active]' : '[expired]';
+				$row['option_name'] = esc_html( $transient_status . $row['option_name'] );
+			}
 
-            $row['option_value'] = '<div class="scrollable-cell">' . esc_html($row['option_value']) . '</div>';
+			$row['option_value'] = '<div class="scrollable-cell">' . esc_html( $row['option_value'] ) . '</div>';
 
-            $row['actions'] = sprintf(
-                '<button class="nhrotm-edit-button" data-id="%s" %s>Edit</button>
+			$row['actions'] = sprintf(
+				'<button class="nhrotm-edit-button" data-id="%s" %s>Edit</button>
                 <button class="nhrotm-history-button" data-option-name="%s">History</button>
                 <button class="nhrotm-delete-button" data-id="%s" %s>Delete</button>',
-                esc_attr($row['option_id']),
-                $protected_attr,
-                esc_attr($row['option_name']),
-                esc_attr($row['option_id']),
-                $protected_attr,
-            );
-        }
+				esc_attr( $row['option_id'] ),
+				$protected_attr,
+				esc_attr( $row['option_name'] ),
+				esc_attr( $row['option_id'] ),
+				$protected_attr,
+			);
+		}
 
-        // Prepare response for DataTables
-        $response = array(
-            "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
-            "recordsTotal" => $total_records,
-            "recordsFiltered" => $filtered_records,
-            "data" => $data
-        );
+		// Prepare response for DataTables.
+		$response = array(
+			'draw'            => isset( $_GET['draw'] ) ? intval( $_GET['draw'] ) : 0,
+			'recordsTotal'    => $total_records,
+			'recordsFiltered' => $filtered_records,
+			'data'            => $data,
+		);
 
-        return $response;
-    }
+		return $response;
+	}
 
-    public function get_option()
-    {
-        // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Look up a single option by name, unserializing structured values.
+	 *
+	 * @return array Option name, value and a status message.
+	 * @throws \Exception When the nonce, permissions or option name are invalid.
+	 */
+	public function get_option() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        $this->validate_permissions();
+		$this->validate_permissions();
 
-        // Sanitize and validate input data
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field(wp_unslash($_POST['option_name'])) : '';
+		// Sanitize and validate input data.
+		$option_name = isset( $_POST['option_name'] ) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
 
-        if (empty($option_name)) {
-            throw new \Exception('Option name is required');
-        }
+		if ( empty( $option_name ) ) {
+			throw new \Exception( 'Option name is required' );
+		}
 
-        // Add the option
-        $option_value = get_option($option_name);
+		// Add the option.
+		$option_value = get_option( $option_name );
 
-        $option_value = !empty($option_value) && is_serialized($option_value) ? unserialize($option_value, ['allowed_classes' => false]) : $option_value;
+		$option_value = ! empty( $option_value ) && is_serialized( $option_value ) ? unserialize( $option_value, [ 'allowed_classes' => false ] ) : $option_value; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes:false blocks object injection; browsing/editing wp_options requires reading PHP-serialized values as WordPress itself stores them
 
-        $response = [];
+		$response = [];
 
-        if (false !== $option_value) {
-            $response['option_name'] = $option_name;
-            $response['option_value'] = $option_value;
-            $response['message'] = 'Option found successfully';
-            return $response;
-        } else {
-            $response['message'] = 'Failed to find option';
-        }
+		if ( false !== $option_value ) {
+			$response['option_name']  = $option_name;
+			$response['option_value'] = $option_value;
+			$response['message']      = 'Option found successfully';
+			return $response;
+		} else {
+			$response['message'] = 'Failed to find option';
+		}
 
-        return $response;
-    }
+		return $response;
+	}
 
-    public function add_option()
-    {
-        // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Create a new option from the submitted name, value and autoload flag.
+	 *
+	 * @return bool Success status
+	 * @throws \Exception When the nonce or permissions fail, a field is empty, or the option already exists.
+	 */
+	public function add_option() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        $this->validate_permissions();
+		$this->validate_permissions();
 
-        // Sanitize and validate input data
-        $option_name = isset($_POST['new_option_name']) ? sanitize_text_field(wp_unslash($_POST['new_option_name'])) : '';
-        $allow_html = get_option('nhrotm_allow_html_in_values', 'false') === 'true';
-        $option_value = isset($_POST['new_option_value']) ? wp_unslash($_POST['new_option_value']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below based on setting
-        $option_value = $allow_html ? $option_value : sanitize_text_field($option_value);
-        $autoload = isset($_POST['new_option_autoload']) ? sanitize_text_field(wp_unslash($_POST['new_option_autoload'])) : 'no';
+		// Sanitize and validate input data.
+		$option_name  = isset( $_POST['new_option_name'] ) ? sanitize_text_field( wp_unslash( $_POST['new_option_name'] ) ) : '';
+		$allow_html   = get_option( 'nhrotm_allow_html_in_values', 'false' ) === 'true';
+		$option_value = isset( $_POST['new_option_value'] ) ? wp_unslash( $_POST['new_option_value'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below based on setting
+		$option_value = $allow_html ? $option_value : sanitize_text_field( $option_value );
+		$autoload     = isset( $_POST['new_option_autoload'] ) ? sanitize_text_field( wp_unslash( $_POST['new_option_autoload'] ) ) : 'no';
 
-        if (empty($option_name)) {
-            throw new \Exception('Option name is required');
-        }
+		if ( empty( $option_name ) ) {
+			throw new \Exception( 'Option name is required' );
+		}
 
-        if (empty($option_value)) {
-            throw new \Exception('Option value is required');
-        }
+		if ( empty( $option_value ) ) {
+			throw new \Exception( 'Option value is required' );
+		}
 
-        if (get_option($option_name) !== false) {
-            throw new \Exception('Option name already exists');
-        }
+		if ( get_option( $option_name ) !== false ) {
+			throw new \Exception( 'Option name already exists' );
+		}
 
-        return update_option($option_name, $option_value, $autoload === 'yes');
-    }
+		return update_option( $option_name, $option_value, 'yes' === $autoload );
+	}
 
-    /**
-     * Edit an option
-     * 
-     * @return bool Success status
-     */
-    public function edit_record()
-    {
-        // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Edit an option
+	 *
+	 * @return bool Success status
+	 * @throws \Exception When the nonce or permissions fail, the option is protected, or the value is malformed.
+	 */
+	public function edit_record() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        $this->validate_permissions();
+		$this->validate_permissions();
 
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field(wp_unslash($_POST['option_name'])) : '';
+		$option_name = isset( $_POST['option_name'] ) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
 
-        if (empty($option_name)) {
-            throw new \Exception('Option name is required');
-        }
+		if ( empty( $option_name ) ) {
+			throw new \Exception( 'Option name is required' );
+		}
 
-        // BACKUP OLD VALUE BEFORE EDIT
-        $old_value = get_option($option_name);
-        if ($old_value !== false) {
-            $this->history_manager->log_change($option_name, $old_value, 'update');
-        }
+		// BACKUP OLD VALUE BEFORE EDIT.
+		$old_value = get_option( $option_name );
+		if ( false !== $old_value ) {
+			$this->history_manager->log_change( $option_name, $old_value, 'update' );
+		}
 
-        if (!isset($_POST['option_value'])) {
-            throw new \Exception('Option value is required');
-        }
+		if ( ! isset( $_POST['option_value'] ) ) {
+			throw new \Exception( 'Option value is required' );
+		}
 
-        if ($this->is_protected_item($option_name)) {
-            throw new \Exception('This option is protected and cannot be edited');
-        }
+		if ( $this->is_protected_item( $option_name ) ) {
+			throw new \Exception( 'This option is protected and cannot be edited' );
+		}
 
-        $allow_html = get_option('nhrotm_allow_html_in_values', 'false') === 'true';
-        $raw_option_value = wp_unslash($_POST['option_value']); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below based on setting
+		$allow_html       = get_option( 'nhrotm_allow_html_in_values', 'false' ) === 'true';
+		$raw_option_value = wp_unslash( $_POST['option_value'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below based on setting
 
-        try {
-            $decoded_value = json_decode($raw_option_value, true);
-        } catch (Exception $e) {
-            throw new \Exception('Error processing serialized data: ' . esc_html($e->getMessage()));
-        }
+		try {
+			$decoded_value = json_decode( $raw_option_value, true );
+		} catch ( Exception $e ) {
+			throw new \Exception( 'Error processing serialized data: ' . esc_html( $e->getMessage() ) );
+		}
 
-        $sanitized_value = '';
+		$sanitized_value = '';
 
-        if ($decoded_value !== null && json_last_error() === JSON_ERROR_NONE) {
-            // JSON value: sanitize each string leaf according to the HTML setting
-            $sanitized_value = $allow_html
-                ? $this->validation_service->sanitize_recursive_html($decoded_value)
-                : $this->validation_service->sanitize_recursive($decoded_value);
-        } else if (is_serialized($raw_option_value)) {
-            try {
-                $unserialized = unserialize($raw_option_value, ['allowed_classes' => false]);
+		if ( null !== $decoded_value && JSON_ERROR_NONE === json_last_error() ) {
+			// JSON value: sanitize each string leaf according to the HTML setting.
+			$sanitized_value = $allow_html
+				? $this->validation_service->sanitize_recursive_html( $decoded_value )
+				: $this->validation_service->sanitize_recursive( $decoded_value );
+		} elseif ( is_serialized( $raw_option_value ) ) {
+			try {
+				$unserialized = unserialize( $raw_option_value, [ 'allowed_classes' => false ] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes:false blocks object injection; browsing/editing wp_options requires reading PHP-serialized values as WordPress itself stores them
 
-                if ($unserialized === false) {
-                    throw new \Exception('Invalid serialized data format');
-                }
+				if ( false === $unserialized ) {
+					throw new \Exception( 'Invalid serialized data format' );
+				}
 
-                if (
-                    is_array($unserialized)
-                    || is_object($unserialized)
-                ) {
-                    $sanitized_value = $allow_html
-                        ? $this->validation_service->sanitize_recursive_html((array) $unserialized)
-                        : $this->validation_service->sanitize_recursive((array) $unserialized);
-                } else {
-                    $sanitized_value = $allow_html ? $unserialized : sanitize_text_field($unserialized);
-                }
+				if (
+					is_array( $unserialized )
+					|| is_object( $unserialized )
+				) {
+					$sanitized_value = $allow_html
+						? $this->validation_service->sanitize_recursive_html( (array) $unserialized )
+						: $this->validation_service->sanitize_recursive( (array) $unserialized );
+				} else {
+					$sanitized_value = $allow_html ? $unserialized : sanitize_text_field( $unserialized );
+				}
+			} catch ( \Exception $e ) {
+				// parent method has check for thrown exception.
+				throw new \Exception( 'Error processing serialized data: ' . esc_html( $e->getMessage() ) );
+			}
+		} else {
+			// Plain string/value.
+			$sanitized_value = $allow_html ? $raw_option_value : sanitize_text_field( $raw_option_value );
+		}
 
-            } catch (\Exception $e) {
-                // parent method has check for thrown exception
-                throw new \Exception('Error processing serialized data: ' . esc_html($e->getMessage()));
-            }
-        } else {
-            // Plain string/value
-            $sanitized_value = $allow_html ? $raw_option_value : sanitize_text_field($raw_option_value);
-        }
+		$autoload = isset( $_POST['autoload'] ) ? sanitize_text_field( wp_unslash( $_POST['autoload'] ) ) : null;
 
-        $autoload = isset($_POST['autoload']) ? sanitize_text_field(wp_unslash($_POST['autoload'])) : null;
+		return \update_option( $option_name, $sanitized_value, $autoload );
+	}
 
-        return \update_option($option_name, $sanitized_value, $autoload);
-    }
+	/**
+	 * Delete an option
+	 *
+	 * @return bool Success status
+	 * @throws \Exception When the nonce or permissions fail, or the option is protected.
+	 */
+	public function delete_record() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-    /**
-     * Delete an option
-     * 
-     * @param array $data Option data to delete
-     * @return bool Success status
-     */
-    public function delete_record()
-    {
-        // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+		$this->validate_permissions();
 
-        $this->validate_permissions();
+		$option_name = isset( $_POST['option_name'] ) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
 
-        $option_name = isset($_POST['option_name']) ? sanitize_text_field(wp_unslash($_POST['option_name'])) : '';
+		if ( empty( $option_name ) ) {
+			throw new \Exception( 'Option name is required' );
+		}
 
-        if (empty($option_name)) {
-            throw new \Exception('Option name is required');
-        }
+		// BACKUP OLD VALUE BEFORE DELETE.
+		$old_value = get_option( $option_name );
+		if ( false !== $old_value ) {
+			$this->history_manager->log_change( $option_name, $old_value, 'delete' );
+		}
 
-        // BACKUP OLD VALUE BEFORE DELETE
-        $old_value = get_option($option_name);
-        if ($old_value !== false) {
-            $this->history_manager->log_change($option_name, $old_value, 'delete');
-        }
+		if ( $this->is_protected_item( $option_name ) ) {
+			throw new \Exception( 'This option is protected and cannot be deleted' );
+		}
 
-        if ($this->is_protected_item($option_name)) {
-            throw new \Exception('This option is protected and cannot be deleted');
-        }
+		return delete_option( $option_name );
+	}
 
-        return delete_option($option_name);
-    }
+	/**
+	 * Bulk delete options
+	 *
+	 * @return bool Success status
+	 * @throws \Exception When the nonce or permissions fail, or no options are selected.
+	 */
+	public function bulk_delete_records() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-    /**
-     * Bulk delete options
-     * 
-     * @return bool Success status
-     */
-    public function bulk_delete_records()
-    {
-        // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
-
-        $this->validate_permissions();
+		$this->validate_permissions();
 
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in array_map below
-        $option_names = isset($_POST['option_names']) ? wp_unslash((array) $_POST['option_names']) : [];
-        $option_names = array_map('sanitize_text_field', $option_names);
+		$option_names = isset( $_POST['option_names'] ) ? wp_unslash( (array) $_POST['option_names'] ) : [];
+		$option_names = array_map( 'sanitize_text_field', $option_names );
 
-        if (empty($option_names)) {
-            throw new \Exception('No options selected');
-        }
+		if ( empty( $option_names ) ) {
+			throw new \Exception( 'No options selected' );
+		}
 
-        foreach ($option_names as $option_name) {
-            $option_name = sanitize_text_field(wp_unslash($option_name));
+		foreach ( $option_names as $option_name ) {
+			$option_name = sanitize_text_field( wp_unslash( $option_name ) );
 
-            if ($this->is_protected_item($option_name)) {
-                continue; // Skip protected items
-            }
+			if ( $this->is_protected_item( $option_name ) ) {
+				continue; // Skip protected items.
+			}
 
-            delete_option($option_name);
-        }
+			delete_option( $option_name );
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    /**
-     * Delete an expired transient
-     * 
-     * @param array $data Option data to delete
-     * @return array Success status and count
-     */
-    public function delete_expired_transients()
-    {
-        // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Delete an expired transient
+	 *
+	 * @return array Success status and count
+	 * @throws \Exception When the nonce is missing/invalid or the user lacks permission.
+	 */
+	public function delete_expired_transients() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        $this->validate_permissions();
+		$this->validate_permissions();
 
-        return $this->perform_cleanup();
-    }
+		return $this->perform_cleanup();
+	}
 
-    /**
-     * Perform the actual cleanup logic (safe for Cron)
-     */
-    public function perform_cleanup()
-    {
-        global $wpdb;
+	/**
+	 * Perform the actual cleanup logic (safe for Cron)
+	 *
+	 * @return array Deleted transient names and their count.
+	 * @throws \Exception When the cleanup query fails.
+	 */
+	public function perform_cleanup() {
+		global $wpdb;
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $transients = $wpdb->get_results(
-            "SELECT option_name FROM {$wpdb->prefix}options WHERE " . $this->transient_timeout_where('option_name'),
-            ARRAY_A
-        );
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- transient_timeout_where() returns a literal WHERE fragment, never user input
+		$transients = $wpdb->get_results(
+			"SELECT option_name FROM {$wpdb->prefix}options WHERE " . $this->transient_timeout_where( 'option_name' ),
+			ARRAY_A
+		);
         // phpcs:enable
 
-        try {
-            $deleted_transients = [];
+		try {
+			$deleted_transients = [];
 
-            foreach ($transients as $transient) {
-                $timeout_name = $transient['option_name'];
-                $is_site = $this->is_site_transient($timeout_name);
-                $transient_name = $this->transient_bare_name_from_timeout($timeout_name);
+			foreach ( $transients as $transient ) {
+				$timeout_name   = $transient['option_name'];
+				$is_site        = $this->is_site_transient( $timeout_name );
+				$transient_name = $this->transient_bare_name_from_timeout( $timeout_name );
 
-                // Check if the transient itself exists and is expired (both scopes).
-                $exists = $is_site ? get_site_transient($transient_name) : get_transient($transient_name);
-                if (false === $exists) {
-                    $deleted_transients[] = $transient_name;
-                    if ($is_site) {
-                        delete_site_transient($transient_name);
-                    } else {
-                        delete_transient($transient_name);
-                    }
-                }
-            }
+				// Check if the transient itself exists and is expired (both scopes).
+				$exists = $is_site ? get_site_transient( $transient_name ) : get_transient( $transient_name );
+				if ( false === $exists ) {
+					$deleted_transients[] = $transient_name;
+					if ( $is_site ) {
+						delete_site_transient( $transient_name );
+					} else {
+						delete_transient( $transient_name );
+					}
+				}
+			}
 
-            return [
-                'message' => 'Expired transients deleted successfully',
-                'count' => count($deleted_transients),
-                'deleted_transients' => $deleted_transients,
-            ];
-        } catch (\Exception $e) {
-            throw new \Exception('Database error: ' . esc_html($e->getMessage()));
-        }
-    }
+			return [
+				'message'            => 'Expired transients deleted successfully',
+				'count'              => count( $deleted_transients ),
+				'deleted_transients' => $deleted_transients,
+			];
+		} catch ( \Exception $e ) {
+			throw new \Exception( 'Database error: ' . esc_html( $e->getMessage() ) );
+		}
+	}
 
-    public function option_usage_analytics()
-    {
-        // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Summarise autoloaded option sizes for the usage analytics view.
+	 *
+	 * @return array Rows of option name, size and autoload state.
+	 * @throws \Exception When the nonce is missing/invalid or the user lacks permission.
+	 */
+	public function option_usage_analytics() {
+		// Verify nonce.
+		if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        $this->validate_permissions();
+		$this->validate_permissions();
 
-        global $wpdb;
+		global $wpdb;
 
-        // Query to get all option names
+		// Query to get all option names.
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $results = $wpdb->get_results("SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A);
+		$results = $wpdb->get_results( "SELECT option_name FROM {$wpdb->prefix}options", ARRAY_A );
         // phpcs:enable
 
-        $prefix_count = [];
+		$prefix_count = [];
 
-        foreach ($results as $row) {
-            $option_name = $row['option_name'];
+		foreach ( $results as $row ) {
+			$option_name = $row['option_name'];
 
-            // Remove '_transient'/'_site_transient' and '_timeout' and take the next part as the prefix
-            $modified_option_name = preg_replace('/^_(?:site_)?transient(?:_timeout)?_/', '', $option_name);
-            $parts = explode('_', $modified_option_name);
+			// Remove '_transient'/'_site_transient' and '_timeout' and take the next part as the prefix.
+			$modified_option_name = preg_replace( '/^_(?:site_)?transient(?:_timeout)?_/', '', $option_name );
+			$parts                = explode( '_', $modified_option_name );
 
-            if (count($parts) > 0) {
-                $prefix = $parts[0]; // Take the first part as the prefix
-                if (!isset($prefix_count[$prefix])) {
-                    $prefix_count[$prefix] = 0;
-                }
-                $prefix_count[$prefix]++;
-            } else {
-                // If no prefix detected, count it as 'others'
-                if (!isset($prefix_count['others'])) {
-                    $prefix_count['others'] = 0;
-                }
-                $prefix_count['others']++;
-            }
-        }
+			if ( count( $parts ) > 0 ) {
+				$prefix = $parts[0]; // Take the first part as the prefix.
+				if ( ! isset( $prefix_count[ $prefix ] ) ) {
+					$prefix_count[ $prefix ] = 0;
+				}
+				++$prefix_count[ $prefix ];
+			} else {
+				// If no prefix detected, count it as 'others'.
+				if ( ! isset( $prefix_count['others'] ) ) {
+					$prefix_count['others'] = 0;
+				}
+				++$prefix_count['others'];
+			}
+		}
 
-        // Prepare results for response
-        $data = [];
-        foreach ($prefix_count as $prefix => $count) {
-            $data[] = ['prefix' => $prefix, 'count' => $count];
-        }
+		// Prepare results for response.
+		$data = [];
+		foreach ( $prefix_count as $prefix => $count ) {
+			$data[] = [
+				'prefix' => $prefix,
+				'count'  => $count,
+			];
+		}
 
-        // Sort the data by count in descending order
-        usort($data, function ($a, $b) {
-            return $b['count'] <=> $a['count'];
-        });
+		// Sort the data by count in descending order.
+		usort(
+			$data,
+			function ( $a, $b ) {
+				return $b['count'] <=> $a['count'];
+			}
+		);
 
-        return $data;
-    }
+		return $data;
+	}
 
-    /**
-     * Get option history
-     */
-    public function get_option_history()
-    {
-        // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Get option history
+	 *
+	 * @return array History rows for the requested option.
+	 * @throws \Exception When the nonce or permissions fail, or no option name is given.
+	 */
+	public function get_option_history() {
+		// Verify nonce.
+		if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        $this->validate_permissions();
+		$this->validate_permissions();
 
-        $option_name = isset($_GET['option_name']) ? sanitize_text_field(wp_unslash($_GET['option_name'])) : '';
+		$option_name = isset( $_GET['option_name'] ) ? sanitize_text_field( wp_unslash( $_GET['option_name'] ) ) : '';
 
-        if (empty($option_name)) {
-            throw new \Exception('Option name is required');
-        }
+		if ( empty( $option_name ) ) {
+			throw new \Exception( 'Option name is required' );
+		}
 
-        return $this->history_manager->get_history($option_name);
-    }
+		return $this->history_manager->get_history( $option_name );
+	}
 
-    /**
-     * Restore option version
-     */
-    public function restore_option_version()
-    {
-        // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Restore option version
+	 *
+	 * @return bool|string True on success, or an error message.
+	 * @throws \Exception When the nonce or permissions fail, or no history id is given.
+	 */
+	public function restore_option_version() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        $this->validate_permissions();
+		$this->validate_permissions();
 
-        $history_id = isset($_POST['history_id']) ? intval($_POST['history_id']) : 0;
+		$history_id = isset( $_POST['history_id'] ) ? intval( $_POST['history_id'] ) : 0;
 
-        if (empty($history_id)) {
-            throw new \Exception('History ID is required');
-        }
+		if ( empty( $history_id ) ) {
+			throw new \Exception( 'History ID is required' );
+		}
 
-        return $this->history_manager->restore_version($history_id);
-    }
+		return $this->history_manager->restore_version( $history_id );
+	}
 
-    /**
-     * Get searchable columns
-     * 
-     * @return array
-     */
-    protected function get_searchable_columns()
-    {
-        return [null, 'option_id', 'option_name', 'option_value', 'autoload'];
-    }
+	/**
+	 * Get searchable columns
+	 *
+	 * @return array
+	 */
+	protected function get_searchable_columns() {
+		return [ null, 'option_id', 'option_name', 'option_value', 'autoload' ];
+	}
 }

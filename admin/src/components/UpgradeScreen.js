@@ -6,6 +6,7 @@
 import { __ } from '@wordpress/i18n';
 
 import ScreenHeader from './ScreenHeader';
+import Icon from './Icon';
 
 const ROWS = [
 	{
@@ -194,7 +195,8 @@ export default function UpgradeScreen( { boot } ) {
 					target="_blank"
 					rel="noopener noreferrer"
 				>
-					{ __( 'View plans →', 'nhrrob-options-table-manager' ) }
+					{ __( 'View plans', 'nhrrob-options-table-manager' ) }
+					<Icon name="arrowRight" size={ 13 } />
 				</a>
 				<span className="nhrotm-upgrade__fine">
 					{ __(

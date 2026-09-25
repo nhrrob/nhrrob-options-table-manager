@@ -27,16 +27,17 @@ Tired of an overloaded `wp_options` table slowing down your WordPress site? **NH
 
 ### ✨ Key Features
 - **Database Health Dashboard** – An at-a-glance scorecard (0–100) summarizing autoload size, transient and orphan counts, and last backup, with prioritized one-click recommendations.
-- **Recent Activity Feed** – A paginated log of every change made through the plugin (edits, deletes, cleanups, restores) right on the Dashboard.
+- **Recent Activity Feed** – A summary of the last few changes on the Dashboard, with a dedicated, searchable and filterable Activity tab (who made each change and when) for the full log.
 - **Modern React Interface** – A fast, dashboard-first admin app organized into Dashboard, Browse, Optimize, Tools, Integrations, and Settings.
 - **Autoload Usage Tracker** – Records which autoloaded options are actually used on real front-end page loads, then flags the ones that are never used so you can safely turn off their autoload; filter the list by usage status and bulk-disable every unused option at once.
 - **Transients Manager** – Dedicated view of every transient with size, expiration, status, and its guessed owner (a plugin, theme, or WordPress core); filter by status or owner, add and edit values (with expiration) directly, and select rows to bulk delete.
 - **Scheduled Backups & Snapshots** – Create restorable snapshots of your `wp_options` table manually or on a daily/weekly schedule, with automatic snapshots taken before Search & Replace and Import.
 - **Option History & Rollback** – Track all changes to individual options and restore previous versions instantly.
 - **Autoload Health Check** – Analyze total autoloaded data size and identify heavy options that slow down your site.
+- **Options Table Analytics** – See every option grouped by its name prefix with a row count, sorted highest first, so you can spot which plugin's options weigh the most on your `wp_options` table.
 - **Automated Daily Cleanup** – Schedule automated daily deletion of expired transients via WP Cron.
-- **Scalable Tab Architecture** – Unified interface that seamlessly supports third-party tables like WP Recipe Maker.
-- **Manage Options** – Add, edit, and delete options easily using a secure, optimized modal system.
+- **Scalable Tab Architecture** – Unified interface that seamlessly supports third-party tables like WP Recipe Maker and Better Payment.
+- **Manage Options** – Add, edit, and delete options easily using a secure, optimized modal system; filter the list by guessed owner (a plugin, theme, or WordPress core), same as the Transients tab.
 - **Usermeta, Postmeta, Commentmeta & Termmeta Support** – Browse, add, edit, and delete user, post, comment, and term meta entries just like options; narrow usermeta or postmeta to a single user or post by searching its name/title in a type-ahead picker.
 - **Serialized Data Handling** – Edit serialized data seamlessly; it appears as a structured object or array.
 - **Options Usage Analytics** – Get visual insights into which prefixes dominate your options table.
@@ -114,8 +115,36 @@ Yes, WP-CLI is supported (`wp nhr-options list`, `wp nhr-options delete`).
 - Added: Scheduled Backups & Snapshots of the wp_options table (manual, daily/weekly cron) with restore; automatic snapshot before Search & Replace and Import.
 - Fixed: Owner/Source attribution wrongly matched every un-prefixed option name (no underscore, e.g. a bare test option) to whichever plugin happened to sort first alphabetically, instead of showing "Unknown".
 - Fixed: Owner attribution for short, generic option prefixes (3 characters or less, e.g. a legacy `nhr_smm_settings`-style name) could match the wrong plugin by loose substring; now resolved against known brand prefixes first and otherwise left as "Unknown" rather than guessed.
+- Fixed: Clicking an orphan group's option count (or Optimize's "N expired transients" link) to jump into Browse pre-filtered could land with the search box showing the right text but the grid still listing everything — a race between the initial unfiltered load and the filter being applied a moment later, where whichever response arrived last won.
+- Fixed: The Orphan Scanner flagged real WordPress core options (e.g. the 9 `default_*` options like `default_category`, `default_role`; the core update-check transients) as High-risk orphans, while Browse and Autoload health correctly showed the same options as protected core — the scanner had its own short, hand-maintained "protected prefix" list instead of checking real option names against the same core-options list every other screen uses.
+- Fixed: Browse → Options tab's "Owner" column had no sort control, unlike every other column.
+- Fixed: Owner attribution and the Orphan Scanner missed several real cases — a hyphenated plugin slug used verbatim as an option prefix (e.g. Better Payment's `better-payment_notices`); the core `category_children` and `auto_core_update_notified` options; and WordPress core's own feed-cache transients (`feed_*`/`feed_mod_*`).
+- Fixed: Orphan Scanner false-flagged this plugin's own sibling nhr-branded plugins (Core Contributions, Smart Media Manager, File Manager, Options Table Manager) as orphaned even while active.
+- Improved: Focused inputs now show the same darkened border as on hover, so a focused field is visibly distinguishable from a resting one.
+- Fixed: Tools → Search & Replace's Search/Replace fields stacked vertically instead of sitting in one row, and the dry-run/replace result showed only a total with no way to see which options matched.
+- Fixed: Tools → Search & Replace's "Dry run" and "Applied" result messages rendered in the same success-green color, making a preview look identical to a confirmed database change.
+- Fixed: Settings' save confirmation and Tools → Backups' create/restore/delete actions used an inline notice, browser alert, or no feedback at all instead of the app's standard toast notification.
+- Improved: Optimize → Cleanup panel's copy column is now vertically centered against its taller stat card instead of leaving dead space below it.
+- Fixed: Integrations tables showed no column headers at all when a table had zero rows, and rendered every cell's text in a muted color meant for secondary previews rather than primary data.
+- Fixed: Dashboard and Recent Activity action buttons baked a raw arrow character into their translated label instead of a real icon (also an RTL-locale issue); they now render a proper arrow icon.
+- Fixed: Dashboard's "Delete expired" recommendation only navigates to Cleanup — it's now labeled "Review expired" so it no longer reads as an immediate delete.
+- Added: Integrations tab now also supports Better Payment's table.
+- Improved: JumpNav's scroll-to-panel flash is now a clean solid border instead of a washed-out translucent ring.
+- Improved: Backups, Search & Replace, Import, Integrations, and Settings panels now have a short explanatory description, matching every other panel in the app; Settings' individual fields now each have a one-line explanation of what they do.
+- Improved: The admin app now declares an explicit base font, anchoring its typography independent of future WordPress admin styling changes.
+- Added: Browse → Options tab now has an Owner filter, matching the one Transients already had.
+- Fixed: Tools → Backups table now follows the same visual conventions as every other table in the app (icon+text row actions, labeled Actions column, proper column widths, and a human-readable "Created" date instead of a raw database timestamp).
+- Improved: Tools → Import now has a proper drag-and-drop file dropzone instead of the browser's unstyled default file picker.
+- Improved: Dashboard's stat cards and Optimize Cleanup's stat tile dropped their pastel tinted backgrounds in favor of a plain card with color only in the small icon badge, for a cleaner, more consistent look.
+- Added: Options Table Analytics — a new Optimize panel, ported from the legacy Classic UI, showing every option grouped by name prefix with a row count.
+- Fixed: A couple more spots (Optimize's "View in Browse", the Upgrade screen's "View plans") baked a raw arrow character into a translated string instead of a real icon.
+- Added: A dedicated Activity tab (Dashboard → "View all") with search, a change-type filter, and who made each change — the Dashboard's own "Recent activity" summary stays as a quick 5-item preview.
+- Fixed: Search & Replace could match and rewrite WordPress core's own cache/transient data (e.g. a cached RSS feed) purely by coincidence; these are now excluded by default.
+- Fixed: A CSS-only update to the plugin could leave a site's browser cache serving the old styles indefinitely, since the stylesheet reused the JS bundle's cache-busting version instead of its own.
 - Added: Usage filter on the Autoload health table (All/Unused/Untracked/Used) to select and bulk-disable autoload for every unused option at once, plus explicit in-app guidance on what's safe to disable.
 - Added: Filter Browse's postmeta/usermeta tabs to a single post or user via a search-as-you-type name/title picker.
+- Developer: The whole PHP codebase now passes WordPress Coding Standards, and the pre-commit hook blocks any commit that fails ESLint, PHPCS, or the unit tests.
+- Developer: Renamed the menu capability filter from `nhrotm-options-table-manager/menu/capability` to `nhrotm_menu_capability` to follow WordPress hook naming. If you filtered the old name, update your callback.
 
 = 1.4.3 - 14/05/2026 =
 - Enhancement: Add GitHub Actions workflow for automated plugin checks

@@ -29,6 +29,10 @@ vendor/myclabs/         export-ignore
 vendor/nikic/           export-ignore
 vendor/phar-io/         export-ignore
 vendor/theseer/         export-ignore
+vendor/squizlabs/       export-ignore
+vendor/wp-coding-standards/ export-ignore
+vendor/phpcsstandards/  export-ignore
+vendor/dealerdirect/    export-ignore
 
 # WordPress.org exclusions
 .babelrc                export-ignore

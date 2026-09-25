@@ -1,8 +1,14 @@
 <?php
+/**
+ * Contract every 2.0 feature module implements.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager\Interfaces;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
@@ -13,40 +19,40 @@ if (!defined('ABSPATH')) {
  * which is the single extension point a PRO add-on hooks into — core is
  * never edited to add a feature.
  */
-interface ModuleInterface
-{
-    /**
-     * Stable machine id, e.g. 'optimize'. Used for routing and nav keys.
-     *
-     * @return string
-     */
-    public function id();
+interface ModuleInterface {
 
-    /**
-     * Human-readable nav label, e.g. 'Optimize'.
-     *
-     * @return string
-     */
-    public function label();
+	/**
+	 * Stable machine id, e.g. 'optimize'. Used for routing and nav keys.
+	 *
+	 * @return string
+	 */
+	public function id();
 
-    /**
-     * Capability required to see/use this module.
-     *
-     * @return string
-     */
-    public function capability();
+	/**
+	 * Human-readable nav label, e.g. 'Optimize'.
+	 *
+	 * @return string
+	 */
+	public function label();
 
-    /**
-     * Register this module's REST routes under the nhrotm/v1 namespace.
-     *
-     * @return void
-     */
-    public function register_routes();
+	/**
+	 * Capability required to see/use this module.
+	 *
+	 * @return string
+	 */
+	public function capability();
 
-    /**
-     * Cards this module contributes to the Dashboard.
-     *
-     * @return array
-     */
-    public function dashboard_cards();
+	/**
+	 * Register this module's REST routes under the nhrotm/v1 namespace.
+	 *
+	 * @return void
+	 */
+	public function register_routes();
+
+	/**
+	 * Cards this module contributes to the Dashboard.
+	 *
+	 * @return array
+	 */
+	public function dashboard_cards();
 }

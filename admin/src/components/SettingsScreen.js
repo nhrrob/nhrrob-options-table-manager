@@ -8,11 +8,12 @@ import apiFetch from '@wordpress/api-fetch';
 
 import Panel from './Panel';
 import ScreenHeader from './ScreenHeader';
+import { useToast } from './ToastProvider';
 
 export default function SettingsScreen() {
+	const toast = useToast();
 	const [ settings, setSettings ] = useState( null );
 	const [ status, setStatus ] = useState( 'loading' ); // loading | ready | saving | error
-	const [ notice, setNotice ] = useState( '' );
 
 	useEffect( () => {
 		apiFetch( { path: 'nhrotm/v1/settings' } )
@@ -28,7 +29,6 @@ export default function SettingsScreen() {
 
 	const save = () => {
 		setStatus( 'saving' );
-		setNotice( '' );
 		apiFetch( {
 			path: 'nhrotm/v1/settings',
 			method: 'POST',
@@ -37,8 +37,11 @@ export default function SettingsScreen() {
 			.then( ( res ) => {
 				setSettings( res.data );
 				setStatus( 'ready' );
-				setNotice(
-					__( 'Settings saved.', 'nhrrob-options-table-manager' )
+				toast(
+					__(
+						'Settings saved successfully.',
+						'nhrrob-options-table-manager'
+					)
 				);
 			} )
 			.catch( () => setStatus( 'error' ) );
@@ -77,6 +80,12 @@ export default function SettingsScreen() {
 				) }
 			/>
 			<Panel title={ __( 'Settings', 'nhrrob-options-table-manager' ) }>
+				<p className="nhrotm-muted">
+					{ __(
+						'Every preference below is applied immediately on save.',
+						'nhrrob-options-table-manager'
+					) }
+				</p>
 				<div className="nhrotm-field">
 					<label htmlFor="nhrotm-allow-html">
 						<input
@@ -95,6 +104,12 @@ export default function SettingsScreen() {
 							'nhrrob-options-table-manager'
 						) }
 					</label>
+					<p className="nhrotm-field__hint">
+						{ __(
+							'Skips sanitization on save — only enable this if you trust every user who can edit options here.',
+							'nhrrob-options-table-manager'
+						) }
+					</p>
 				</div>
 
 				<div className="nhrotm-field">
@@ -115,6 +130,12 @@ export default function SettingsScreen() {
 							'nhrrob-options-table-manager'
 						) }
 					</label>
+					<p className="nhrotm-field__hint">
+						{ __(
+							'Required for Optimize\'s autoload Usage column and its "Unused" bulk-disable filter — leave off and those stay empty.',
+							'nhrrob-options-table-manager'
+						) }
+					</p>
 				</div>
 
 				<div className="nhrotm-field">
@@ -135,6 +156,12 @@ export default function SettingsScreen() {
 							'nhrrob-options-table-manager'
 						) }
 					</label>
+					<p className="nhrotm-field__hint">
+						{ __(
+							'Automatically clears expired transients every day — the automated counterpart to Optimize Cleanup\'s manual "Delete expired" button.',
+							'nhrrob-options-table-manager'
+						) }
+					</p>
 				</div>
 
 				<div className="nhrotm-field">
@@ -161,6 +188,12 @@ export default function SettingsScreen() {
 							{ __( 'Weekly', 'nhrrob-options-table-manager' ) }
 						</option>
 					</select>
+					<p className="nhrotm-field__hint">
+						{ __(
+							'Only the last 15 snapshots are ever kept (Tools → Backups) — "Daily" quietly exhausts that cap in two weeks.',
+							'nhrrob-options-table-manager'
+						) }
+					</p>
 				</div>
 
 				<div className="nhrotm-field">
@@ -182,6 +215,12 @@ export default function SettingsScreen() {
 							)
 						}
 					/>
+					<p className="nhrotm-field__hint">
+						{ __(
+							"How long the option-change audit log (Dashboard's Recent Activity) keeps entries — rows past this many days are purged.",
+							'nhrrob-options-table-manager'
+						) }
+					</p>
 				</div>
 
 				<div className="nhrotm-actions">
@@ -198,9 +237,6 @@ export default function SettingsScreen() {
 									'nhrrob-options-table-manager'
 							  ) }
 					</button>
-					{ notice && (
-						<span className="nhrotm-notice">{ notice }</span>
-					) }
 					{ status === 'error' && (
 						<span className="nhrotm-error">
 							{ __(

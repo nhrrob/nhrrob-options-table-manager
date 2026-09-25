@@ -180,9 +180,13 @@ export default function DashboardScreen( { onNavigate } ) {
 										>
 											{ card.action ||
 												__(
-													'View →',
+													'View',
 													'nhrrob-options-table-manager'
 												) }
+											<Icon
+												name="arrowRight"
+												size={ 13 }
+											/>
 										</button>
 									</div>
 								) }
@@ -262,7 +266,10 @@ export default function DashboardScreen( { onNavigate } ) {
 				) }
 			</Panel>
 
-			<ActivityPanel recent={ summary.activity || [] } />
+			<ActivityPanel
+				recent={ summary.activity || [] }
+				onViewAll={ () => go( 'activity' ) }
+			/>
 		</div>
 	);
 }

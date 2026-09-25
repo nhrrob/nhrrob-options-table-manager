@@ -1,8 +1,14 @@
 <?php
+/**
+ * Boots the 2.0 module registry and its REST routes.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager\Core;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Nhrotm\OptionsTableManager\Services\SettingsService;
@@ -22,71 +28,74 @@ use Nhrotm\OptionsTableManager\Admin\AppPage;
  * REST routes on rest_api_init. Additive and inert alongside the 1.5.x
  * admin-ajax path — nothing here touches the existing UI until cutover.
  */
-class Bootstrap
-{
-    /**
-     * @var ModuleRegistry
-     */
-    private $registry;
+class Bootstrap {
 
-    /**
-     * @var SettingsService
-     */
-    private $settings;
+	/**
+	 * Registry holding every booted feature module.
+	 *
+	 * @var ModuleRegistry
+	 */
+	private $registry;
 
-    public function __construct()
-    {
-        $this->settings = new SettingsService();
-        $this->registry = new ModuleRegistry();
-    }
+	/**
+	 * Plugin settings reader.
+	 *
+	 * @var SettingsService
+	 */
+	private $settings;
 
-    /**
-     * Wire hooks. Called once from the main plugin's init.
-     *
-     * @return void
-     */
-    public function init()
-    {
-        $this->registry->boot($this->core_modules());
-        add_action('rest_api_init', [$this->registry, 'register_routes']);
+	/**
+	 * Construct the settings reader and module registry.
+	 */
+	public function __construct() {
+		$this->settings = new SettingsService();
+		$this->registry = new ModuleRegistry();
+	}
 
-        if (is_admin()) {
-            (new AppPage($this->registry))->init();
-        }
-    }
+	/**
+	 * Wire hooks. Called once from the main plugin's init.
+	 *
+	 * @return void
+	 */
+	public function init() {
+		$this->registry->boot( $this->core_modules() );
+		add_action( 'rest_api_init', [ $this->registry, 'register_routes' ] );
 
-    /**
-     * The registry, for callers that need module data (e.g. admin nav).
-     *
-     * @return ModuleRegistry
-     */
-    public function registry()
-    {
-        return $this->registry;
-    }
+		if ( is_admin() ) {
+			( new AppPage( $this->registry ) )->init();
+		}
+	}
 
-    /**
-     * Free core modules. Add-ons append via the `nhrotm_modules` filter.
-     *
-     * @return array
-     */
-    private function core_modules()
-    {
-        $modules = [
-            new DashboardModule(),
-            new BrowseModule(),
-            new OptimizeModule(),
-            new ToolsModule(),
-        ];
+	/**
+	 * The registry, for callers that need module data (e.g. admin nav).
+	 *
+	 * @return ModuleRegistry
+	 */
+	public function registry() {
+		return $this->registry;
+	}
 
-        // Integrations only appears when a supported third-party table exists.
-        $integrations = new IntegrationsService();
-        if ($integrations->has_any()) {
-            $modules[] = new IntegrationsModule($integrations);
-        }
+	/**
+	 * Free core modules. Add-ons append via the `nhrotm_modules` filter.
+	 *
+	 * @return array
+	 */
+	private function core_modules() {
+		$modules = [
+			new DashboardModule(),
+			new BrowseModule(),
+			new OptimizeModule(),
+			new ToolsModule(),
+		];
 
-        $modules[] = new SettingsModule($this->settings);
+		// Integrations only appears when a supported third-party table exists.
+		$integrations = new IntegrationsService();
+		if ( $integrations->has_any() ) {
+			$modules[] = new IntegrationsModule( $integrations );
+		}
 
-        return $modules;
-    }
+		$modules[] = new SettingsModule( $this->settings );
+
+		return $modules;
+	}
 }

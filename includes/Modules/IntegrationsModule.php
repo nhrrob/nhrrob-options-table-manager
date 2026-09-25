@@ -1,8 +1,17 @@
 <?php
+/**
+ * Class IntegrationsModule
+ *
+ * Registers the Integrations feature module: REST routes for browsing
+ * third-party plugin tables (e.g. WPRM) detected on this site.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager\Modules;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Nhrotm\OptionsTableManager\Interfaces\ModuleInterface;
@@ -13,55 +22,66 @@ use Nhrotm\OptionsTableManager\Services\IntegrationsService;
  * Integrations section — third-party tables (e.g. WPRM).
  * Only registered by Bootstrap when at least one integration table exists.
  */
-class IntegrationsModule implements ModuleInterface
-{
-    /**
-     * @var IntegrationsService
-     */
-    private $integrations;
+class IntegrationsModule implements ModuleInterface {
 
-    public function __construct(IntegrationsService $integrations)
-    {
-        $this->integrations = $integrations;
-    }
+	/**
+	 * Detects/queries third-party integration tables.
+	 *
+	 * @var IntegrationsService
+	 */
+	private $integrations;
 
-    /**
-     * @return string
-     */
-    public function id()
-    {
-        return 'integrations';
-    }
+	/**
+	 * Bind the integrations service used to discover/query third-party tables.
+	 *
+	 * @param IntegrationsService $integrations Detects/queries third-party integration tables.
+	 */
+	public function __construct( IntegrationsService $integrations ) {
+		$this->integrations = $integrations;
+	}
 
-    /**
-     * @return string
-     */
-    public function label()
-    {
-        return __('Integrations', 'nhrrob-options-table-manager');
-    }
+	/**
+	 * Stable machine id, used for routing and nav keys.
+	 *
+	 * @return string
+	 */
+	public function id() {
+		return 'integrations';
+	}
 
-    /**
-     * @return string
-     */
-    public function capability()
-    {
-        return 'manage_options';
-    }
+	/**
+	 * Human-readable nav label.
+	 *
+	 * @return string
+	 */
+	public function label() {
+		return __( 'Integrations', 'nhrrob-options-table-manager' );
+	}
 
-    /**
-     * @return void
-     */
-    public function register_routes()
-    {
-        (new IntegrationsController($this->integrations))->register();
-    }
+	/**
+	 * Capability required to see/use this module.
+	 *
+	 * @return string
+	 */
+	public function capability() {
+		return 'manage_options';
+	}
 
-    /**
-     * @return array
-     */
-    public function dashboard_cards()
-    {
-        return [];
-    }
+	/**
+	 * Register this module's REST routes under the nhrotm/v1 namespace.
+	 *
+	 * @return void
+	 */
+	public function register_routes() {
+		( new IntegrationsController( $this->integrations ) )->register();
+	}
+
+	/**
+	 * Cards this module contributes to the Dashboard.
+	 *
+	 * @return array
+	 */
+	public function dashboard_cards() {
+		return [];
+	}
 }

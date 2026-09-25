@@ -29,6 +29,10 @@ node_modules
 /vendor/nikic
 /vendor/phar-io
 /vendor/theseer
+/vendor/squizlabs
+/vendor/wp-coding-standards
+/vendor/phpcsstandards
+/vendor/dealerdirect
 
 # Additional WordPress.org exclusions
 .babelrc

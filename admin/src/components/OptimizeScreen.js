@@ -358,6 +358,47 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 			sortable: true,
 			colClassName: 'nhrotm-col-size',
 			cellClassName: 'nhrotm-grid__size',
+			// The count alone ("9") doesn't say *which* 9 options — clicking it
+			// deep-links to Browse pre-filtered to this prefix (same pattern as
+			// Cleanup's "N expired transients" link below), and the hover title
+			// previews a few real names from `sample` (up to
+			// ScannerManager::ORPHAN_SAMPLE_LIMIT, collected during the scan at
+			// no extra query cost) so a quick hover often answers the question
+			// without navigating away at all.
+			render: ( r ) => {
+				const sample = r.sample || [];
+				const more = r.count - sample.length;
+				const title =
+					sample.length > 0
+						? sample.join( '\n' ) +
+						  ( more > 0
+								? '\n' +
+								  sprintf(
+										/* translators: %s: number of additional options beyond the preview sample. */
+										__(
+											'…and %s more',
+											'nhrrob-options-table-manager'
+										),
+										more
+								  )
+								: '' )
+						: '';
+				return (
+					<button
+						type="button"
+						className="nhrotm-linkbtn"
+						title={ title }
+						onClick={ () =>
+							onNavigate( 'browse', undefined, {
+								type: r.browse_type || 'options',
+								search: r.prefix,
+							} )
+						}
+					>
+						{ r.count }
+					</button>
+				);
+			},
 		},
 		{
 			key: 'actions',
@@ -411,6 +452,42 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 						{ __( 'Delete', 'nhrrob-options-table-manager' ) }
 					</button>
 				</div>
+			),
+		},
+	];
+
+	// Ported from the legacy Classic UI's "Options Table Analytics" — every
+	// prefix, not just orphaned ones, so clicking a count always deep-links
+	// into Browse rather than offering a delete action (unlike orphanColumns
+	// above, which is scoped to leftovers safe to remove).
+	const analyticsColumns = [
+		{
+			key: 'prefix',
+			label: __( 'Prefix', 'nhrrob-options-table-manager' ),
+			sortable: true,
+			colClassName: 'nhrotm-col-name nhrotm-col-name--capped',
+			cellClassName: 'nhrotm-grid__name',
+		},
+		{
+			key: 'count',
+			label: __( 'Options', 'nhrrob-options-table-manager' ),
+			align: 'right',
+			sortable: true,
+			colClassName: 'nhrotm-col-size',
+			cellClassName: 'nhrotm-grid__size',
+			render: ( r ) => (
+				<button
+					type="button"
+					className="nhrotm-linkbtn"
+					onClick={ () =>
+						onNavigate( 'browse', undefined, {
+							type: 'options',
+							search: r.prefix,
+						} )
+					}
+				>
+					{ r.count }
+				</button>
 			),
 		},
 	];
@@ -502,6 +579,13 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 					{
 						id: 'cleanup',
 						label: __( 'Cleanup', 'nhrrob-options-table-manager' ),
+					},
+					{
+						id: 'analytics',
+						label: __(
+							'Analytics',
+							'nhrrob-options-table-manager'
+						),
 					},
 				] }
 			/>
@@ -715,79 +799,133 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 					/>
 				}
 			>
+				<div className="nhrotm-cleanup">
+					<div className="nhrotm-cleanup__copy">
+						<p className="nhrotm-muted">
+							{ __(
+								'Transients are a temporary cache. WordPress does not delete expired ones on its own — this does.',
+								'nhrrob-options-table-manager'
+							) }
+						</p>
+						<div className="nhrotm-actions">
+							<button
+								type="button"
+								className="nhrotm-btn nhrotm-btn--primary"
+								disabled={
+									busy || data.expired_transients === 0
+								}
+								onClick={ () =>
+									action(
+										'clean-transients',
+										{ scope: 'expired' },
+										__(
+											'Expired transients deleted successfully.',
+											'nhrrob-options-table-manager'
+										)
+									)
+								}
+							>
+								{ __(
+									'Delete expired',
+									'nhrrob-options-table-manager'
+								) }
+							</button>
+						</div>
+						{ proAvailable && ! hasPro && (
+							<div className="nhrotm-actions">
+								<span className="nhrotm-hint">
+									{ __(
+										'Custom hourly→monthly scheduling',
+										'nhrrob-options-table-manager'
+									) }
+								</span>
+								<ProTag
+									hasPro={ hasPro }
+									proAvailable={ proAvailable }
+									onNavigate={ onNavigate }
+								/>
+							</div>
+						) }
+					</div>
+					<div className="nhrotm-card nhrotm-card--transients nhrotm-cleanup__stat">
+						<div className="nhrotm-card__top">
+							<span className="nhrotm-card__ico">
+								<Icon name="clock" size={ 16 } />
+							</span>
+							<span className="nhrotm-card__label">
+								{ __(
+									'Expired transients',
+									'nhrrob-options-table-manager'
+								) }
+							</span>
+						</div>
+						<span className="nhrotm-card__metric">
+							{ data.expired_transients }
+						</span>
+						<span className="nhrotm-card__sub">
+							{ data.expired_transients > 0
+								? __(
+										'Ready to delete.',
+										'nhrrob-options-table-manager'
+								  )
+								: __(
+										'Nothing to clean up right now.',
+										'nhrrob-options-table-manager'
+								  ) }
+						</span>
+						{ data.expired_transients > 0 && (
+							<div className="nhrotm-card__action">
+								<button
+									type="button"
+									className="nhrotm-btn nhrotm-btn--soft nhrotm-btn--sm"
+									onClick={ () =>
+										onNavigate( 'browse', undefined, {
+											type: 'transients',
+											status: 'expired',
+										} )
+									}
+								>
+									{ __(
+										'View in Browse',
+										'nhrrob-options-table-manager'
+									) }
+									<Icon name="arrowRight" size={ 13 } />
+								</button>
+							</div>
+						) }
+					</div>
+				</div>
+			</Panel>
+
+			<Panel
+				anchor="analytics"
+				title={ __(
+					'Options table analytics',
+					'nhrrob-options-table-manager'
+				) }
+			>
 				<p className="nhrotm-muted">
 					{ __(
-						'Transients are a temporary cache. WordPress does not delete expired ones on its own — this does.',
+						'Every option grouped by its name prefix, sorted by row count — which prefix (usually a plugin) has the most rows sitting in the table.',
 						'nhrrob-options-table-manager'
 					) }
 				</p>
-				<p className="nhrotm-muted">
-					{ data.expired_transients > 0 ? (
-						<button
-							type="button"
-							className="nhrotm-linkbtn"
-							onClick={ () =>
-								onNavigate( 'browse', undefined, {
-									type: 'transients',
-									status: 'expired',
-								} )
-							}
-						>
-							{ sprintf(
-								/* translators: %s: expired transient count. */
-								_n(
-									'%s expired transient.',
-									'%s expired transients.',
-									data.expired_transients,
-									'nhrrob-options-table-manager'
-								),
-								data.expired_transients
-							) }
-						</button>
-					) : (
-						__(
-							'0 expired transients.',
-							'nhrrob-options-table-manager'
-						)
+				<DataTable
+					columns={ analyticsColumns }
+					rows={ data.analytics }
+					rowKey={ ( r ) => r.prefix }
+					defaultSort={ { key: 'count', dir: 'desc' } }
+					searchKeys={ [ 'prefix' ] }
+					searchPlaceholder={ __(
+						'Search prefix…',
+						'nhrrob-options-table-manager'
 					) }
-				</p>
-				<div className="nhrotm-actions">
-					<button
-						type="button"
-						className="nhrotm-btn nhrotm-btn--primary"
-						disabled={ busy || data.expired_transients === 0 }
-						onClick={ () =>
-							action(
-								'clean-transients',
-								{ scope: 'expired' },
-								__(
-									'Expired transients deleted successfully.',
-									'nhrrob-options-table-manager'
-								)
-							)
-						}
-					>
-						{ __(
-							'Delete expired',
-							'nhrrob-options-table-manager'
-						) }
-					</button>
-				</div>
-				{ proAvailable && ! hasPro && (
-					<div className="nhrotm-actions">
-						<span className="nhrotm-hint">
-							{ __(
-								'Custom hourly→monthly scheduling',
-								'nhrrob-options-table-manager'
-							) }
-						</span>
-						<ProTag
-							hasPro={ hasPro }
-							proAvailable={ proAvailable }
-							onNavigate={ onNavigate }
-						/>
-					</div>
-				) }
+					pageSize={ 20 }
+					emptyMessage={ __(
+						'No options found.',
+						'nhrrob-options-table-manager'
+					) }
+				/>
 			</Panel>
 		</div>
 	);

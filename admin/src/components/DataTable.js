@@ -10,6 +10,7 @@
 import { useMemo, useState } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
 
+import FilterControl from './FilterControl';
 import Icon from './Icon';
 
 const PAGE_SIZE_OPTIONS = [ 20, 50, 100 ];
@@ -163,28 +164,18 @@ export default function DataTable( {
 					<div className="nhrotm-browse__tools">
 						{ filters &&
 							filters.map( ( f ) => (
-								<select
+								<FilterControl
 									key={ f.key }
-									className="nhrotm-browse__statusfilter"
+									descriptor={ f }
 									value={ filterValues[ f.key ] || '' }
-									onChange={ ( e ) => {
+									onChange={ ( v ) => {
 										setPage( 1 );
 										setFilterValues( ( prev ) => ( {
 											...prev,
-											[ f.key ]: e.target.value,
+											[ f.key ]: v,
 										} ) );
 									} }
-									aria-label={ f.label }
-								>
-									{ f.options.map( ( opt ) => (
-										<option
-											key={ opt.value }
-											value={ opt.value }
-										>
-											{ opt.label }
-										</option>
-									) ) }
-								</select>
+								/>
 							) ) }
 						{ searchKeys && (
 							<span className="nhrotm-search">

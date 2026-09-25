@@ -1,8 +1,17 @@
 <?php
+/**
+ * Class SettingsModule
+ *
+ * Registers the Settings feature module: REST routes for reading and
+ * writing the plugin's centralized settings store.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager\Modules;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Nhrotm\OptionsTableManager\Interfaces\ModuleInterface;
@@ -15,57 +24,66 @@ use Nhrotm\OptionsTableManager\Services\SettingsService;
  * Proves the module → REST flow: the registry calls register_routes(),
  * which stands up the SettingsController under nhrotm/v1.
  */
-class SettingsModule implements ModuleInterface
-{
-    /**
-     * @var SettingsService
-     */
-    private $settings;
+class SettingsModule implements ModuleInterface {
 
-    public function __construct(SettingsService $settings)
-    {
-        $this->settings = $settings;
-    }
+	/**
+	 * Centralized settings store.
+	 *
+	 * @var SettingsService
+	 */
+	private $settings;
 
-    /**
-     * @return string
-     */
-    public function id()
-    {
-        return 'settings';
-    }
+	/**
+	 * Bind the settings service used to read/write plugin settings.
+	 *
+	 * @param SettingsService $settings Centralized settings store.
+	 */
+	public function __construct( SettingsService $settings ) {
+		$this->settings = $settings;
+	}
 
-    /**
-     * @return string
-     */
-    public function label()
-    {
-        return __('Settings', 'nhrrob-options-table-manager');
-    }
+	/**
+	 * Stable machine id, used for routing and nav keys.
+	 *
+	 * @return string
+	 */
+	public function id() {
+		return 'settings';
+	}
 
-    /**
-     * @return string
-     */
-    public function capability()
-    {
-        return 'manage_options';
-    }
+	/**
+	 * Human-readable nav label.
+	 *
+	 * @return string
+	 */
+	public function label() {
+		return __( 'Settings', 'nhrrob-options-table-manager' );
+	}
 
-    /**
-     * @return void
-     */
-    public function register_routes()
-    {
-        (new SettingsController($this->settings))->register();
-    }
+	/**
+	 * Capability required to see/use this module.
+	 *
+	 * @return string
+	 */
+	public function capability() {
+		return 'manage_options';
+	}
 
-    /**
-     * Settings contributes no dashboard cards.
-     *
-     * @return array
-     */
-    public function dashboard_cards()
-    {
-        return [];
-    }
+	/**
+	 * Register this module's REST routes under the nhrotm/v1 namespace.
+	 *
+	 * @return void
+	 */
+	public function register_routes() {
+		( new SettingsController( $this->settings ) )->register();
+	}
+
+	/**
+	 * Settings contributes no dashboard cards.
+	 *
+	 * @return array
+	 */
+	public function dashboard_cards() {
+		return [];
+	}
 }

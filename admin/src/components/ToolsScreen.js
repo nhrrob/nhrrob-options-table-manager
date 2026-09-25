@@ -3,7 +3,7 @@
  * Wired to nhrotm/v1/tools/*.
  */
 /* eslint-disable no-alert -- native alert used intentionally for lightweight error UX. */
-import { useEffect, useState, useCallback } from '@wordpress/element';
+import { useEffect, useState, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
@@ -11,10 +11,13 @@ import JumpNav from './JumpNav';
 import Panel from './Panel';
 import ProTag from './ProTag';
 import ScreenHeader from './ScreenHeader';
+import Icon from './Icon';
 import { useConfirm } from './ConfirmProvider';
+import { useToast } from './ToastProvider';
 
 export default function ToolsScreen( { boot, onNavigate } ) {
 	const confirm = useConfirm();
+	const toast = useToast();
 	const hasPro = !! ( boot && boot.hasPro );
 	const proAvailable = !! ( boot && boot.proAvailable );
 	const [ backups, setBackups ] = useState( [] );
@@ -26,6 +29,9 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 	const [ srResult, setSrResult ] = useState( null );
 
 	const [ importJson, setImportJson ] = useState( '' );
+	const [ importFileName, setImportFileName ] = useState( '' );
+	const [ isDropzoneActive, setIsDropzoneActive ] = useState( false );
+	const fileInputRef = useRef( null );
 	const [ overwrite, setOverwrite ] = useState( false );
 	const [ importResult, setImportResult ] = useState( null );
 
@@ -49,6 +55,12 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			.then( ( res ) => {
 				setBackups( res.data.backups );
 				setLabel( '' );
+				toast(
+					__(
+						'Snapshot created successfully.',
+						'nhrrob-options-table-manager'
+					)
+				);
 			} )
 			.catch( () =>
 				window.alert(
@@ -82,11 +94,11 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			method: 'POST',
 		} )
 			.then( ( res ) =>
-				window.alert(
+				toast(
 					sprintf(
 						/* translators: %s: number of options restored. */
 						__(
-							'%s options restored.',
+							'%s options restored successfully.',
 							'nhrrob-options-table-manager'
 						),
 						res.data.restored
@@ -123,7 +135,15 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			path: `nhrotm/v1/tools/backups/${ id }`,
 			method: 'DELETE',
 		} )
-			.then( () => loadBackups() )
+			.then( () => {
+				loadBackups();
+				toast(
+					__(
+						'Snapshot deleted successfully.',
+						'nhrrob-options-table-manager'
+					)
+				);
+			} )
 			.catch( () => {} );
 	};
 
@@ -227,6 +247,7 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			.then( ( res ) => {
 				setImportResult( res.data );
 				setImportJson( '' );
+				setImportFileName( '' );
 				loadBackups();
 			} )
 			.catch( ( e ) =>
@@ -238,14 +259,38 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			.finally( () => setBusy( false ) );
 	};
 
-	const onFile = ( e ) => {
-		const file = e.target.files && e.target.files[ 0 ];
+	const readFile = ( file ) => {
 		if ( ! file ) {
 			return;
 		}
 		const reader = new window.FileReader();
-		reader.onload = ( ev ) => setImportJson( String( ev.target.result ) );
+		reader.onload = ( ev ) => {
+			setImportJson( String( ev.target.result ) );
+			setImportFileName( file.name );
+		};
 		reader.readAsText( file );
+	};
+
+	const onFile = ( e ) => readFile( e.target.files && e.target.files[ 0 ] );
+
+	const clearImportFile = () => {
+		setImportFileName( '' );
+		setImportJson( '' );
+		if ( fileInputRef.current ) {
+			fileInputRef.current.value = '';
+		}
+	};
+
+	const onDropzoneDrop = ( e ) => {
+		e.preventDefault();
+		setIsDropzoneActive( false );
+		readFile( e.dataTransfer.files && e.dataTransfer.files[ 0 ] );
+	};
+
+	const openFilePicker = () => {
+		if ( fileInputRef.current ) {
+			fileInputRef.current.click();
+		}
 	};
 
 	return (
@@ -284,17 +329,13 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 				anchor="backups"
 				title={ __( 'Backups', 'nhrrob-options-table-manager' ) }
 			>
+				<p className="nhrotm-muted">
+					{ __(
+						'A full snapshot of the entire options table, taken before anything risky — restore it in one click if something goes wrong.',
+						'nhrrob-options-table-manager'
+					) }
+				</p>
 				<div className="nhrotm-actions">
-					<input
-						type="text"
-						className="nhrotm-browse__search"
-						placeholder={ __(
-							'Snapshot label (optional)',
-							'nhrrob-options-table-manager'
-						) }
-						value={ label }
-						onChange={ ( e ) => setLabel( e.target.value ) }
-					/>
 					<button
 						type="button"
 						className="nhrotm-btn nhrotm-btn--primary"
@@ -306,6 +347,16 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 							'nhrrob-options-table-manager'
 						) }
 					</button>
+					<input
+						type="text"
+						className="nhrotm-browse__search"
+						placeholder={ __(
+							'Snapshot label (optional)',
+							'nhrrob-options-table-manager'
+						) }
+						value={ label }
+						onChange={ ( e ) => setLabel( e.target.value ) }
+					/>
 				</div>
 				{ backups.length === 0 ? (
 					<p className="nhrotm-muted">
@@ -316,6 +367,14 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 					</p>
 				) : (
 					<table className="nhrotm-grid">
+						<colgroup>
+							<col className="nhrotm-col-name" />
+							<col className="nhrotm-col-badge" />
+							<col className="nhrotm-col-count" />
+							<col className="nhrotm-col-size" />
+							<col className="nhrotm-col-date" />
+							<col className="nhrotm-col-act" />
+						</colgroup>
 						<thead>
 							<tr>
 								<th>
@@ -336,7 +395,7 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 										'nhrrob-options-table-manager'
 									) }
 								</th>
-								<th>
+								<th style={ { textAlign: 'right' } }>
 									{ __(
 										'Size',
 										'nhrrob-options-table-manager'
@@ -348,7 +407,12 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 										'nhrrob-options-table-manager'
 									) }
 								</th>
-								<th />
+								<th style={ { textAlign: 'right' } }>
+									{ __(
+										'Actions',
+										'nhrrob-options-table-manager'
+									) }
+								</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -363,34 +427,46 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 										</span>
 									</td>
 									<td>{ b.option_count }</td>
-									<td>{ b.size_formatted }</td>
+									<td className="nhrotm-grid__size">
+										{ b.size_formatted }
+									</td>
 									<td>{ b.created_at }</td>
 									<td>
-										<button
-											type="button"
-											className="nhrotm-linkbtn"
-											disabled={ busy }
-											onClick={ () =>
-												restoreBackup( b.id )
-											}
-										>
-											{ __(
-												'Restore',
-												'nhrrob-options-table-manager'
-											) }
-										</button>{ ' ' }
-										<button
-											type="button"
-											className="nhrotm-linkbtn nhrotm-linkbtn--danger"
-											onClick={ () =>
-												deleteBackup( b.id )
-											}
-										>
-											{ __(
-												'Delete',
-												'nhrrob-options-table-manager'
-											) }
-										</button>
+										<div className="nhrotm-grid__actions">
+											<button
+												type="button"
+												className="nhrotm-iconbtn"
+												disabled={ busy }
+												onClick={ () =>
+													restoreBackup( b.id )
+												}
+											>
+												<Icon
+													name="refresh"
+													size={ 14 }
+												/>
+												{ __(
+													'Restore',
+													'nhrrob-options-table-manager'
+												) }
+											</button>
+											<button
+												type="button"
+												className="nhrotm-iconbtn nhrotm-iconbtn--danger"
+												onClick={ () =>
+													deleteBackup( b.id )
+												}
+											>
+												<Icon
+													name="trash"
+													size={ 14 }
+												/>
+												{ __(
+													'Delete',
+													'nhrrob-options-table-manager'
+												) }
+											</button>
+										</div>
 									</td>
 								</tr>
 							) ) }
@@ -421,29 +497,37 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 					'nhrrob-options-table-manager'
 				) }
 			>
-				<div className="nhrotm-field">
-					<input
-						type="text"
-						className="nhrotm-browse__search"
-						placeholder={ __(
-							'Search for…',
-							'nhrrob-options-table-manager'
-						) }
-						value={ search }
-						onChange={ ( e ) => setSearch( e.target.value ) }
-					/>
-				</div>
-				<div className="nhrotm-field">
-					<input
-						type="text"
-						className="nhrotm-browse__search"
-						placeholder={ __(
-							'Replace with…',
-							'nhrrob-options-table-manager'
-						) }
-						value={ replace }
-						onChange={ ( e ) => setReplace( e.target.value ) }
-					/>
+				<p className="nhrotm-muted">
+					{ __(
+						"Find and replace a string across every option's value — a safety snapshot is taken automatically before anything is written.",
+						'nhrrob-options-table-manager'
+					) }
+				</p>
+				<div className="nhrotm-fieldrow">
+					<div className="nhrotm-field">
+						<input
+							type="text"
+							className="nhrotm-browse__search"
+							placeholder={ __(
+								'Search for…',
+								'nhrrob-options-table-manager'
+							) }
+							value={ search }
+							onChange={ ( e ) => setSearch( e.target.value ) }
+						/>
+					</div>
+					<div className="nhrotm-field">
+						<input
+							type="text"
+							className="nhrotm-browse__search"
+							placeholder={ __(
+								'Replace with…',
+								'nhrrob-options-table-manager'
+							) }
+							value={ replace }
+							onChange={ ( e ) => setReplace( e.target.value ) }
+						/>
+					</div>
 				</div>
 				<div className="nhrotm-actions">
 					<button
@@ -479,30 +563,74 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 					) }
 				</div>
 				{ srResult && (
-					<p
-						className={
-							srResult.dry_run ? 'nhrotm-notice' : 'nhrotm-notice'
-						}
-					>
-						{ sprintf(
-							/* translators: 1: dry-run/applied, 2: options count, 3: occurrences. */
-							__(
-								'%1$s — %2$s options, %3$s occurrences.',
-								'nhrrob-options-table-manager'
-							),
-							srResult.dry_run
-								? __(
-										'Dry run',
-										'nhrrob-options-table-manager'
-								  )
-								: __(
-										'Applied',
-										'nhrrob-options-table-manager'
-								  ),
-							srResult.total_updated,
-							srResult.total_occurrences
+					<>
+						<p
+							className={
+								srResult.dry_run
+									? 'nhrotm-muted'
+									: 'nhrotm-notice'
+							}
+						>
+							{ sprintf(
+								/* translators: 1: dry-run/applied, 2: options count, 3: occurrences. */
+								__(
+									'%1$s — %2$s options, %3$s occurrences.',
+									'nhrrob-options-table-manager'
+								),
+								srResult.dry_run
+									? __(
+											'Dry run',
+											'nhrrob-options-table-manager'
+									  )
+									: __(
+											'Applied',
+											'nhrrob-options-table-manager'
+									  ),
+								srResult.total_updated,
+								srResult.total_occurrences
+							) }
+						</p>
+						{ srResult.details && srResult.details.length > 0 && (
+							<div className="nhrotm-grid__wrap">
+								<div className="nhrotm-grid__scroll">
+									<table className="nhrotm-grid">
+										<thead>
+											<tr>
+												<th>
+													{ __(
+														'Option',
+														'nhrrob-options-table-manager'
+													) }
+												</th>
+												<th
+													style={ {
+														textAlign: 'right',
+													} }
+												>
+													{ __(
+														'Occurrences',
+														'nhrrob-options-table-manager'
+													) }
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											{ srResult.details.map( ( row ) => (
+												<tr key={ row.option_name }>
+													<td className="nhrotm-grid__name">
+														{ row.option_name }
+													</td>
+													<td className="nhrotm-grid__size">
+														{ row.occurrences }
+													</td>
+												</tr>
+											) ) }
+										</tbody>
+									</table>
+								</div>
+							</div>
 						) }
-					</p>
+					</>
 				) }
 			</Panel>
 
@@ -529,23 +657,91 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 				anchor="import"
 				title={ __( 'Import', 'nhrrob-options-table-manager' ) }
 			>
+				<p className="nhrotm-muted">
+					{ __(
+						'Restore or merge options from a previously exported JSON file, matched by option name.',
+						'nhrrob-options-table-manager'
+					) }
+				</p>
 				<div className="nhrotm-field">
-					<input
-						type="file"
-						accept="application/json,.json"
-						onChange={ onFile }
-					/>
+					<div
+						className={
+							'nhrotm-dropzone' +
+							( isDropzoneActive ? ' is-active' : '' )
+						}
+						role="button"
+						tabIndex={ 0 }
+						onClick={ openFilePicker }
+						onKeyDown={ ( e ) => {
+							if ( 'Enter' === e.key || ' ' === e.key ) {
+								e.preventDefault();
+								openFilePicker();
+							}
+						} }
+						onDragOver={ ( e ) => {
+							e.preventDefault();
+							setIsDropzoneActive( true );
+						} }
+						onDragLeave={ () => setIsDropzoneActive( false ) }
+						onDrop={ onDropzoneDrop }
+					>
+						<input
+							ref={ fileInputRef }
+							type="file"
+							accept="application/json,.json"
+							className="nhrotm-dropzone__input"
+							onChange={ onFile }
+							tabIndex={ -1 }
+						/>
+						{ importFileName ? (
+							<div className="nhrotm-dropzone__file">
+								<Icon name="upload" size={ 18 } />
+								<span>{ importFileName }</span>
+								<button
+									type="button"
+									className="nhrotm-dropzone__clear"
+									aria-label={ __(
+										'Remove file',
+										'nhrrob-options-table-manager'
+									) }
+									onClick={ ( e ) => {
+										e.stopPropagation();
+										clearImportFile();
+									} }
+								>
+									<Icon name="close" size={ 14 } />
+								</button>
+							</div>
+						) : (
+							<div className="nhrotm-dropzone__empty">
+								<Icon name="upload" size={ 20 } />
+								{ __(
+									'Click to upload or drag a JSON file here',
+									'nhrrob-options-table-manager'
+								) }
+							</div>
+						) }
+					</div>
+				</div>
+				<div className="nhrotm-dropzone__divider">
+					{ __(
+						'— or paste JSON —',
+						'nhrrob-options-table-manager'
+					) }
 				</div>
 				<div className="nhrotm-field">
 					<textarea
 						className="nhrotm-modal__textarea"
 						rows="6"
 						placeholder={ __(
-							'…or paste exported JSON here',
+							'Paste exported JSON here',
 							'nhrrob-options-table-manager'
 						) }
 						value={ importJson }
-						onChange={ ( e ) => setImportJson( e.target.value ) }
+						onChange={ ( e ) => {
+							setImportJson( e.target.value );
+							setImportFileName( '' );
+						} }
 					/>
 				</div>
 				<div className="nhrotm-field">

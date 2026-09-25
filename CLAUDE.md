@@ -10,11 +10,28 @@ npm run lint         # wp-scripts lint-js admin/src
 npx wp-scripts lint-js admin/src --fix   # auto-fix prettier/eslint issues
 
 # PHP
+composer install            # dev toolchain (phpcs + phpunit)
 composer install --no-dev   # production autoload (ships in the zip)
-./vendor/bin/phpunit        # PHPUnit
+composer run phpcs          # WordPress Coding Standards lint
+composer run phpcbf         # auto-fix what PHPCS can
+composer run test:unit      # PHPUnit (WP_Mock, no DB)
 ```
 
 Always run `npm run lint` (fixing anything it flags) **and** `npm run build` after any change under `admin/src/` — the compiled `admin/build/` output is what actually ships and renders; editing `admin/src/` alone changes nothing live.
+
+## Pre-commit gate
+
+`.husky/pre-commit` (active — `git config core.hooksPath .husky`) blocks the commit on any failure of:
+
+1. `npm run lint` — ESLint over `admin/src/`
+2. `composer run phpcs` — WPCS, config in `phpcs.xml`
+3. `composer run test:unit` — PHPUnit, config in `phpunit.xml`
+
+Steps 2 and 3 are skipped when `vendor/bin/` is absent, so the hook still works on a checkout with no dev toolchain installed — run `composer install` to get the real gate.
+
+The whole codebase is currently PHPCS-clean, so **any** new violation is yours; fix it rather than widening the ruleset. Where a sniff is a genuine false positive (a `$wpdb` table name interpolated from `$this->table_name`, a nonce already checked in `validate_nonce()`), the codebase uses a narrowly-scoped `phpcs:ignore`/`phpcs:disable` with a `--` reason appended. Match that pattern; never blanket-disable a sniff in `phpcs.xml`.
+
+**`composer install` note:** `10up/wp_mock` is hosted under the `10up` GitHub org. A fine-grained GitHub PAT that doesn't include that org makes Composer fail with `Could not authenticate against github.com` — the package is public, so `COMPOSER_HOME=$(mktemp -d) composer install` (no token) is the quick workaround; the real fix is re-scoping the PAT.
 
 ## Architecture
 
@@ -32,7 +49,7 @@ This is the condensed, load-bearing checklist distilled from a full UI/UX polish
 
 1. **Component consistency is non-negotiable.** Same button height/padding/radius/shape as existing `.nhrotm-btn`/`.nhrotm-iconbtn`/`.nhrotm-segmented__item` siblings — never introduce one-off pixel values for a "new" button. Every clickable element gets an explicit `:hover`. No exceptions — this has been audited and fixed once already app-wide.
 2. **Every native form control (`input`, `textarea`, `select`, checkboxes, `a`) needs an explicit `:focus` override, and it must reset `outline`, `border-color`, *and* `box-shadow` together.** wp-admin core sets real styles on these elements (not just resets) — including a themed `box-shadow` ring — and winning the cascade for one property (e.g. `outline`) does nothing for the others core also sets. Half-fixing this is the single most repeated bug this session. See DESIGN.md §14.1.
-3. **Focus convention: hover darkens the border, focus changes nothing.** `:hover { border-color: var(--nhrotm-text-muted); }`, `:focus { border-color: var(--nhrotm-border-strong); outline: none; box-shadow: none; }` — deliberately *no* visible ring or colour change on focus for text-like inputs. This was a considered reversal partway through the polish pass; don't add a focus ring back to a text input without checking with the user first.
+3. **Focus convention: focus gets the same darkened border as hover.** `:hover { border-color: var(--nhrotm-text-muted); }`, `:focus { border-color: var(--nhrotm-text-muted); outline: none; box-shadow: none; }` — still no `box-shadow` ring, but focus is no longer visually indistinguishable from resting state. Reverted 2026-09-21 (user request) from an earlier "focus changes nothing" convention — don't revert this again without checking with the user first.
 4. **Checkboxes: never use `accent-color`.** Fully custom-drawn (`appearance: none` + `clip-path` checkmark) — `accent-color` checkboxes get a native focus halo Chrome paints that no CSS can suppress. Also explicitly reset `min-width: 0` (wp-admin sets `min-width: 1rem` with no matching `min-height`, which silently produces a non-square box) alongside the usual `outline`/`box-shadow` reset. See DESIGN.md §14.2 — this exact rule has regressed twice already from an incomplete rewrite.
 5. **`.nhrotm-btn` variants need a real, visible `border-color` — never rely on the transparent base border.** A shadow alone (e.g. on hover) blends into a similarly-toned fill with nothing to anchor the button's shape.
 6. **CSS custom properties (`--nhrotm-*`) only resolve inside `.nhrotm-app`'s DOM subtree.** Any provider/portal that renders UI (modals, toasts, tooltips) must be mounted as a *descendant* of `<AppShell>` (nest it under `children`), never as a wrapper around `<AppShell>` — a wrapper renders as a DOM *sibling* of `.nhrotm-app` and silently loses every token (fully transparent modal, no error). See DESIGN.md §14.4.
@@ -41,6 +58,9 @@ This is the condensed, load-bearing checklist distilled from a full UI/UX polish
 9. **Tables:** bold (`700`) headers, normal-weight (`400`) body content including name/key columns, zebra-striped rows (`nth-child(even)`, `--nhrotm-bg`) with a stronger `:hover` tint layered on top. Row actions are icon + text label, never icon-only.
 10. **If a screen has default sort/filter state, check every code path that can reset it** (tab switches, type changes, not just the initial `useState`) — this regressed once when a tab-switch handler reset sort to a different default than the one on mount.
 11. **A toolbar/header row's line count must never depend on whether its content happens to fit.** If different tabs/states render different amounts of toolbar content (Browse: some types have 0 extra filters, some 1, Transients has 2), letting `flex-wrap` decide per case means each type wraps at a different width, so the grid header sits at a different height per tab and switching tabs "jumps." Force a fixed row count instead (Browse's `.nhrotm-browse__tools` now carries `flex-basis: 100%` so it's always its own row on every type). See DESIGN.md §14.8 — this bit us once already via the loading-skeleton row count (`typeRowCountRef`) and came back in a new form when the Usermeta/Postmeta id-lookup filter was added.
+12. **Sharing a CSS class doesn't guarantee two controls look the same — check the wrapper too.** `JumpNav`'s quick-jump pill and Browse's type switcher both use `.nhrotm-segmented`, but `JumpNav` used to sit inside its own boxed strip (`.nhrotm-jumpnav`'s background/border/padding) while Browse's sits bare — same pill, two visibly different "tab bar" treatments. See DESIGN.md §14.10.
+13. **A panel with much less content than its siblings needs its own layout, not just left-aligned text in a full-width body.** Optimize's Cleanup panel (description + count + one button) left the whole right half of the panel blank next to Autoload health/Orphan scanner's full-width tables — fixed by reusing the existing `.nhrotm-card` component (same one Dashboard uses) as a stat tile beside the description, not inventing a new one. See DESIGN.md §14.11.
+14. **`table-layout: fixed` (the `.nhrotm-grid` default) needs an explicit `<colgroup>` of `nhrotm-col-*` widths.** A table whose columns aren't known ahead of time — e.g. Integrations, whose columns come straight from a third-party plugin's own DB schema — has no `<colgroup>` to give it, so the browser squeezes an arbitrary number of columns into the container's fixed width and their `nowrap` header text overflows on top of the neighbouring column instead of wrapping or scrolling. Give that table the `.nhrotm-grid--fluid` modifier (`table-layout: auto`) instead, so it sizes to its content and `.nhrotm-grid__scroll`'s `overflow-x: auto` can actually scroll it. See DESIGN.md §14.12.
 
 ## Documentation sync — required after every fix or feature change
 

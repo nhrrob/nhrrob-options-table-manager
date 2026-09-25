@@ -1,8 +1,14 @@
 <?php
+/**
+ * Shared base class for the plugin's controllers.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
@@ -10,15 +16,22 @@ use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 /**
  * Controller Class
  */
-class App
-{
+class App {
 
-    use GlobalTrait;
 
-    protected $page_slug;
+	use GlobalTrait;
 
-    public function __construct()
-    {
-        $this->page_slug = 'nhrotm-options-table-manager';
-    }
+	/**
+	 * Admin page slug shared by the plugin's screens.
+	 *
+	 * @var string
+	 */
+	protected $page_slug;
+
+	/**
+	 * Set the shared admin page slug.
+	 */
+	public function __construct() {
+		$this->page_slug = 'nhrotm-options-table-manager';
+	}
 }
