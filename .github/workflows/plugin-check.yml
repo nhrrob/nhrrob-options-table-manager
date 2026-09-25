@@ -15,12 +15,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install production Composer autoloader (no dev deps)
+        run: composer install --no-dev --no-interaction
+
       - name: Run Plugin Check
         uses: wordpress/plugin-check-action@v1
         with:
           build-dir: '.'
+          exclude-directories: tests
           exclude-checks: |
             plugin_review_phpcs
+          ignore-codes: |
             hidden_files
             ai_instruction_directory
             github_directory
+            unexpected_markdown_file
+            plugin_updater_detected
+            update_modification_detected

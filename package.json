@@ -1,0 +1,18 @@
+{
+  "name": "nhrrob-options-table-manager",
+  "version": "2.0.0-dev",
+  "description": "React admin app for NHR Options Manager 2.0.",
+  "author": "Nazmul Hasan Robin",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "scripts": {
+    "start": "wp-scripts start admin/src/index.js --output-path=admin/build",
+    "build": "wp-scripts build admin/src/index.js --output-path=admin/build",
+    "lint:js": "wp-scripts lint-js admin/src",
+    "lint": "wp-scripts lint-js admin/src",
+    "prepare": "git config core.hooksPath .husky || true"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  }
+}

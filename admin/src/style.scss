@@ -1,0 +1,2233 @@
+/**
+ * NHR Options Manager 2.0 — colorful, modern admin UI.
+ * All colour is CSS custom properties (zero bundle cost). Violet/indigo brand.
+ * Light + dark themes (token remap); dense, professional data grid.
+ * Mirrors .ai/DESIGN.md §9/§12/§13.
+ */
+
+@mixin dark-tokens {
+	// Brand violet is documented as theme-invariant (DESIGN.md §13), but that
+	// was only ever true for backgrounds/borders — as *text* (`.nhrotm-btn--soft`,
+	// `.nhrotm-linkbtn`, panel links) it was designed against a light surface.
+	// `--nhrotm-gradient-soft` does flip dark below, so the unremapped
+	// primary/primary-600 text sitting on top of it lost most of its contrast
+	// (~2.6:1, well under the 4.5:1 the docs call for). Lightened here the
+	// same way `--nhrotm-pro-text` already was for the identical pairing.
+	--nhrotm-primary: #8a7cff;
+	--nhrotm-primary-600: #b9adff;
+	--nhrotm-gradient-soft: linear-gradient(135deg, #242a4d 0%, #2c2350 100%);
+	--nhrotm-card-autoload: rgba(46, 144, 250, 0.14);
+	--nhrotm-card-options: rgba(109, 94, 252, 0.16);
+	--nhrotm-card-transients: rgba(247, 144, 9, 0.14);
+	--nhrotm-card-backup: rgba(18, 183, 106, 0.14);
+	--nhrotm-pro: rgba(109, 94, 252, 0.16);
+	--nhrotm-pro-text: #b9adff;
+	--nhrotm-pro-border: rgba(109, 94, 252, 0.35);
+	--nhrotm-surface: #1b1e2b;
+	--nhrotm-bg: #14161f;
+	--nhrotm-border: #2a2e3f;
+	--nhrotm-border-strong: #363b50;
+	--nhrotm-text: #e7e9f2;
+	--nhrotm-text-muted: #9aa1b8;
+	--nhrotm-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+	// Solid tint used for hover — a gradient can't be transitioned, a colour can.
+	--nhrotm-hover: rgba(255, 255, 255, 0.05);
+}
+
+.nhrotm-app {
+	// ---- Design tokens (light) ----
+	--nhrotm-primary: #6d5efc;
+	--nhrotm-primary-600: #5b4ce6;
+	--nhrotm-gradient: linear-gradient(135deg, #6d5efc 0%, #9b5cff 100%);
+	--nhrotm-gradient-soft: linear-gradient(135deg, #eef0ff 0%, #f6eeff 100%);
+
+	--nhrotm-success: #12b76a;
+	--nhrotm-warning: #f79009;
+	--nhrotm-danger: #f04438;
+	--nhrotm-info: #2e90fa;
+
+	--nhrotm-card-autoload: #eef4ff;
+	--nhrotm-card-options: #f4f0ff;
+	--nhrotm-card-transients: #fff4ec;
+	--nhrotm-card-backup: #ecfdf3;
+
+	--nhrotm-pro: #f4f0ff;
+	--nhrotm-pro-text: #6d5efc;
+	--nhrotm-pro-border: #e4dcff;
+
+	--nhrotm-surface: #ffffff;
+	--nhrotm-bg: #f7f8fc;
+	--nhrotm-border: #eaecf5;
+	--nhrotm-border-strong: #dfe1ee;
+	--nhrotm-text: #101828;
+	--nhrotm-text-muted: #667085;
+	--nhrotm-radius: 12px;
+	--nhrotm-shadow: 0 1px 3px rgba(16, 24, 40, 0.08),
+		0 1px 2px rgba(16, 24, 40, 0.06);
+	// Solid tint used for hover — a gradient can't be transitioned, a colour can.
+	--nhrotm-hover: #f5f3ff;
+
+	--nhrotm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	// Explicit base stack (matches WP admin's own current default) rather than
+	// silently inheriting whatever wp-admin's CSS happens to cascade down —
+	// this app had never declared one, so it was consistent only by accident
+	// of inheritance, with no anchor of its own against a future core/theme
+	// font change.
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+
+	// Horizontal insets come from .wrap alone, so the app lines up with the
+	// admin notices above it instead of sitting 20px further from the right edge.
+	margin: 20px 0 0;
+	// A closed <select>'s box takes its colours from our CSS, but the open
+	// option list's hover/selected highlight is native browser chrome our
+	// `color`/`background` can't touch — the browser picks that highlight
+	// colour from `color-scheme`, which defaults to light when undeclared.
+	// In dark mode that left our light option text sitting on the browser's
+	// still-light native hover row. Declared per theme state below so the
+	// native highlight actually matches which palette is showing.
+	color-scheme: light;
+	color: var(--nhrotm-text);
+	background: var(--nhrotm-bg);
+	border-radius: var(--nhrotm-radius);
+	overflow: hidden;
+	box-shadow: var(--nhrotm-shadow);
+
+	* {
+		box-sizing: border-box;
+	}
+}
+
+// Notices relocated into our .wrap should sit flush with the app below them.
+.nhrotm-wrap .notice,
+.nhrotm-wrap div.updated,
+.nhrotm-wrap div.error {
+	margin: 5px 0 15px;
+}
+
+// Dark: follow OS unless the user explicitly chose light; explicit dark always wins.
+@media (prefers-color-scheme: dark) {
+	.nhrotm-app:not([data-theme='light']) {
+		color-scheme: dark;
+		@include dark-tokens;
+	}
+}
+.nhrotm-app[data-theme='dark'] {
+	color-scheme: dark;
+	@include dark-tokens;
+}
+
+// `.nhrotm-wrap` is core's plain `.wrap` div — a *parent* of `.nhrotm-app`,
+// so the `--nhrotm-*` tokens scoped to `.nhrotm-app` never reach it (§14.4).
+// Left alone it stays whatever colour wp-admin's canvas is (white/near-white
+// in every core colour scheme), so the rounded dark card above sat inside a
+// visible white margin. `:has()` reads the theme state from the child
+// instead of duplicating AppShell's toggle logic up onto the static PHP
+// wrapper. Hex matches dark-tokens' `--nhrotm-bg` — can't reference the var
+// itself since it isn't in scope here.
+.nhrotm-wrap:has(.nhrotm-app[data-theme='dark']) {
+	background: #14161f;
+}
+@media (prefers-color-scheme: dark) {
+	.nhrotm-wrap:has(.nhrotm-app:not([data-theme='light'])) {
+		background: #14161f;
+	}
+}
+
+// ---- App bar (gradient hero strip) ----
+.nhrotm-appbar {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	background: var(--nhrotm-gradient);
+	padding: 14px 22px;
+	color: #fff;
+
+	&__mark {
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 9px;
+		background: rgba(255, 255, 255, 0.18);
+		flex: 0 0 auto;
+	}
+
+	&__title {
+		font-size: 17px;
+		font-weight: 600;
+		letter-spacing: 0.2px;
+	}
+
+	&__spacer {
+		flex: 1;
+	}
+
+	&__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		border: 0;
+		cursor: pointer;
+		background: rgba(255, 255, 255, 0.16);
+		color: #fff;
+		padding: 7px 11px;
+		border-radius: 8px;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 500;
+		transition: background 150ms;
+
+		&:hover {
+			background: rgba(255, 255, 255, 0.28);
+		}
+
+		// WP core's global `a:focus` rule (text colour, box-shadow ring, and
+		// 2px border-radius, themed to the admin colour scheme's accent
+		// colour) matches this link too, and otherwise wins each of those
+		// properties while focused since it's more specific than the plain
+		// `.nhrotm-appbar__btn` rule above. No focus ring here at all, so
+		// redeclare everything core's rule sets.
+		&:focus {
+			color: #fff;
+			outline: none;
+			box-shadow: none;
+			border-radius: 8px;
+		}
+	}
+
+	&__icobtn {
+		display: grid;
+		place-items: center;
+		width: 32px;
+		height: 32px;
+		padding: 0;
+	}
+
+	&__link {
+		// Matches &__icobtn's fixed 32px (the dark-theme toggle it sits next
+		// to) — the base padding alone renders shorter since it's sized to
+		// one line of 13px text, not a fixed box.
+		height: 32px;
+		text-decoration: none;
+		line-height: 1;
+
+		&:hover {
+			color: #fff;
+		}
+	}
+}
+
+// ---- Layout ----
+.nhrotm-body {
+	display: flex;
+	min-height: 520px;
+}
+
+.nhrotm-nav {
+	flex: 0 0 216px;
+	display: flex;
+	flex-direction: column;
+	background: var(--nhrotm-surface);
+	border-right: 1px solid var(--nhrotm-border);
+	padding: 12px;
+	gap: 3px;
+	transition: flex-basis 180ms ease;
+	overflow: hidden;
+
+	&__item {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		width: 100%;
+		padding: 9px 12px;
+		border: 0;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		font: inherit;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		text-align: left;
+		transition: background-color 160ms ease, color 160ms ease;
+
+		&:hover {
+			background-color: var(--nhrotm-hover);
+			color: var(--nhrotm-primary-600);
+		}
+
+		&.is-active {
+			background: var(--nhrotm-gradient);
+			color: #fff;
+			box-shadow: 0 4px 12px rgba(109, 94, 252, 0.35);
+		}
+	}
+
+	&__icon {
+		flex: 0 0 auto;
+		opacity: 0.9;
+	}
+
+	&__spacer {
+		flex: 1;
+	}
+
+	&__sep {
+		height: 1px;
+		margin: 10px 8px;
+		background: var(--nhrotm-border);
+	}
+
+	&__item--upgrade {
+		color: var(--nhrotm-text-muted);
+
+		&:hover {
+			background: var(--nhrotm-pro);
+			color: var(--nhrotm-pro-text);
+		}
+
+		&.is-active {
+			background: var(--nhrotm-pro);
+			color: var(--nhrotm-pro-text);
+			box-shadow: none;
+		}
+	}
+}
+
+// Collapsed: nav becomes an icon rail so content (grid) gets full width.
+.nhrotm-app.is-collapsed {
+	.nhrotm-nav {
+		flex-basis: 58px;
+	}
+	.nhrotm-nav__label {
+		display: none;
+	}
+	.nhrotm-nav__item {
+		justify-content: center;
+		padding-left: 0;
+		padding-right: 0;
+	}
+}
+
+.nhrotm-content {
+	flex: 1;
+	padding: 24px;
+	min-width: 0;
+	background: var(--nhrotm-bg);
+}
+
+// Soft fade on every section switch (keyed remount) — no more hard blink.
+// Opacity-only (no transform): a transformed ancestor would trap position:fixed
+// modals inside the content box instead of the viewport.
+.nhrotm-screen {
+	animation: nhrotm-screen-in 200ms ease-out both;
+}
+
+@keyframes nhrotm-screen-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+// ---- Screen header (title + lede at the top of each section) ----
+.nhrotm-screen__head {
+	margin: 0 0 22px;
+}
+.nhrotm-screen__title {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: -0.2px;
+	color: var(--nhrotm-text);
+}
+.nhrotm-screen__lede {
+	margin: 4px 0 0;
+	color: var(--nhrotm-text-muted);
+	font-size: 13.5px;
+}
+
+// ---- Panel ----
+.nhrotm-panel {
+	background: var(--nhrotm-surface);
+	border: 1px solid var(--nhrotm-border);
+	border-radius: var(--nhrotm-radius);
+	box-shadow: var(--nhrotm-shadow);
+	margin-bottom: 20px;
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 15px 20px;
+		border-bottom: 1px solid var(--nhrotm-border);
+	}
+
+	&__title {
+		margin: 0;
+		font-size: 15px;
+		font-weight: 600;
+	}
+
+	// Right-hand count in a panel header, e.g. "3 items".
+	&__meta {
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+		white-space: nowrap;
+	}
+
+	&__body {
+		padding: 20px;
+
+		// A lead-in <p className="nhrotm-muted"> otherwise stacks the
+		// browser's default paragraph margin on top of this padding (an
+		// oversized top gap) while leaving no gap at all below it before
+		// whatever follows (table, buttons) — reset both to one deliberate
+		// value instead.
+		> p {
+			margin: 0 0 12px;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+	}
+
+	// Brief flash when a cross-section link lands on this panel, so the jump is
+	// legible instead of looking like a random scroll position. Border-only —
+	// no box-shadow — matches this app's restrained no-glow interaction
+	// language elsewhere (a translucent ring next to a solid border read as
+	// washed-out rather than a clean ring).
+	&.is-focused {
+		border-color: var(--nhrotm-primary);
+		transition: border-color 250ms;
+	}
+}
+
+// ---- Fields ----
+.nhrotm-field {
+	margin-bottom: 16px;
+
+	label {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 14px;
+		font-weight: 500;
+	}
+
+	&__hint {
+		margin: 4px 0 0;
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+	}
+
+	input[type='text'],
+	input[type='number'],
+	input[type='search'],
+	textarea,
+	select {
+		margin-top: 6px;
+		padding: 8px 11px;
+		border: 1px solid var(--nhrotm-border-strong);
+		border-radius: 8px;
+		min-width: 200px;
+		background: var(--nhrotm-surface);
+		color: var(--nhrotm-text);
+		font: inherit;
+		font-size: 13.5px;
+	}
+
+	input:hover,
+	textarea:hover,
+	select:hover {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	// Focus gets the same darkened border as hover (reverted from the earlier
+	// "focus changes nothing" convention per user request) — still resets WP
+	// core's own themed box-shadow ring and outline, which keep applying here
+	// otherwise, and still no box-shadow ring of our own.
+	input:focus,
+	textarea:focus,
+	select:focus {
+		outline: none;
+		border-color: var(--nhrotm-text-muted);
+		box-shadow: none;
+	}
+}
+
+// Pairs of .nhrotm-field side by side in one row (e.g. Search & Replace's
+// search/replace-with inputs) instead of stacking — every other toolbar in
+// the app (.nhrotm-actions, .nhrotm-browse__tools) is a flex row already.
+.nhrotm-fieldrow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 16px;
+
+	.nhrotm-field {
+		flex: 1 1 220px;
+		margin-bottom: 0;
+
+		input {
+			width: 100%;
+		}
+	}
+}
+
+// Compact, on-brand checkboxes app-wide (native ones render oversized) —
+// every checkbox in the app, not just the Browse grid's. Fully custom-drawn
+// (appearance:none + a clip-path check) rather than styled via accent-color —
+// accent-color checkboxes get a native focus halo that outline/box-shadow
+// can't touch (it's the native widget's own paint). appearance:none removes
+// that native paint, but WP core's own `:focus` box-shadow rule (a plain CSS
+// property, unrelated to native rendering) still matches and must still be
+// reset explicitly below — appearance doesn't do that part for free.
+.nhrotm-app input[type='checkbox'] {
+	appearance: none;
+	-webkit-appearance: none;
+	box-sizing: border-box;
+	// WP core's `input[type=checkbox]` sets `min-width: 1rem` (16px) with no
+	// matching min-height. min-width is a hard layout floor — it clamps the
+	// final width no matter which rule's `width` wins the cascade, so the
+	// box rendered 16x15px (clamped wide, height untouched) until this reset.
+	min-width: 0;
+	display: inline-grid;
+	place-content: center;
+	width: 15px;
+	height: 15px;
+	margin: 0;
+	vertical-align: middle;
+	border: 1.5px solid var(--nhrotm-border-strong);
+	border-radius: 4px;
+	background: var(--nhrotm-surface);
+	cursor: pointer;
+	transition: background 150ms, border-color 150ms;
+
+	// A hand-picked clip-path polygon and a rotated-border "L" were both
+	// tried here and both left the visible checkmark ink off-centre within
+	// its own box — a checkmark is inherently asymmetric (short left stroke,
+	// long right stroke), so centering the *bounding box* doesn't centre
+	// what's actually drawn. Masking with the same check-icon path already
+	// used (and already correctly centred) for the toast success icon
+	// sidesteps the problem entirely instead of re-deriving it by eye.
+	&::before {
+		content: '';
+		width: 12px;
+		height: 12px;
+		margin-top: 1px;
+		margin-left: 1px;
+		background: #fff;
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+		mask-repeat: no-repeat;
+		-webkit-mask-repeat: no-repeat;
+		mask-position: center;
+		-webkit-mask-position: center;
+		mask-size: contain;
+		-webkit-mask-size: contain;
+		transform: scale(0);
+		transition: transform 120ms ease-in-out;
+	}
+
+	&:checked {
+		background: var(--nhrotm-primary);
+		border-color: var(--nhrotm-primary);
+
+		&::before {
+			transform: scale(1);
+		}
+	}
+
+	&:hover {
+		border-color: var(--nhrotm-primary);
+	}
+
+	// appearance:none removes native widget painting, but WP core's
+	// `input[type=checkbox]:focus` box-shadow (the double white+theme-colour
+	// ring) is plain author CSS, not native paint — appearance never touched
+	// it, and dropping this reset when this rule was rewritten let it back in.
+	&:focus {
+		outline: none;
+		box-shadow: none;
+	}
+}
+
+.nhrotm-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+	flex-wrap: wrap;
+
+	// Acts as a table toolbar (e.g. Tools → Backups) when a grid immediately
+	// follows it — give it the same bottom spacing Browse's own toolbar
+	// (.nhrotm-browse__toolbar) has, rather than sitting flush against the table.
+	&:has(+ .nhrotm-grid__wrap, + .nhrotm-grid) {
+		margin-bottom: 16px;
+	}
+}
+
+// ---- Buttons ----
+.nhrotm-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 9px 16px;
+	border: 1px solid transparent;
+	border-radius: 10px;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 150ms, box-shadow 150ms, background 150ms,
+		border-color 150ms;
+
+	&--primary {
+		background: var(--nhrotm-gradient);
+		color: #fff;
+
+		&:hover {
+			box-shadow: 0 6px 16px rgba(109, 94, 252, 0.4);
+			transform: translateY(-1px);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: default;
+			transform: none;
+			box-shadow: none;
+		}
+	}
+
+	&--soft {
+		background: var(--nhrotm-gradient-soft);
+		color: var(--nhrotm-primary-600);
+		// The base border is transparent, so this button's shape was defined
+		// only by its soft fill colour — on hover, the lift shadow is a
+		// similar violet tone and blurs into the fill with no edge to anchor
+		// it. A real border keeps the shape crisp at rest and on hover alike.
+		// Neutral (not tinted) so it reads as one family with the other
+		// bordered controls it sits beside, e.g. .nhrotm-browse__search.
+		border-color: var(--nhrotm-border-strong);
+
+		// Same lift language as --primary, scaled down to read as the
+		// secondary action — every .nhrotm-btn variant gets a hover now.
+		&:hover {
+			box-shadow: 0 4px 12px rgba(109, 94, 252, 0.22);
+			transform: translateY(-1px);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: default;
+			transform: none;
+			box-shadow: none;
+		}
+	}
+
+	&--danger {
+		background: var(--nhrotm-danger);
+		color: #fff;
+
+		&:hover {
+			box-shadow: 0 6px 16px rgba(240, 68, 56, 0.35);
+			transform: translateY(-1px);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: default;
+			transform: none;
+			box-shadow: none;
+		}
+	}
+
+	&--sm {
+		padding: 6px 11px;
+		font-size: 12px;
+		border-radius: 8px;
+	}
+}
+
+// ---- PRO tag (muted, quiet — reads as metadata, not a button) ----
+.nhrotm-pro-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 8px 2px 7px;
+	border-radius: 20px;
+	background: var(--nhrotm-pro);
+	border: 1px solid var(--nhrotm-pro-border);
+	color: var(--nhrotm-pro-text);
+	font: inherit;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	cursor: pointer;
+
+	&::before {
+		content: '';
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: currentColor;
+	}
+
+	&:hover {
+		filter: brightness(0.97);
+	}
+}
+
+.nhrotm-hint {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--nhrotm-text-muted);
+	font-size: 12.5px;
+}
+
+// ---- Dashboard ----
+.nhrotm-health {
+	display: flex;
+	align-items: center;
+	gap: 30px;
+	flex-wrap: wrap;
+	// The health panel is the page's headline surface — give it room to read as
+	// one rather than a thin strip above the cards.
+	padding: 14px 6px;
+}
+
+.nhrotm-gauge {
+	position: relative;
+	flex: 0 0 auto;
+
+	&__value {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+
+		strong {
+			font-size: 32px;
+			line-height: 1;
+			letter-spacing: -0.5px;
+		}
+
+		span {
+			font-size: 12px;
+			color: var(--nhrotm-text-muted);
+		}
+	}
+}
+
+.nhrotm-health__copy {
+	// Take the remaining row width so the description wraps beside the gauge
+	// rather than pushing it onto its own line.
+	flex: 1 1 320px;
+	min-width: 0;
+
+	h3 {
+		margin: 0 0 6px;
+		font-size: 17px;
+		font-weight: 700;
+	}
+
+	p {
+		margin: 0;
+		font-size: 13.5px;
+		max-width: 68ch;
+	}
+}
+
+// Figure strip under the health description.
+.nhrotm-health__stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 22px;
+	margin-top: 14px;
+	font-size: 13px;
+	color: var(--nhrotm-text-muted);
+
+	b {
+		color: var(--nhrotm-text);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+}
+
+.nhrotm-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.nhrotm-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 18px;
+	border-radius: var(--nhrotm-radius);
+	background: var(--nhrotm-surface);
+	box-shadow: var(--nhrotm-shadow);
+
+	// Previously tinted the whole card — busier than the rest of the app,
+	// which never uses tinted card backgrounds elsewhere. Colour now lives
+	// only in the small icon badge below (still the same theme-aware
+	// --nhrotm-card-* tokens, already reused for badge backgrounds
+	// elsewhere, so dark mode's translucent variants keep working here too).
+	&--autoload .nhrotm-card__ico {
+		background: var(--nhrotm-card-autoload);
+	}
+	&--options .nhrotm-card__ico {
+		background: var(--nhrotm-card-options);
+	}
+	&--transients .nhrotm-card__ico {
+		background: var(--nhrotm-card-transients);
+	}
+	&--backup .nhrotm-card__ico {
+		background: var(--nhrotm-card-backup);
+	}
+
+	&__top {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 12px;
+	}
+
+	&__ico {
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 8px;
+		background: rgba(255, 255, 255, 0.65);
+	}
+
+	&__label {
+		font-size: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.4px;
+		color: var(--nhrotm-text-muted);
+	}
+
+	&__metric {
+		font-size: 24px;
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: -0.5px;
+	}
+
+	&__sub {
+		font-size: 12.5px;
+		color: var(--nhrotm-text-muted);
+		margin: 3px 0 14px;
+	}
+
+	&__action {
+		margin-top: auto;
+	}
+
+	// The soft button's tint is close enough to some card tints (notably
+	// --nhrotm-card-options) to disappear. On a card it gets a solid surface
+	// and a real border so it always reads as a control.
+	.nhrotm-btn--soft {
+		background: var(--nhrotm-surface);
+		border-color: var(--nhrotm-border-strong);
+
+		&:hover {
+			background: var(--nhrotm-hover);
+			border-color: var(--nhrotm-primary);
+		}
+	}
+}
+
+// Cleanup panel body (Optimize): description + action beside a stat tile.
+// Reuses the plain .nhrotm-card component (same one the Dashboard's
+// autoload/options/transients/backup tiles use) instead of a one-off — the
+// panel previously had only a description, a count line and a button, all
+// left-aligned, leaving the whole right half of the (full-width) panel
+// visibly blank next to sibling panels that fill the width with a table.
+.nhrotm-cleanup {
+	display: flex;
+	// The copy column (paragraph + one button) is much shorter than the stat
+	// card (icon row + label + metric + subtext + button) — center-align so
+	// leftover height distributes around the shorter column instead of
+	// pooling below it as dead space.
+	align-items: center;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+.nhrotm-cleanup__copy {
+	flex: 1 1 320px;
+	min-width: 0;
+}
+
+.nhrotm-cleanup__stat {
+	flex: 0 0 220px;
+}
+
+// Dark-mode fallback for a .nhrotm-card__ico with none of the 4 tint
+// modifiers below (none exists today, but every icon badge should still get
+// a visible chip rather than falling through to the light-mode translucent
+// white, which would nearly disappear against a dark surface).
+[data-theme='dark'] .nhrotm-card:not([class*='nhrotm-card--']) .nhrotm-card__ico {
+	background: rgba(255, 255, 255, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+	.nhrotm-app:not([data-theme='light'])
+		.nhrotm-card:not([class*='nhrotm-card--'])
+		.nhrotm-card__ico {
+		background: rgba(255, 255, 255, 0.08);
+	}
+}
+
+// ---- Optimize/Tools: jump nav (reuses .nhrotm-segmented below) ----
+// Bare — no background/border/padding of its own — so this sits exactly like
+// Browse's segmented type switcher (.nhrotm-browse__toolbar > .nhrotm-segmented):
+// directly under the screen header, same 16px bottom margin, nothing framing
+// it. It used to carry its own surface-coloured strip with a bottom border,
+// which read as a boxed "tab bar" distinct from Browse's bare pill — same
+// underlying control, two different visual treatments. The strip's vertical
+// padding also had no horizontal counterpart, so the pill's left edge sat
+// flush against the strip's edge instead of getting the inset every other
+// bordered surface in the app gets.
+.nhrotm-jumpnav {
+	margin: 0 0 16px;
+}
+
+// ---- Browse: toolbar, segmented switcher, grid, pager ----
+// `.nhrotm-browse__tools` content varies per type (plain search vs. search +
+// transient status/owner selects vs. search + postmeta/usermeta lookup), so
+// whether it happens to fit beside the segmented switcher on one line is
+// type-dependent and viewport-dependent — letting it wrap opportunistically
+// meant the toolbar (and therefore the grid header) sat at a different
+// height per type, which read as the whole page "jumping" when switching
+// tabs. `flex-basis: 100%` on `.nhrotm-browse__tools` below forces it onto
+// its own row unconditionally, so every type gets the same two-row toolbar
+// height regardless of how wide its filters are.
+.nhrotm-browse__toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+	flex-wrap: wrap;
+}
+
+.nhrotm-segmented {
+	display: inline-flex;
+	background: var(--nhrotm-bg);
+	border: 1px solid var(--nhrotm-border);
+	border-radius: 10px;
+	padding: 3px;
+
+	&__item {
+		border: 0;
+		background: transparent;
+		padding: 7px 14px;
+		border-radius: 8px;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		transition: background 150ms, color 150ms;
+
+		&:hover:not(.is-active) {
+			background: var(--nhrotm-hover);
+			color: var(--nhrotm-primary-600);
+		}
+
+		&.is-active {
+			background: var(--nhrotm-gradient);
+			color: #fff;
+		}
+	}
+}
+
+.nhrotm-browse__tools {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	// Always its own row — see the comment on .nhrotm-browse__toolbar above.
+	flex-basis: 100%;
+
+	// Bulk action / Add / filters render first in markup (left group); the
+	// search box is always last, and this margin pushes it to the row's right
+	// edge — isolating free-text search from the structured controls beside
+	// it, without a wrapper div per side. Falls back to wrapping onto its own
+	// line (still right-edge-anchored via the same auto margin) on narrow
+	// viewports rather than fighting flex-wrap.
+	.nhrotm-search {
+		margin-left: auto;
+	}
+}
+
+// Scoped to `.nhrotm-app` (not just the bare class) so this beats WP core's
+// `input[type=search]{border-radius:2px;...}` in forms.css — that rule pairs
+// an element type with an attribute selector, which outranks a lone class
+// regardless of our stylesheet's load order. Same reasoning applies to the
+// `:hover`/`:focus` variants below against core's `input[type=search]:focus`.
+.nhrotm-app .nhrotm-browse__search {
+	// Match the segmented switcher / buttons it sits beside in the toolbar
+	// (10px radius, 9px vertical padding) rather than the smaller 8px used
+	// for form-field inputs elsewhere.
+	padding: 9px 14px;
+	border: 1px solid var(--nhrotm-border-strong);
+	border-radius: 10px;
+	min-width: 200px;
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	font: inherit;
+	font-size: 13px;
+	transition: border-color 150ms;
+	// Reset native OS search-field chrome so the radius/border above always
+	// wins instead of the browser's own rounded/pill appearance. Chrome/Safari
+	// only respect this on `input[type=search]` via the -webkit- prefixed
+	// property — the build's autoprefixer strips a plain `none` here as a
+	// "redundant" duplicate of the standard `appearance: none` below, since
+	// current browser versions claim to support the unprefixed property. They
+	// don't fully honour it for the search-field chrome specifically, so we
+	// use `textfield` (a different value, immune to that dedup) — the same
+	// value WordPress core itself uses for this exact input type.
+	-webkit-appearance: textfield;
+	appearance: none;
+
+	&::-webkit-search-decoration,
+	&::-webkit-search-cancel-button {
+		-webkit-appearance: none;
+	}
+
+	&:hover {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	// WP core's `input[type=search]:focus` sets its own border-color and
+	// box-shadow ring (themed to the admin colour scheme's accent colour) —
+	// each is a separate declaration that keeps applying unless redeclared,
+	// even once our selector's specificity wins the cascade. Focus gets the
+	// same darkened border as hover, no box-shadow ring of our own.
+	&:focus {
+		border-color: var(--nhrotm-text-muted);
+		outline: none;
+		box-shadow: none;
+	}
+}
+
+// Transients-only status filter — same visual weight as the search field it
+// sits beside (9px/14px padding, 10px radius), same hover/focus treatment.
+.nhrotm-app .nhrotm-browse__statusfilter {
+	padding: 9px 14px;
+	border: 1px solid var(--nhrotm-border-strong);
+	border-radius: 10px;
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	font: inherit;
+	font-size: 13px;
+
+	&:hover {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	&:focus {
+		outline: none;
+		border-color: var(--nhrotm-text-muted);
+		box-shadow: none;
+	}
+}
+
+// Postmeta/usermeta-only "filter by post/user" search-and-pick combobox
+// (IdLookupFilter) — same leading-icon/clear-button shape as .nhrotm-search
+// beside it, plus a dropdown result panel.
+.nhrotm-app .nhrotm-lookup {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+
+	> svg {
+		position: absolute;
+		left: 11px;
+		color: var(--nhrotm-text-muted);
+		pointer-events: none;
+	}
+
+	&__input {
+		width: 200px;
+		padding: 9px 30px 9px 34px;
+		border: 1px solid var(--nhrotm-border-strong);
+		border-radius: 10px;
+		background: var(--nhrotm-surface);
+		color: var(--nhrotm-text);
+		font: inherit;
+		font-size: 13px;
+
+		&:hover {
+			border-color: var(--nhrotm-text-muted);
+		}
+
+		&:focus {
+			outline: none;
+			border-color: var(--nhrotm-text-muted);
+			box-shadow: none;
+		}
+	}
+
+	&__clear {
+		position: absolute;
+		right: 6px;
+		display: grid;
+		place-items: center;
+		width: 22px;
+		height: 22px;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		transition: background 150ms, color 150ms;
+
+		&:hover {
+			background: var(--nhrotm-bg);
+			color: var(--nhrotm-text);
+		}
+	}
+
+	&__panel {
+		position: absolute;
+		top: calc(100% + 6px);
+		left: 0;
+		z-index: 20;
+		width: 260px;
+		max-height: 240px;
+		overflow-y: auto;
+		padding: 6px;
+		border: 1px solid var(--nhrotm-border);
+		border-radius: 10px;
+		background: var(--nhrotm-surface);
+		box-shadow: var(--nhrotm-shadow);
+	}
+
+	&__status {
+		padding: 8px 10px;
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+	}
+
+	&__option {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		width: 100%;
+		padding: 8px 10px;
+		border: 0;
+		border-radius: 7px;
+		background: transparent;
+		color: var(--nhrotm-text);
+		font: inherit;
+		font-size: 13px;
+		text-align: left;
+		cursor: pointer;
+
+		&:hover,
+		&.is-active {
+			background: var(--nhrotm-bg);
+		}
+	}
+
+	&__id {
+		flex: 0 0 auto;
+		color: var(--nhrotm-text-muted);
+		font-size: 12px;
+	}
+}
+
+// Leading magnifying-glass icon + a custom clear button on the Browse search
+// field (the native ::-webkit-search-cancel-button is switched off above so
+// it doesn't fight the icon/appearance reset — this replaces it).
+.nhrotm-app .nhrotm-search {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+
+	> svg {
+		position: absolute;
+		left: 11px;
+		color: var(--nhrotm-text-muted);
+		pointer-events: none;
+	}
+
+	.nhrotm-browse__search {
+		width: 240px;
+		padding-left: 34px;
+		padding-right: 30px;
+	}
+
+	&__clear {
+		position: absolute;
+		right: 6px;
+		display: grid;
+		place-items: center;
+		width: 22px;
+		height: 22px;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		transition: background 150ms, color 150ms;
+
+		&:hover {
+			background: var(--nhrotm-bg);
+			color: var(--nhrotm-text);
+		}
+	}
+}
+
+.nhrotm-grid__wrap {
+	border: 1px solid var(--nhrotm-border);
+	border-radius: var(--nhrotm-radius);
+	overflow: hidden;
+	background: var(--nhrotm-surface);
+	box-shadow: var(--nhrotm-shadow);
+}
+
+.nhrotm-grid__scroll {
+	overflow-x: auto;
+}
+
+.nhrotm-grid {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	min-width: 790px;
+	table-layout: fixed;
+
+	col.nhrotm-col-check {
+		width: 40px;
+	}
+	// Deliberately no width here. Every sibling column below is a fixed px
+	// value, and this is the one column left unset per table — under
+	// table-layout:fixed an unset column absorbs 100% of whatever's left
+	// over, so it renders at the same width convention (fixed columns
+	// pinned, text column flexes) across every table regardless of how many
+	// fixed columns that particular table has. A `%` value here previously
+	// computed against total table width independently of the other
+	// columns' real footprint, so the same "24%" rendered at a different
+	// effective width in a 4-column table vs. a 5-column one.
+	col.nhrotm-col-name {
+		width: auto;
+	}
+	// Optimize's DataTable (Autoload health, Orphan scanner) has no second
+	// flex column to share the leftover space with — unlike Browse's Name +
+	// Value pair — so the plain flex rule above leaves it oversized next to
+	// short option/prefix names. `max-width` on a `<col>` is not honored by
+	// browsers under table-layout:fixed (only `width` is), so a real fixed
+	// width is the only way to actually stop it growing — it no longer
+	// flexes narrower than this on small screens either, but that beat
+	// silently not capping at all.
+	col.nhrotm-col-name--capped {
+		width: 220px;
+	}
+	col.nhrotm-col-size {
+		width: 84px;
+	}
+	col.nhrotm-col-badge {
+		width: 128px;
+	}
+	// Orphan scanner's Source badge ("Unknown Plugin/Theme") runs much longer
+	// than a plain status badge — at the shared 128px width its pill left
+	// almost no buffer before the Risk column's cell boundary, so Risk read
+	// as crowded against it despite the same 16px cell padding every other
+	// column gets. Risk itself stays on the narrow `nhrotm-col-badge` width
+	// since "High"/"Medium" never need the extra room.
+	col.nhrotm-col-badge-wide {
+		width: 210px;
+	}
+	col.nhrotm-col-owner {
+		width: 150px;
+	}
+	// A high-traffic option's real hit count (e.g. "15044 usages") is wider
+	// than a flat status word — 110px only fit short labels like "Unused"/
+	// "Untracked" and forced the pill to wrap onto a second line for any
+	// option with a large tracked count.
+	col.nhrotm-col-usage {
+		width: 150px;
+	}
+	col.nhrotm-col-act {
+		width: 210px;
+	}
+	// Optimize's row actions are ever only one button (+ an occasional inline
+	// score-impact badge) — Browse's 210px .nhrotm-col-act was sized for its
+	// two-button (Edit + Delete) rows and left a visibly empty gutter here.
+	col.nhrotm-col-act-sm {
+		width: 168px;
+	}
+	// A plain numeric count (e.g. Backups' "Options" column) — narrower than
+	// a badge, wider than a bare 2-3 digit number needs to avoid feeling cramped.
+	col.nhrotm-col-count {
+		width: 90px;
+	}
+	// A formatted date (e.g. Backups' "Created" column, wp_date()'s
+	// site-configured date_format) — no existing column needed this before.
+	col.nhrotm-col-date {
+		width: 170px;
+	}
+
+	th,
+	td {
+		text-align: left;
+		padding: 9px 16px;
+		border-bottom: 1px solid var(--nhrotm-border);
+		vertical-align: middle;
+	}
+
+	thead th {
+		color: var(--nhrotm-text-muted);
+		font-weight: 700;
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		background: var(--nhrotm-bg);
+		height: 40px;
+		white-space: nowrap;
+	}
+
+	tbody tr {
+		transition: background-color 140ms ease;
+	}
+
+	// Classic-style zebra stripe as a static anchor for scanning a wide,
+	// tall row — hover below still wins (same specificity, later in source)
+	// so it stays the stronger interaction cue on top of either stripe.
+	tbody tr:nth-child(even) {
+		background-color: var(--nhrotm-bg);
+	}
+
+	tbody tr:last-child td {
+		border-bottom: 0;
+	}
+
+	tbody tr:hover {
+		background-color: var(--nhrotm-hover);
+	}
+
+	&__sort {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		padding: 0;
+
+		&:hover {
+			color: var(--nhrotm-primary-600);
+		}
+
+		&.is-active {
+			color: var(--nhrotm-primary-600);
+		}
+
+		svg {
+			opacity: 0.6;
+		}
+		&.is-active svg {
+			opacity: 1;
+		}
+	}
+
+	&__name {
+		font-family: var(--nhrotm-mono);
+		font-weight: 400;
+		font-size: 12.5px;
+		color: var(--nhrotm-text);
+		// Wrap rather than truncate — usermeta keys in particular run much
+		// longer than option names and an ellipsis was hiding them entirely.
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	&__preview {
+		// A block div nested inside a plain, unstyled <td> (see BrowseScreen.js)
+		// rather than applied to the <td> itself: table cells ignore margin,
+		// and a `display: block` <td> stops stretching to the row's height,
+		// which desyncs its border-bottom from every other column's. The
+		// <td>'s own padding (the standard th/td rule above) already matches
+		// the Name/Size columns, so this div adds none of its own — only the
+		// vertical margin, which needs the div's real box model to take effect.
+		display: block;
+		color: var(--nhrotm-text-muted);
+		font-family: var(--nhrotm-mono);
+		font-size: 12px;
+		max-height: 90px;
+		overflow-y: auto;
+		white-space: pre-wrap;
+		word-break: break-word;
+		scrollbar-width: thin;
+		// So two tall, scrollable values in adjacent rows still read as
+		// separate blocks instead of touching.
+		margin: 3px 0;
+
+		&::-webkit-scrollbar {
+			width: 6px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: var(--nhrotm-border-strong);
+			border-radius: 3px;
+		}
+	}
+
+	&__size {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		color: var(--nhrotm-text-muted);
+		text-align: right;
+	}
+
+	// Health-score points a whole Optimize panel is worth if fully cleared
+	// (see OptimizeScreen.js's ScoreGainMeta) — a real, single computed
+	// number per panel, never a per-row figure (the score's capped/ratio
+	// penalties make per-row gains misleading; see OptimizeService::overview()).
+	&__gain {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		text-align: right;
+		font-weight: 700;
+		color: var(--nhrotm-success);
+	}
+
+	// Link to the owning post/user for usermeta & postmeta rows, in the same
+	// column autoload/status badges use for options/transients.
+	&__owner {
+		display: inline-block;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		vertical-align: middle;
+		font-size: 12.5px;
+		font-weight: 600;
+		color: var(--nhrotm-primary);
+		text-decoration: none;
+
+		&:hover,
+		&:focus {
+			text-decoration: underline;
+		}
+
+		&--muted {
+			color: var(--nhrotm-text-muted);
+			font-weight: 400;
+
+			&:hover,
+			&:focus {
+				text-decoration: none;
+			}
+		}
+
+		// Second line under a status/autoload badge in the same cell
+		// (transients: status badge + guessed owner).
+		&--stacked {
+			display: block;
+			margin-top: 3px;
+		}
+	}
+
+	// The header's "ACTIONS" label is plain text, so it respects the cell's
+	// text-align:right directly. This div doesn't get that for free — a
+	// block/flex box with no declared width isn't reliably stretching to
+	// the actual (table-layout:fixed, possibly browser-stretched-wider-
+	// than-declared) column width, so `justify-content:flex-end` was
+	// packing the button against the edge of a too-narrow box instead of
+	// the cell's true right edge, leaving every button visibly left of the
+	// header above it. Forcing full width removes the ambiguity.
+	&__actions {
+		display: flex;
+		width: 100%;
+		box-sizing: border-box;
+		gap: 6px;
+		justify-content: flex-end;
+	}
+}
+
+// Every other .nhrotm-grid table (Browse, Optimize, Backups) has a known,
+// fixed set of columns and renders an explicit <colgroup> of nhrotm-col-*
+// widths that add up sensibly under the base table-layout:fixed above.
+// Integrations' table doesn't — its columns come straight from a third-party
+// plugin's own DB schema (Better Payment's table alone has 15+), so there's
+// no <colgroup> and no per-column width to give it. Under table-layout:fixed
+// with no <colgroup>, the browser still has to divide the table's fixed
+// 100%-of-container width across however many columns showed up, so each
+// one gets a sliver far narrower than its (nowrap) header text — which then
+// overflows out of its cell and on top of the neighbours instead of wrapping
+// or scrolling. table-layout:auto here lets the table size itself to its
+// content instead and grow past the container, so .nhrotm-grid__scroll's
+// existing overflow-x:auto can actually do its job.
+.nhrotm-grid--fluid {
+	table-layout: auto;
+	width: auto;
+	min-width: 100%;
+}
+
+// Placeholder rows shown while a type/sort/search/page change is loading, so
+// the grid keeps roughly its prior row count instead of collapsing to a
+// single "Loading…" line and jumping back once data arrives.
+.nhrotm-skeleton {
+	display: inline-block;
+	height: 12px;
+	border-radius: 4px;
+	background: linear-gradient(
+		90deg,
+		var(--nhrotm-border) 25%,
+		var(--nhrotm-hover) 50%,
+		var(--nhrotm-border) 75%
+	);
+	background-size: 200% 100%;
+	animation: nhrotm-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes nhrotm-skeleton-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+// Row actions (Edit/Delete): icon + label, matching Classic view's text
+// links rather than icon-only glyphs that need a tooltip to read.
+.nhrotm-iconbtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--nhrotm-text-muted);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: color 150ms, background 150ms, border-color 150ms;
+
+	&:hover {
+		color: var(--nhrotm-primary);
+		background: var(--nhrotm-surface);
+		// Strong token, not the passive row-divider one — this border is
+		// hover feedback on a control, same family as the search field,
+		// inputs and checkboxes.
+		border-color: var(--nhrotm-border-strong);
+	}
+
+	&--danger:hover {
+		color: var(--nhrotm-danger);
+		border-color: var(--nhrotm-danger);
+	}
+}
+
+// "Protected" swaps in for .nhrotm-iconbtn in the same actions cell (rows
+// that can't be acted on don't get the button at all). It must share the
+// button's exact box model — same padding, border and font — or its text
+// sits flush against the cell edge while the button's text sits inset by
+// the button's own padding, so the two rows visibly fail to line up.
+.nhrotm-grid__protected {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
+	border: 1px solid transparent;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.nhrotm-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 9px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.6;
+	text-transform: capitalize;
+	// A pill shape wrapping onto a second line reads as broken (the rounded
+	// background stretches into an oval around two stacked lines instead of
+	// hugging one) — every badge label in this app is short by design, so
+	// force it to one line and let the column width (not the badge) decide
+	// when content is genuinely too long.
+	white-space: nowrap;
+
+	// Optional leading status dot (autoload On/Off, transient status).
+	&--dot::before {
+		content: '';
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+		flex: 0 0 auto;
+	}
+
+	&--info {
+		background: var(--nhrotm-card-autoload);
+		color: var(--nhrotm-info);
+	}
+	&--success {
+		background: var(--nhrotm-card-backup);
+		color: var(--nhrotm-success);
+	}
+	&--warning {
+		background: var(--nhrotm-card-transients);
+		color: var(--nhrotm-warning);
+	}
+	&--danger {
+		background: rgba(240, 68, 56, 0.12);
+		color: var(--nhrotm-danger);
+	}
+	// Background alone is not enough here: `--nhrotm-bg` is the same token
+	// the zebra stripe uses (tbody tr:nth-child(even)), so on a striped row
+	// this badge had zero contrast against its own row and just vanished —
+	// on the plain white rows it was barely visible either. A real border
+	// makes the pill read the same way regardless of which row it lands on.
+	&--muted {
+		background: var(--nhrotm-surface);
+		border: 1px solid var(--nhrotm-border-strong);
+		color: var(--nhrotm-text-muted);
+	}
+}
+
+// "protected" label inside a grid name cell — a state, not a status: no dot, quieter.
+.nhrotm-grid__tag {
+	margin-left: 7px;
+	font-size: 10px;
+	font-weight: 500;
+	letter-spacing: 0.3px;
+	text-transform: uppercase;
+	padding: 2px 7px;
+}
+
+.nhrotm-pager {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 16px;
+	flex-wrap: wrap;
+	gap: 12px;
+
+	&__nav {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	&__pos {
+		font-size: 13px;
+		color: var(--nhrotm-text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__perpage {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 12.5px;
+		color: var(--nhrotm-text-muted);
+
+		select {
+			padding: 5px 8px;
+			border: 1px solid var(--nhrotm-border-strong);
+			border-radius: 8px;
+			background: var(--nhrotm-surface);
+			color: var(--nhrotm-text);
+			font: inherit;
+			font-size: 12.5px;
+
+			&:hover {
+				border-color: var(--nhrotm-text-muted);
+			}
+
+			// Focus gets the same darkened border as hover, beyond resetting
+			// WP core's own themed ring/outline.
+			&:focus {
+				outline: none;
+				border-color: var(--nhrotm-text-muted);
+				box-shadow: none;
+			}
+		}
+	}
+
+	.nhrotm-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+}
+
+// ---- Recommendations ----
+.nhrotm-recs {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.nhrotm-rec {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 14px;
+	margin-bottom: 8px;
+	border-radius: 10px;
+	background: var(--nhrotm-bg);
+	border-left: 4px solid var(--nhrotm-text-muted);
+
+	&--danger {
+		border-left-color: var(--nhrotm-danger);
+	}
+	&--warning {
+		border-left-color: var(--nhrotm-warning);
+	}
+	&--info {
+		border-left-color: var(--nhrotm-info);
+	}
+	&--success {
+		border-left-color: var(--nhrotm-success);
+	}
+
+	&__text {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 14px;
+	}
+
+	// Severity glyph, tinted by the modifier on the row.
+	&__sev {
+		flex: 0 0 auto;
+		color: var(--nhrotm-text-muted);
+	}
+
+	&--danger &__sev {
+		color: var(--nhrotm-danger);
+	}
+	&--warning &__sev {
+		color: var(--nhrotm-warning);
+	}
+	&--info &__sev {
+		color: var(--nhrotm-info);
+	}
+	&--success &__sev {
+		color: var(--nhrotm-success);
+	}
+
+	&__action {
+		flex: 0 0 auto;
+	}
+}
+
+// ---- Recent activity ----
+.nhrotm-activity {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+
+	li {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 11px 0;
+		border-bottom: 1px solid var(--nhrotm-border);
+		font-size: 13.5px;
+
+		&:last-child {
+			border-bottom: 0;
+		}
+	}
+
+	&__dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--nhrotm-primary);
+		flex: 0 0 auto;
+	}
+
+	&__text code {
+		font-family: var(--nhrotm-mono);
+		font-size: 12px;
+		word-break: break-all;
+	}
+
+	&__when {
+		margin-left: auto;
+		color: var(--nhrotm-text-muted);
+		font-size: 12.5px;
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+}
+
+// Text link used in a panel header, e.g. "View all →".
+.nhrotm-linkbtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	border: 0;
+	padding: 0;
+	background: none;
+	cursor: pointer;
+	font: inherit;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--nhrotm-primary);
+	white-space: nowrap;
+
+	&:hover,
+	&:focus {
+		text-decoration: underline;
+	}
+
+	&--danger {
+		color: var(--nhrotm-danger);
+	}
+}
+
+.nhrotm-activity__foot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 14px;
+	padding-top: 14px;
+	border-top: 1px solid var(--nhrotm-border);
+	font-size: 12.5px;
+	color: var(--nhrotm-text-muted);
+}
+
+// ---- Upgrade screen ----
+.nhrotm-upgrade {
+	&__hero {
+		border-radius: var(--nhrotm-radius);
+		background: var(--nhrotm-gradient-soft);
+		border: 1px solid var(--nhrotm-pro-border);
+		padding: 24px 26px;
+		margin-bottom: 20px;
+	}
+
+	&__eyebrow {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.6px;
+		text-transform: uppercase;
+		color: var(--nhrotm-pro-text);
+	}
+
+	&__title {
+		margin: 8px 0 6px;
+		font-size: 21px;
+		font-weight: 800;
+		letter-spacing: -0.3px;
+	}
+
+	&__lede {
+		margin: 0;
+		color: var(--nhrotm-text-muted);
+		font-size: 14px;
+		max-width: 60ch;
+	}
+
+	&__cta {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		margin-top: 20px;
+		flex-wrap: wrap;
+	}
+
+	&__fine {
+		font-size: 12px;
+		color: var(--nhrotm-text-muted);
+	}
+}
+
+.nhrotm-compare {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13.5px;
+
+	th,
+	td {
+		padding: 12px 16px;
+		border-bottom: 1px solid var(--nhrotm-border);
+		text-align: left;
+	}
+
+	thead th {
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.4px;
+		color: var(--nhrotm-text-muted);
+	}
+
+	.nhrotm-compare__pro {
+		background: var(--nhrotm-pro);
+	}
+
+	tbody tr:last-child td {
+		border-bottom: 0;
+	}
+
+	&__cap {
+		font-weight: 600;
+	}
+
+	.yes {
+		color: var(--nhrotm-success);
+		font-weight: 700;
+	}
+	.no {
+		color: var(--nhrotm-text-muted);
+	}
+	.plus {
+		color: var(--nhrotm-pro-text);
+		font-weight: 600;
+	}
+}
+
+// ---- Modal ----
+.nhrotm-modal__overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(16, 24, 40, 0.55);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	z-index: 100000;
+	animation: nhrotm-overlay-in 160ms ease-out both;
+}
+
+@keyframes nhrotm-overlay-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes nhrotm-modal-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.nhrotm-modal {
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	border-radius: var(--nhrotm-radius);
+	width: min(640px, 100%);
+	max-height: 90vh;
+	overflow: auto;
+	box-shadow: 0 20px 48px rgba(16, 24, 40, 0.28);
+	animation: nhrotm-modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+	@media (prefers-reduced-motion: reduce) {
+		animation: none;
+	}
+
+	// Narrow variant for a short confirm prompt — the default 640px reads
+	// as an empty void around a title and two buttons.
+	&--sm {
+		width: min(420px, 100%);
+	}
+
+	// The confirm dialog skips the body entirely when it has no description
+	// — without this, the header's bottom border and the footer's top
+	// border would land flush against each other with no gap between.
+	&__head + &__foot {
+		border-top: 0;
+	}
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 18px 20px;
+		border-bottom: 1px solid var(--nhrotm-border);
+
+		// Matches .nhrotm-screen__title's weight/tracking (one step down in
+		// size) — plain 16px/400 read as an afterthought in a 640px-wide bar.
+		h2 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 700;
+			letter-spacing: -0.1px;
+			color: var(--nhrotm-text);
+		}
+	}
+
+	&__close {
+		border: 0;
+		background: transparent;
+		font-size: 22px;
+		line-height: 1;
+		cursor: pointer;
+		color: var(--nhrotm-text-muted);
+		transition: color 150ms;
+
+		&:hover {
+			color: var(--nhrotm-text);
+		}
+	}
+
+	&__body {
+		padding: 20px;
+	}
+
+	&__confirm-text {
+		margin: 0;
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--nhrotm-text);
+	}
+
+	&__foot {
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		padding: 16px 20px;
+		border-top: 1px solid var(--nhrotm-border);
+	}
+
+	&__textarea {
+		width: 100%;
+		border: 1px solid var(--nhrotm-border-strong);
+		border-radius: 8px;
+		padding: 10px;
+		font-family: var(--nhrotm-mono);
+		font-size: 12px;
+		resize: vertical;
+		background: var(--nhrotm-surface);
+		color: var(--nhrotm-text);
+	}
+}
+
+// Tools → Import's file picker — a clickable, custom-bordered dropzone
+// (same border/radius treatment as every other input) that also accepts
+// drag-and-drop, wrapping a visually-hidden native <input type="file">
+// underneath for accessibility rather than replacing it outright.
+.nhrotm-dropzone {
+	position: relative;
+	border: 1px dashed var(--nhrotm-border-strong);
+	border-radius: 10px;
+	padding: 20px;
+	text-align: center;
+	cursor: pointer;
+	background: var(--nhrotm-surface);
+	transition: border-color 150ms, background-color 150ms;
+
+	&:hover,
+	&:focus-visible {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	&:focus-visible {
+		outline: none;
+	}
+
+	&.is-active {
+		border-color: var(--nhrotm-primary);
+		background: var(--nhrotm-hover);
+	}
+
+	&__input {
+		// Visually hidden but still keyboard/AT-reachable — not display:none,
+		// which would drop it from the accessibility tree entirely.
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	&__empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		color: var(--nhrotm-text-muted);
+		font-size: 13px;
+
+		svg {
+			opacity: 0.7;
+		}
+	}
+
+	&__file {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		color: var(--nhrotm-text);
+		font-size: 13px;
+		font-weight: 500;
+
+		span {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			max-width: 320px;
+		}
+	}
+
+	&__clear {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--nhrotm-text-muted);
+		cursor: pointer;
+		flex: 0 0 auto;
+
+		&:hover {
+			background: var(--nhrotm-bg);
+			color: var(--nhrotm-text);
+		}
+	}
+
+	&__divider {
+		margin: 12px 0;
+		text-align: center;
+		color: var(--nhrotm-text-muted);
+		font-size: 12px;
+	}
+}
+
+// ---- Utilities ----
+.nhrotm-muted {
+	color: var(--nhrotm-text-muted);
+}
+.nhrotm-error {
+	color: var(--nhrotm-danger);
+	font-weight: 500;
+}
+.nhrotm-notice {
+	color: var(--nhrotm-success);
+	font-weight: 500;
+}
+
+// ---- Toasts ----
+.nhrotm-toasts {
+	position: fixed;
+	right: 20px;
+	bottom: 20px;
+	z-index: 100010;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-width: min(360px, calc(100vw - 40px));
+}
+
+.nhrotm-toast {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 13px 18px;
+	border-radius: 10px;
+	background: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	border: 1px solid var(--nhrotm-border);
+	border-left: 3px solid var(--nhrotm-success);
+	box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
+	font-size: 13px;
+	font-weight: 500;
+	animation: nhrotm-toast-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+	svg {
+		flex: 0 0 auto;
+		color: var(--nhrotm-success);
+	}
+
+	&--error {
+		border-left-color: var(--nhrotm-danger);
+
+		svg {
+			color: var(--nhrotm-danger);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		animation: none;
+	}
+}
+
+@keyframes nhrotm-toast-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (max-width: 900px) {
+	.nhrotm-nav {
+		flex-basis: 58px;
+	}
+	.nhrotm-nav__label {
+		display: none;
+	}
+	.nhrotm-nav__item {
+		justify-content: center;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nhrotm-app *,
+	.nhrotm-screen {
+		transition: none !important;
+		animation: none !important;
+	}
+}

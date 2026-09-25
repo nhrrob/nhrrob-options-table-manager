@@ -19,6 +19,17 @@ git checkout dev
 - Ensure you are on the `dev` branch.
 - Ensure all tests pass.
 
+## Step 0.5: Security Gate (WP.org automated release review)
+WordPress.org scans every release after the SVN commit and **blocks high-risk releases** (make.wordpress.org/plugins/2026/09/09/automated-security-review-for-plugin-releases/). Do not tag until:
+1. The **Security Review** workflow (`.github/workflows/security.yml`) is green on the release PR: Semgrep PHP security rules, PHPStan, and the endpoint authorization probe.
+2. Run the probe locally against a throwaway site if any AJAX/REST endpoint changed:
+   ```bash
+   python3 .github/security/probe.py --wp "wp --path=/path/to/throwaway-site" \
+     --script /path/to/throwaway-site/wp-content/plugins/nhrrob-options-table-manager/.github/security/endpoint-probe.php
+   ```
+   Never against a site with real data. Writes are blocked, but responses are printed.
+3. Manually review anything a tool can't judge: new imports/uploads, `unserialize()`, writes on front-end requests, and the **Security invariants** section of `CLAUDE.md`.
+
 ## Step 1: Sync Branches
 Merge the `staging` branch into `dev` to ensure all latest tested changes are included.
 ```bash

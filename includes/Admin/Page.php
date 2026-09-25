@@ -1,8 +1,14 @@
 <?php
+/**
+ * Base class for admin screens.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager\Admin;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Nhrotm\OptionsTableManager\App;
@@ -10,7 +16,7 @@ use Nhrotm\OptionsTableManager\App;
 /**
  * Page Class
  */
-class Page extends App
-{
+class Page extends App {
+
 
 }

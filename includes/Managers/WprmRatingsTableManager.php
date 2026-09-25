@@ -1,142 +1,168 @@
 <?php
+/**
+ * DataTables-backed manager for the WP Recipe Maker ratings table.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
+
 namespace Nhrotm\OptionsTableManager\Managers;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Exception;
 
-class WprmRatingsTableManager extends BaseTableManager
-{
+/**
+ * Class WprmRatingsTableManager
+ *
+ * Read-only DataTables view over the WP Recipe Maker ratings table, with
+ * server-side search, sort and pagination. Editing and deletion are not
+ * offered — the plugin only surfaces the rows for inspection.
+ */
+class WprmRatingsTableManager extends BaseTableManager {
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->table_name = $this->wpdb->prefix . 'wprm_ratings';
-    }
 
-    /**
-     * Retrieve options data
-     * 
-     * @return array Options data
-     */
-    public function get_data()
-    {
-        // Verify nonce
-        if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'nhrotm-admin-nonce')) {
-            throw new \Exception('Invalid nonce');
-        }
+	/**
+	 * Bind the manager to the WP Recipe Maker ratings table.
+	 */
+	public function __construct() {
+		parent::__construct();
+		$this->table_name = $this->wpdb->prefix . 'wprm_ratings';
+	}
 
-        $this->validate_permissions();
+	/**
+	 * Retrieve options data
+	 *
+	 * @return array Options data
+	 * @throws \Exception When the nonce is missing/invalid or the user lacks permission.
+	 */
+	public function get_data() {
+		// Verify nonce.
+		if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+			throw new \Exception( 'Invalid nonce' );
+		}
 
-        global $wpdb;
-        $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
-        $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
-        $search = isset($_GET['search']['value']) ? sanitize_text_field(wp_unslash($_GET['search']['value'])) : '';
-        $order_column_index = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 0;
-        $order_direction = isset($_GET['order'][0]['dir']) && in_array($_GET['order'][0]['dir'], ['asc', 'desc']) ? strtolower(sanitize_text_field(wp_unslash($_GET['order'][0]['dir']))) : 'asc';
+		$this->validate_permissions();
 
-        $columns = $this->get_searchable_columns();
-        if ($order_column_index < 0 || $order_column_index >= count($columns)) {
-            $order_column_index = 0;
-        }
-        $order_column = $columns[$order_column_index];
-        $table = $this->table_name;
+		global $wpdb;
+		$start              = isset( $_GET['start'] ) ? intval( $_GET['start'] ) : 0;
+		$length             = isset( $_GET['length'] ) ? intval( $_GET['length'] ) : 10;
+		$search             = isset( $_GET['search']['value'] ) ? sanitize_text_field( wp_unslash( $_GET['search']['value'] ) ) : '';
+		$order_column_index = isset( $_GET['order'][0]['column'] ) ? intval( $_GET['order'][0]['column'] ) : 0;
+		// Built from literals, never from the request value itself, so no user data reaches ORDER BY.
+		$order_direction = isset( $_GET['order'][0]['dir'] ) && 'desc' === $_GET['order'][0]['dir'] ? 'desc' : 'asc';
+
+		$columns = $this->get_searchable_columns();
+		if ( $order_column_index < 0 || $order_column_index >= count( $columns ) ) {
+			$order_column_index = 0;
+		}
+		// Pick the column by comparison against the fixed list rather than
+		// indexing with the request value — only whitelisted names reach ORDER BY.
+		$order_column = reset( $columns );
+		foreach ( $columns as $index => $column ) {
+			if ( $index === $order_column_index ) {
+				$order_column = $column;
+			}
+		}
+		$table = $this->table_name;
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-        $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+		$total_records = $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
 
-        $where_sql = '';
-        if (!empty($where_clauses)) {
-            $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
-        }
-        
-        // Count filtered records
+		// Global search across every column (same as CommonTableManager). These
+		// were never built here, so any search fataled on the undefined spread.
+		$where_clauses       = [];
+		$search_params_final = [];
+		if ( ! empty( $search ) ) {
+			$search_like      = '%' . $this->wpdb->esc_like( $search ) . '%';
+			$search_sql_parts = [];
+			foreach ( $columns as $column ) {
+				$search_sql_parts[]    = "{$column} LIKE %s";
+				$search_params_final[] = $search_like;
+			}
+			$where_clauses[] = '(' . implode( ' OR ', $search_sql_parts ) . ')';
+		}
+
+		$where_sql = '';
+		if ( ! empty( $where_clauses ) ) {
+			$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
+		}
+
+		// Count filtered records.
         // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
-        $filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}wprm_ratings {$where_sql}";
-        
-        if (!empty($search)) {
-            $filtered_records = $this->wpdb->get_var(
-                $this->wpdb->prepare($filtered_records_sql, ...$search_params_final)
-            );
-        } else {
-            $filtered_records = $this->wpdb->get_var($filtered_records_sql);
-        }
-        
-        // SQL for ordering
-        $order_sql = "ORDER BY {$order_column} {$order_direction}";
-        
-        // Get data with search, order, and pagination
-        $data_sql = "SELECT * FROM {$this->wpdb->prefix}wprm_ratings {$where_sql} {$order_sql} LIMIT %d, %d";
-        
-        if (!empty($search)) {
-            $query_params = array_merge($search_params_final, [$start, $length]);
-            $data = $this->wpdb->get_results(
-                $this->wpdb->prepare($data_sql, ...$query_params),
-                ARRAY_A
-            );
-        } else {
-            $data = $this->wpdb->get_results(
-                $this->wpdb->prepare($data_sql, $start, $length),
-                ARRAY_A
-            );
-        }
+		$filtered_records_sql = "SELECT COUNT(*) FROM {$this->wpdb->prefix}wprm_ratings {$where_sql}";
+
+		if ( ! empty( $search ) ) {
+			$filtered_records = $this->wpdb->get_var(
+				$this->wpdb->prepare( $filtered_records_sql, ...$search_params_final )
+			);
+		} else {
+			$filtered_records = $this->wpdb->get_var( $filtered_records_sql );
+		}
+
+		// SQL for ordering.
+		$order_sql = "ORDER BY {$order_column} {$order_direction}";
+
+		// Get data with search, order, and pagination.
+		$data_sql = "SELECT * FROM {$this->wpdb->prefix}wprm_ratings {$where_sql} {$order_sql} LIMIT %d, %d";
+
+		if ( ! empty( $search ) ) {
+			$query_params = array_merge( $search_params_final, [ $start, $length ] );
+			$data         = $this->wpdb->get_results(
+				$this->wpdb->prepare( $data_sql, ...$query_params ),
+				ARRAY_A
+			);
+		} else {
+			$data = $this->wpdb->get_results(
+				$this->wpdb->prepare( $data_sql, $start, $length ),
+				ARRAY_A
+			);
+		}
         // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter
-        
-        // Wrap the option_value in the scrollable-cell div
-        foreach ($data as &$row) {
-            $row['date'] = esc_html(wp_date(get_option('date_format'), strtotime($row['date'])));
-            // Uncomment if you need action buttons
-            // $row['actions'] = sprintf(
-            //     '<button class="nhrotm-edit-record" data-id="%s">Edit</button>
-            //     <button class="nhrotm-delete-record" data-id="%s">Delete</button>',
-            //     esc_attr($row['id']),
-            //     esc_attr($row['id'])
-            // );
-        }
 
-        // Prepare response for DataTables
-        $response = array(
-            "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 0,
-            "recordsTotal" => $total_records,
-            "recordsFiltered" => $filtered_records,
-            "data" => $data
-        );
+		// Wrap the option_value in the scrollable-cell div.
+		foreach ( $data as &$row ) {
+			$row['date'] = esc_html( wp_date( get_option( 'date_format' ), strtotime( $row['date'] ) ) );
+		}
 
-        return $response;
-    }
+		// Prepare response for DataTables.
+		$response = array(
+			'draw'            => isset( $_GET['draw'] ) ? intval( $_GET['draw'] ) : 0,
+			'recordsTotal'    => $total_records,
+			'recordsFiltered' => $filtered_records,
+			'data'            => $data,
+		);
 
-    /**
-     * Edit an option
-     * 
-     * @return bool Success status
-     */
-    public function edit_record()
-    {
-        // Not planned        
-        return false;
-    }
+		return $response;
+	}
 
-    /**
-     * Delete an option
-     * 
-     * @param array $data Option data to delete
-     * @return bool Success status
-     */
-    public function delete_record()
-    {
-        // Not planned
-        return false;
-    }
+	/**
+	 * Edit an option
+	 *
+	 * @return bool Success status
+	 */
+	public function edit_record() {
+		// Not planned.
+		return false;
+	}
 
-    /**
-     * Get searchable columns
-     * 
-     * @return array
-     */
-    protected function get_searchable_columns()
-    {
-        return ['id', 'date', 'recipe_id', 'post_id', 'comment_id', 'approved', 'has_comment', 'user_id', 'ip', 'rating'];
-    }
+	/**
+	 * Delete an option
+	 *
+	 * @return bool Success status
+	 */
+	public function delete_record() {
+		// Not planned.
+		return false;
+	}
+
+	/**
+	 * Get searchable columns
+	 *
+	 * @return array
+	 */
+	protected function get_searchable_columns() {
+		return [ 'id', 'date', 'recipe_id', 'post_id', 'comment_id', 'approved', 'has_comment', 'user_id', 'ip', 'rating' ];
+	}
 }

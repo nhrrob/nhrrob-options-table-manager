@@ -1,9 +1,14 @@
 <?php
+/**
+ * Registers the plugin's admin menu entries.
+ *
+ * @package Nhrotm\OptionsTableManager
+ */
 
 namespace Nhrotm\OptionsTableManager\Admin;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Nhrotm\OptionsTableManager\App;
@@ -11,61 +16,62 @@ use Nhrotm\OptionsTableManager\App;
 /**
  * The Menu handler class
  */
-class Menu extends App
-{
-    /**
-     * Initialize the class
-     */
-    function __construct()
-    {
-        add_action('admin_menu', [$this, 'admin_menu']);
-    }
+class Menu extends App {
 
-    /**
-     * Register admin menu
-     *
-     * @return void
-     */
-    public function admin_menu()
-    {
-        $parent_slug = 'nhrotm-options-table-manager';
-        $capability = apply_filters('nhrotm-options-table-manager/menu/capability', 'manage_options');
+	/**
+	 * Initialize the class
+	 */
+	public function __construct() {
+		add_action( 'admin_menu', [ $this, 'admin_menu' ] );
+	}
 
-        // $hook = add_menu_page(__('Options Table', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page'], 'dashicons-admin-post');
-        // add_submenu_page( $parent_slug, __( 'Settings', 'nhrrob-options-table-manager' ), __( 'Settings', 'nhrrob-options-table-manager' ), $capability, 'nhrotm-options-table-manager-settings', [ $this, 'settings_page' ] );
-        $hook = add_submenu_page('tools.php', __('Manage Options', 'nhrrob-options-table-manager'), __('Options Table', 'nhrrob-options-table-manager'), $capability, $parent_slug, [$this, 'settings_page']);
+	/**
+	 * Register admin menu
+	 *
+	 * @return void
+	 */
+	public function admin_menu() {
+		// Legacy DataTables UI, kept reachable as "Classic" after the 2.0 React cutover.
+		// The page stays registered (so its URL works and the React app can link to
+		// it), but we hide its Tools submenu entry so only ONE menu item shows —
+		// "Options Table" (the React app). Reach Classic from inside that app.
+		$parent_slug = 'nhrotm-classic';
+		$capability  = apply_filters( 'nhrotm_menu_capability', 'manage_options' );
 
-        add_action('admin_head-' . $hook, [$this, 'enqueue_assets']);
-    }
+		$hook = add_submenu_page( 'tools.php', __( 'Options Table (Classic)', 'nhrrob-options-table-manager' ), __( 'Options Table (Classic)', 'nhrrob-options-table-manager' ), $capability, $parent_slug, [ $this, 'settings_page' ] );
 
-    /**
-     * Handles the settings page
-     *
-     * @return void
-     */
-    public function settings_page()
-    {
-        $settings_page = new SettingsPage();
+		// Registered but hidden from the menu — reachable only via tools.php?page=nhrotm-classic.
+		remove_submenu_page( 'tools.php', $parent_slug );
 
-        ob_start();
-        $settings_page->view();
-        $content = ob_get_clean();
+		add_action( 'admin_head-' . $hook, [ $this, 'enqueue_assets' ] );
+	}
 
-        echo wp_kses($content, $this->allowed_html());
-    }
+	/**
+	 * Handles the settings page
+	 *
+	 * @return void
+	 */
+	public function settings_page() {
+		$settings_page = new SettingsPage();
 
-    /**
-     * Enqueue scripts and styles
-     *
-     * @return void
-     */
-    public function enqueue_assets()
-    {
-        wp_enqueue_style('nhrotm-datatable-style');
-        wp_enqueue_style('nhrotm-admin-style');
+		ob_start();
+		$settings_page->view();
+		$content = ob_get_clean();
 
-        wp_enqueue_script('jquery');
-        wp_enqueue_script('nhrotm-datatable-script');
-        wp_enqueue_script('nhrotm-admin-script');
-    }
+		echo wp_kses( $content, $this->allowed_html() );
+	}
+
+	/**
+	 * Enqueue scripts and styles
+	 *
+	 * @return void
+	 */
+	public function enqueue_assets() {
+		wp_enqueue_style( 'nhrotm-datatable-style' );
+		wp_enqueue_style( 'nhrotm-admin-style' );
+
+		wp_enqueue_script( 'jquery' );
+		wp_enqueue_script( 'nhrotm-datatable-script' );
+		wp_enqueue_script( 'nhrotm-admin-script' );
+	}
 }

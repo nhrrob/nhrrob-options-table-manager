@@ -1,5 +1,6 @@
 # System files
 .ai/
+CLAUDE.md
 .sass-cache
 .DS_Store
 .phpintel
@@ -28,6 +29,10 @@ node_modules
 /vendor/nikic
 /vendor/phar-io
 /vendor/theseer
+/vendor/squizlabs
+/vendor/wp-coding-standards
+/vendor/phpcsstandards
+/vendor/dealerdirect
 
 # Additional WordPress.org exclusions
 .babelrc
@@ -67,6 +72,6 @@ tests
 *.tar.gz
 *.zip
 /src
-build
 postcss.config.js
 .wordpress-org
+.husky

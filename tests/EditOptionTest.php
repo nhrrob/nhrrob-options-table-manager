@@ -17,7 +17,12 @@ class EditOptionTest extends TestCase {
 
     protected function setUp(): void {
         WP_Mock::setUp();
-        
+
+        // edit_record() reads these on every path, independent of what any
+        // individual test is asserting. Stubbed here so each test only has to
+        // mock the calls it actually cares about.
+        WP_Mock::userFunction('get_option')->andReturn(false);
+
         // Create mocks for dependencies
         $this->validation_service = $this->createMock(ValidationService::class);
         $this->options_manager = $this->getMockBuilder(OptionsTableManager::class)

@@ -1,5 +1,6 @@
 # System files
 .ai/                    export-ignore
+CLAUDE.md               export-ignore
 .sass-cache             export-ignore
 .DS_Store               export-ignore
 .phpintel               export-ignore
@@ -28,6 +29,10 @@ vendor/myclabs/         export-ignore
 vendor/nikic/           export-ignore
 vendor/phar-io/         export-ignore
 vendor/theseer/         export-ignore
+vendor/squizlabs/       export-ignore
+vendor/wp-coding-standards/ export-ignore
+vendor/phpcsstandards/  export-ignore
+vendor/dealerdirect/    export-ignore
 
 # WordPress.org exclusions
 .babelrc                export-ignore
@@ -68,5 +73,5 @@ tests/                  export-ignore
 *.tar.gz                export-ignore
 *.zip                   export-ignore
 /src/                   export-ignore
-build/                  export-ignore
 postcss.config.js       export-ignore
+.husky/                export-ignore
