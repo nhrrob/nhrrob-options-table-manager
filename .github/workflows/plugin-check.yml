@@ -22,6 +22,7 @@ jobs:
         uses: wordpress/plugin-check-action@v1
         with:
           build-dir: '.'
+          exclude-directories: tests
           exclude-checks: |
             plugin_review_phpcs
           ignore-codes: |
