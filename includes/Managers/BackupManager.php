@@ -173,7 +173,9 @@ class BackupManager {
 				continue;
 			}
 			$autoload = in_array( $option['autoload'], [ 'yes', 'on', 'auto', 'auto-on' ], true ) ? 'yes' : 'no';
-			update_option( $option['option_name'], maybe_unserialize( $option['option_value'] ), $autoload );
+			// Restricted unserialize (no object injection) — objects round-trip unchanged as __PHP_Incomplete_Class.
+			$value = is_serialized( $option['option_value'] ) ? unserialize( $option['option_value'], [ 'allowed_classes' => false ] ) : $option['option_value']; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes:false blocks object injection
+			update_option( $option['option_name'], $value, $autoload );
 			++$restored;
 		}
 

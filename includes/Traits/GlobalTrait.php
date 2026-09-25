@@ -411,6 +411,46 @@ trait GlobalTrait {
 	}
 
 	/**
+	 * Whether an imported option value would plant a PHP object in wp_options.
+	 *
+	 * WordPress unserializes every option on read (get_option() →
+	 * maybe_unserialize()), so a crafted import file carrying a serialized
+	 * object with magic methods becomes object injection on every page load.
+	 * stdClass is inert and common in real option data, so it's allowed;
+	 * any other class makes the value unsafe to import.
+	 *
+	 * @param mixed $value Raw imported option value.
+	 * @return bool
+	 */
+	public function is_unsafe_import_value( $value ) {
+		if ( ! is_string( $value ) || ! is_serialized( $value ) ) {
+			return false;
+		}
+		$data = @unserialize( $value, [ 'allowed_classes' => [ 'stdClass' ] ] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize,WordPress.PHP.NoSilencedErrors.Discouraged -- restricted to stdClass; only inspects the value, never stores the result
+		return $this->contains_foreign_object( $data );
+	}
+
+	/**
+	 * Recursively look for any object PHP couldn't restore (a class outside the allow-list).
+	 *
+	 * @param mixed $data Unserialized data.
+	 * @return bool
+	 */
+	private function contains_foreign_object( $data ) {
+		if ( $data instanceof \__PHP_Incomplete_Class ) {
+			return true;
+		}
+		if ( is_array( $data ) || is_object( $data ) ) {
+			foreach ( $data as $item ) {
+				if ( $this->contains_foreign_object( $item ) ) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Whether a transient option_name belongs to the network-wide "site" scope.
 	 *
 	 * @param string $option_name Full option_name, e.g. "_site_transient_theme_roots".

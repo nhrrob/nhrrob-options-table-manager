@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Nhrotm\OptionsTableManager\Managers\BackupManager;
 use Nhrotm\OptionsTableManager\Managers\SearchReplaceManager;
+use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 /**
  * Action service for the Tools section: backups, search & replace, export.
@@ -21,6 +22,8 @@ use Nhrotm\OptionsTableManager\Managers\SearchReplaceManager;
  * automatically before a live (non-dry-run) search & replace.
  */
 class ToolsService {
+
+	use GlobalTrait;
 
 	/**
 	 * Backup manager used for snapshot create/restore/delete.
@@ -160,6 +163,13 @@ class ToolsService {
 			$name     = $opt['option_name'];
 			$value    = isset( $opt['option_value'] ) ? $opt['option_value'] : '';
 			$autoload = ( isset( $opt['autoload'] ) && in_array( $opt['autoload'], [ 'no', 'false', '0', '' ], true ) ) ? 'no' : 'yes';
+
+			// Same core-option protection as Browse/Search & Replace, and never
+			// import a value that would plant a PHP object (see is_unsafe_import_value()).
+			if ( in_array( $name, $this->get_protected_options(), true ) || $this->is_unsafe_import_value( $value ) ) {
+				++$skipped;
+				continue;
+			}
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var( $wpdb->prepare( "SELECT option_id FROM {$wpdb->options} WHERE option_name = %s", $name ) );

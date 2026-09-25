@@ -188,6 +188,9 @@ class ImportExportManager extends BaseTableManager {
 			}
 
 			$option_data = $options_map[ $option_name ];
+			if ( $this->is_protected_item( $option_data['name'] ) || $this->is_unsafe_import_value( $option_data['value'] ) ) {
+				continue;
+			}
 
 			global $wpdb;
 			// Allow raw SQL replace to handle exact value restoration including serialization

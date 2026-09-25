@@ -82,3 +82,9 @@ Grep for the old state (old tab list, old route list, old feature name) across a
 ## WP.org screenshots
 
 `.wordpress-org/screenshot-1..8.png` (1600×1000, app on a soft violet canvas) must match the readme's `== Screenshots ==` captions. Never capture them from the nhrrob-dev site — its options hold real API keys and test junk. They were generated from a throwaway clean install (`~/Sites/otm-shots`, Valet `otm-shots.test`) with WooCommerce, Yoast SEO, Contact Form 7 and WP Recipe Maker active, plus Elementor/WPForms/Really Simple Security deleted to leave real orphans. Captured with Playwright (WP admin chrome hidden, any site URL masked to example.com).
+
+## Security invariants (WP.org automated release review blocks high-risk findings)
+
+- Every REST route: `permission_callback => [ $this, 'can_manage' ]` (`manage_options`); routes are also only registered for users who pass the module capability. Every `wp_ajax_*` handler: nonce (`nhrotm-admin-nonce`) **and** `current_user_can( 'manage_options' )` — a nonce alone is not authorization.
+- Never call `unserialize()`/`maybe_unserialize()` on option data without `allowed_classes` — `false` for pass-through (restore), `[ 'stdClass' ]` only where objects must be walked (Search & Replace). Imports reject serialized non-stdClass objects via `GlobalTrait::is_unsafe_import_value()` and skip protected core options.
+- Re-verify after changing any endpoint: probe every AJAX action + REST route as a subscriber holding valid nonces on a throwaway site (all must refuse; DB fingerprint unchanged).

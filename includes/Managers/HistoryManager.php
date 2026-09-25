@@ -253,7 +253,10 @@ class HistoryManager {
 		// Let's check how we retrieve it.
 		// In log_change, we did maybe_serialize.
 
-		$value_to_restore = maybe_unserialize( $option_value );
+		// Restricted unserialize: no class is instantiated (no object
+		// injection); objects come back as __PHP_Incomplete_Class, which
+		// update_option() re-serializes to the exact original string.
+		$value_to_restore = is_serialized( $option_value ) ? unserialize( $option_value, [ 'allowed_classes' => false ] ) : $option_value; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes:false blocks object injection
 
 		// We log the CURRENT state before restoring, effectively adding a new history entry for the "undo".
 		$current_value = get_option( $option_name );

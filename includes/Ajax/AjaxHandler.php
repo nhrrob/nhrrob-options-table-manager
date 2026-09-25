@@ -575,9 +575,19 @@ class AjaxHandler {
 	 * Scan for orphaned option groups left behind by removed plugins.
 	 *
 	 * @return void
+	 * @throws \Exception Caught internally and returned as a JSON error response.
 	 */
 	public function scan_orphans() {
 		try {
+			if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
+				throw new \Exception( 'Invalid nonce' );
+			}
+
+			// Lists every option-name prefix on the site — admin-only data.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				throw new \Exception( 'Unauthorized' );
+			}
+
 			$data = $this->scanner_manager->scan_orphans();
 			wp_send_json_success( $data );
 		} catch ( \Exception $e ) {

@@ -139,6 +139,9 @@ Deleting the plugin removes its own settings, history, and backup tables. It nev
 - Fixed: "Last backup" on the Dashboard showed the wrong age (measured from midnight of the backup day).
 - Improved: The plugin's own settings no longer autoload on every front-end page load.
 - Fixed: Uninstall now removes every option the plugin creates.
+- Security: The Classic view's orphan scan now requires a valid nonce and the `manage_options` capability; it previously returned option-name prefixes to any logged-in user.
+- Security: Import skips WordPress core options and rejects values containing serialized PHP objects (other than plain stdClass), so a crafted import file can't plant an object-injection payload.
+- Security: Search & Replace and snapshot/history restore no longer instantiate PHP classes when reading serialized option values.
 - Developer: The whole PHP codebase now passes WordPress Coding Standards.
 - Developer: Renamed the menu capability filter from `nhrotm-options-table-manager/menu/capability` to `nhrotm_menu_capability` to follow WordPress hook naming. If you filtered the old name, update your callback.
 

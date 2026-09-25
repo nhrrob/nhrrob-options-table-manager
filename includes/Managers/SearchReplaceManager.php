@@ -141,8 +141,13 @@ class SearchReplaceManager extends BaseTableManager {
 			$occurrences     = 0;
 
 			if ( is_serialized( $original_value ) ) {
-				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- round-tripping WP's own serialized option storage format, not attacker-controlled input
-				$data            = unserialize( $original_value );
+				// Option values can hold data other plugins took from visitors, so
+				// never instantiate arbitrary classes (object injection). stdClass
+				// has no magic methods and is safe to walk; any other object comes
+				// back as __PHP_Incomplete_Class, is skipped by recursive_replace(),
+				// and re-serializes byte-for-byte unchanged.
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes restricted to stdClass; see above
+				$data            = unserialize( $original_value, [ 'allowed_classes' => [ 'stdClass' ] ] );
 				$occurrences     = $this->recursive_replace( $data, $search, $replace );
 				$processed_value = serialize( $data ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- must match the original option's serialization format
 			} elseif ( $this->is_json( $original_value ) ) {
@@ -190,6 +195,9 @@ class SearchReplaceManager extends BaseTableManager {
 	 */
 	private function recursive_replace( &$data, $search, $replace ) {
 		$count = 0;
+		if ( $data instanceof \__PHP_Incomplete_Class ) {
+			return 0;
+		}
 		if ( is_array( $data ) || is_object( $data ) ) {
 			foreach ( $data as &$value ) {
 				$count += $this->recursive_replace( $value, $search, $replace );
