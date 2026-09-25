@@ -17,7 +17,7 @@ composer run phpcbf         # auto-fix what PHPCS can
 composer run test:unit      # PHPUnit (WP_Mock, no DB)
 ```
 
-`vendor/composer/*` is committed, but a local `composer install` rewrites it with dev-only packages (PHPUnit, Mockery, …) that `.gitignore`/`.distignore` exclude — a zip built from that fatals on load. The tag-deploy workflow therefore runs `composer install --no-dev` before the 10up deploy step; never remove that step, and never hand-build a release zip without `--no-dev`.
+`vendor/autoload.php` + `vendor/composer/*` are committed as the **production (`--no-dev`) autoloader** — the zip, GitHub downloads and CI all load it. A local `composer install` rewrites them to reference dev packages (PHPUnit, Mockery, …) that `.gitignore`/`.distignore` exclude, and committing that version makes the plugin fatal on load (happened in 1.1.5 and again before 2.0.0). Locally these files are marked `git update-index --skip-worktree` so the dev versions never get staged; after a real dependency change, regenerate the no-dev autoloader in a temp copy, stage it with `--no-skip-worktree` toggled, and commit. Both the tag-deploy and Plugin Check workflows also run `composer install --no-dev` first — never remove those steps.
 
 Always run `npm run lint` (fixing anything it flags) **and** `npm run build` after any change under `admin/src/` — the compiled `admin/build/` output is what actually ships and renders; editing `admin/src/` alone changes nothing live.
 

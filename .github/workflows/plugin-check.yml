@@ -15,6 +15,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install production Composer autoloader (no dev deps)
+        run: composer install --no-dev --no-interaction
+
       - name: Run Plugin Check
         uses: wordpress/plugin-check-action@v1
         with:
