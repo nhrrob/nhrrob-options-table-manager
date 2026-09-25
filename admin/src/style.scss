@@ -96,6 +96,14 @@
 	* {
 		box-sizing: border-box;
 	}
+
+	// wp-admin sets `h1–h6 { color: #1d2327 }` directly, which beats the
+	// inherited `color` above — invisible on the dark surface. `:where()`
+	// keeps this at single-class specificity so any later heading class
+	// that sets its own colour still wins by source order.
+	:where(h1, h2, h3, h4, h5, h6) {
+		color: var(--nhrotm-text);
+	}
 }
 
 // Notices relocated into our .wrap should sit flush with the app below them.
@@ -117,20 +125,31 @@
 	@include dark-tokens;
 }
 
-// `.nhrotm-wrap` is core's plain `.wrap` div — a *parent* of `.nhrotm-app`,
-// so the `--nhrotm-*` tokens scoped to `.nhrotm-app` never reach it (§14.4).
-// Left alone it stays whatever colour wp-admin's canvas is (white/near-white
-// in every core colour scheme), so the rounded dark card above sat inside a
-// visible white margin. `:has()` reads the theme state from the child
-// instead of duplicating AppShell's toggle logic up onto the static PHP
-// wrapper. Hex matches dark-tokens' `--nhrotm-bg` — can't reference the var
-// itself since it isn't in scope here.
-.nhrotm-wrap:has(.nhrotm-app[data-theme='dark']) {
+// The tokens scoped to `.nhrotm-app` never reach its ancestors (§14.4), so
+// in dark mode everything around the app — `.nhrotm-wrap`'s margin,
+// `#wpcontent`'s left padding, the footer strip below — stayed wp-admin's
+// light canvas (`html`/`body` background in every core colour scheme),
+// leaving a white frame around the dark app. Paint the page canvas itself:
+// `:has()` reads the theme state from the app instead of duplicating
+// AppShell's toggle logic in PHP. The admin menu/bar draw their own
+// backgrounds, so they're unaffected. Hex values match dark-tokens'
+// `--nhrotm-bg`/`--nhrotm-text-muted` — the vars aren't in scope up here.
+html:has(.nhrotm-app[data-theme='dark']),
+html:has(.nhrotm-app[data-theme='dark']) body {
 	background: #14161f;
+	color-scheme: dark;
+}
+html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
+	color: #9aa1b8;
 }
 @media (prefers-color-scheme: dark) {
-	.nhrotm-wrap:has(.nhrotm-app:not([data-theme='light'])) {
+	html:has(.nhrotm-app:not([data-theme='light'])),
+	html:has(.nhrotm-app:not([data-theme='light'])) body {
 		background: #14161f;
+		color-scheme: dark;
+	}
+	html:has(.nhrotm-app:not([data-theme='light'])) #wpfooter {
+		color: #9aa1b8;
 	}
 }
 
@@ -568,7 +587,7 @@
 	// Acts as a table toolbar (e.g. Tools → Backups) when a grid immediately
 	// follows it — give it the same bottom spacing Browse's own toolbar
 	// (.nhrotm-browse__toolbar) has, rather than sitting flush against the table.
-	&:has(+ .nhrotm-grid__wrap, + .nhrotm-grid) {
+	&:has(+ .nhrotm-grid__wrap, + .nhrotm-grid__scroll, + .nhrotm-grid) {
 		margin-bottom: 16px;
 	}
 }
@@ -2221,6 +2240,81 @@
 	}
 	.nhrotm-nav__item {
 		justify-content: center;
+	}
+}
+
+// Phones. `.nhrotm-app` is `overflow: hidden` (for its rounded corners), so
+// anything wider than the viewport here is clipped, not scrollable — every
+// rule below keeps a control inside the width or gives it its own scroller.
+@media (max-width: 600px) {
+	.nhrotm-appbar {
+		gap: 10px;
+		padding: 12px 14px;
+	}
+	.nhrotm-appbar__mark {
+		display: none;
+	}
+	.nhrotm-appbar__title {
+		font-size: 15px;
+	}
+	.nhrotm-appbar__link {
+		white-space: nowrap;
+	}
+
+	.nhrotm-content {
+		padding: 16px;
+	}
+
+	// Section/type switchers (Browse types, Optimize, Tools) swipe
+	// sideways instead of losing their last tabs off the edge.
+	.nhrotm-segmented {
+		max-width: 100%;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.nhrotm-segmented__item {
+		flex: 0 0 auto;
+		white-space: nowrap;
+	}
+
+	// Title and its right-hand meta/actions stack instead of squeezing the
+	// title into a one-word-per-line column.
+	.nhrotm-panel__head {
+		flex-wrap: wrap;
+	}
+
+	// Grids already scroll sideways here; the extra width goes to the
+	// flexible Name/Value columns, which the fixed columns otherwise leave
+	// at ~90px — option names broke every few characters.
+	.nhrotm-grid:not(.nhrotm-grid--fluid) {
+		min-width: 1000px;
+	}
+
+	.nhrotm-pager__nav {
+		flex-wrap: wrap;
+	}
+	.nhrotm-pager__pos {
+		white-space: nowrap;
+	}
+
+	// Fixed 200px minimums don't fit beside the icon rail; fill the row.
+	.nhrotm-app input[type='text'],
+	.nhrotm-app input[type='search'],
+	.nhrotm-app textarea,
+	.nhrotm-app select,
+	.nhrotm-app .nhrotm-browse__search {
+		min-width: 0;
+		max-width: 100%;
+	}
+	.nhrotm-browse__tools,
+	.nhrotm-browse__tools > * {
+		min-width: 0;
+	}
+	.nhrotm-browse__tools > * {
+		flex: 1 1 100%;
+	}
+	.nhrotm-browse__tools .nhrotm-search {
+		margin-left: 0;
 	}
 }
 
