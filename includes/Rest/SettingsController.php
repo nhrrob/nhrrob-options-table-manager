@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Nhrotm\OptionsTableManager\Services\SettingsService;
 use Nhrotm\OptionsTableManager\Managers\BackupManager;
+use Nhrotm\OptionsTableManager\Managers\HistoryManager;
 
 /**
  * REST endpoints for the centralized settings store.
@@ -61,6 +62,47 @@ class SettingsController extends RestController {
 				],
 			]
 		);
+
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/settings/history-stats',
+			[
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'history_stats' ],
+				'permission_callback' => [ $this, 'can_manage' ],
+			]
+		);
+
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/settings/prune-history',
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'prune_history' ],
+				'permission_callback' => [ $this, 'can_manage' ],
+			]
+		);
+	}
+
+	/**
+	 * Delete history entries older than the retention period right away
+	 * (the same prune the daily Cron runs).
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function prune_history() {
+		$history = new HistoryManager();
+		$deleted = $history->prune_history( (int) $this->settings->get( 'history_retention_days' ) );
+		return $this->ok( [ 'deleted' => (int) $deleted ] + $history->stats() );
+	}
+
+	/**
+	 * How much the option-change history takes up.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function history_stats() {
+		return $this->ok( ( new HistoryManager() )->stats() );
 	}
 
 	/**
@@ -105,10 +147,6 @@ class SettingsController extends RestController {
 	private function schema_args() {
 		return [
 			'allow_html_in_values'   => [
-				'type'              => 'boolean',
-				'sanitize_callback' => 'rest_sanitize_boolean',
-			],
-			'auto_cleanup_enabled'   => [
 				'type'              => 'boolean',
 				'sanitize_callback' => 'rest_sanitize_boolean',
 			],

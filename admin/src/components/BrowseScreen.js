@@ -11,6 +11,7 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
 import EditModal from './EditModal';
+import HistoryModal from './HistoryModal';
 import FilterControl from './FilterControl';
 import Icon from './Icon';
 import ScreenHeader from './ScreenHeader';
@@ -76,7 +77,13 @@ const ADDED_MESSAGE = {
 	),
 };
 
-export default function BrowseScreen( { focus } ) {
+export default function BrowseScreen( { boot, focus } ) {
+	// Multisite: user meta is network-wide, so the server only serves it to
+	// network user managers (boot.canUsermeta); hide the tab for everyone else.
+	// wp_localize_script() delivers false as "", so test truthiness.
+	const types = TYPES.filter(
+		( t ) => t.id !== 'usermeta' || !! ( boot && boot.canUsermeta )
+	);
 	const confirm = useConfirm();
 	const toast = useToast();
 	// Seeded from focus.browseFilter (if arriving pre-filtered, e.g. Optimize's
@@ -121,6 +128,8 @@ export default function BrowseScreen( { focus } ) {
 	const [ status, setStatus ] = useState( 'loading' );
 	const [ selected, setSelected ] = useState( [] );
 	const [ modal, setModal ] = useState( null );
+	// Option name whose History modal is open (options type only).
+	const [ historyFor, setHistoryFor ] = useState( null );
 	const [ busy, setBusy ] = useState( false );
 	const [ reloadTick, setReloadTick ] = useState( 0 );
 	// When true, the next load refreshes rows in place (no "Loading…" flash) —
@@ -600,6 +609,19 @@ export default function BrowseScreen( { focus } ) {
 								{ __( 'Edit', 'nhrrob-options-table-manager' ) }
 							</button>
 						) }
+						{ type === 'options' && (
+							<button
+								type="button"
+								className="nhrotm-iconbtn"
+								onClick={ () => setHistoryFor( item.name ) }
+							>
+								<Icon name="clock" size={ 14 } />
+								{ __(
+									'History',
+									'nhrrob-options-table-manager'
+								) }
+							</button>
+						) }
 						{ ! item.protected && (
 							<button
 								type="button"
@@ -773,7 +795,7 @@ export default function BrowseScreen( { focus } ) {
 
 			<div className="nhrotm-browse__toolbar">
 				<div className="nhrotm-segmented">
-					{ TYPES.map( ( t ) => (
+					{ types.map( ( t ) => (
 						<button
 							key={ t.id }
 							type="button"
@@ -881,7 +903,13 @@ export default function BrowseScreen( { focus } ) {
 								<col />
 								<col className="nhrotm-col-size" />
 								<col className="nhrotm-col-badge" />
-								<col className="nhrotm-col-act" />
+								<col
+									className={
+										type === 'options'
+											? 'nhrotm-col-act-lg'
+											: 'nhrotm-col-act'
+									}
+								/>
 							</colgroup>
 							<thead>
 								<tr>
@@ -1028,6 +1056,13 @@ export default function BrowseScreen( { focus } ) {
 					busy={ busy }
 					onSave={ saveRecord }
 					onClose={ () => setModal( null ) }
+				/>
+			) }
+			{ historyFor && (
+				<HistoryModal
+					name={ historyFor }
+					onClose={ () => setHistoryFor( null ) }
+					onRestored={ load }
 				/>
 			) }
 		</div>

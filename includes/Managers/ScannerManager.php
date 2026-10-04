@@ -45,7 +45,8 @@ class ScannerManager extends BaseTableManager {
 		// slug (nhrrob-options-table-manager, nhrrob-smart-media-manager…),
 		// so the directory-guessing fallback below can never bridge them by
 		// itself; each one needs an explicit entry here, same as nhrada_.
-		'nhrotm_'                 => 'Options Table Manager',
+		'nhrotm_'                 => 'Database Cleaner',
+		'nhrotmp_'                => 'Database Cleaner Add-on',
 		'nhrsmm_'                 => 'Smart Media Manager',
 		'nhrcc_'                  => 'Core Contributions',
 		'nhrfm_'                  => 'File Manager',
@@ -130,6 +131,7 @@ class ScannerManager extends BaseTableManager {
 		// scanner's installed-plugin check can bridge these too, not just
 		// the owner-label lookup.
 		'nhrotm_'                 => 'nhrrob-options-table-manager',
+		'nhrotmp_'                => 'nhrrob-options-table-manager-pro',
 		'nhrsmm_'                 => 'nhrrob-smart-media-manager',
 		'nhrcc_'                  => 'nhrrob-core-contributions',
 		'nhrfm_'                  => 'nhrrob-file-manager',
@@ -158,37 +160,6 @@ class ScannerManager extends BaseTableManager {
 		parent::__construct();
 		$this->table_name = ! empty( $this->wpdb->options ) ? $this->wpdb->options : $this->wpdb->prefix . 'options';
 	}
-
-	/**
-	 * Get searchable columns (required by BaseTableManager).
-	 *
-	 * @return array
-	 */
-	protected function get_searchable_columns() {
-		return [];
-	}
-
-	/**
-	 * Not used by this manager; orphan scanning has its own dedicated methods below.
-	 *
-	 * @return array Always an empty array.
-	 */
-	public function get_data() {
-		return []; }
-	/**
-	 * Not used by this manager; orphan scanning has its own dedicated methods below.
-	 *
-	 * @return bool Always false.
-	 */
-	public function edit_record() {
-		return false; }
-	/**
-	 * Not used by this manager; orphan scanning has its own dedicated methods below.
-	 *
-	 * @return bool Always false.
-	 */
-	public function delete_record() {
-		return false; }
 
 	/**
 	 * Scan for orphaned options

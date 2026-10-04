@@ -1,6 +1,6 @@
 # Skill: Release Plugin
 
-This skill outlines the standard operating procedure for releasing a new version of the **NHR Advanced Options Table Manager** plugin.
+This skill outlines the standard operating procedure for releasing a new version of the **NHR Database Cleaner & Optimizer** plugin.
 
 ## Versioning Definitions
 - **Major Release**: Increment the second digit (0.1.0 bump). Example: `1.4.0` -> `1.5.0`.

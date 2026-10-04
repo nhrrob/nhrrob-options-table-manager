@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <ruleset
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	name="NHR Options Table Manager"
+	name="NHR Database Cleaner &amp; Optimizer"
 	xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd"
 >
-	<description>NHR Options Table Manager PHP Coding Standards</description>
+	<description>NHR Database Cleaner &amp; Optimizer PHP Coding Standards</description>
 
 	<!-- PHP files only — JS/CSS are linted by ESLint -->
 	<arg name="extensions" value="php"/>

@@ -6,14 +6,22 @@
  * DataTable is self-contained (client-side search/sort/pagination) once a
  * list is fully loaded, same as Optimize's three lists, and the history
  * table is bounded by Settings' retention-window prune, not open-ended.
+ *
+ * Option edits and deletes carry their previous value, so those rows get a
+ * Restore action (POST nhrotm/v1/dashboard/activity/{id}/restore). The
+ * server decides which rows are restorable (`restorable`); meta, transient
+ * and event rows never are.
  */
-import { useEffect, useState } from '@wordpress/element';
+import { useCallback, useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
 import DataTable from './DataTable';
+import Icon from './Icon';
 import Panel from './Panel';
 import ScreenHeader from './ScreenHeader';
+import { useConfirm } from './ConfirmProvider';
+import { useToast } from './ToastProvider';
 
 const FETCH_LIMIT = 100;
 
@@ -49,7 +57,7 @@ const ACTION_LABELS = {
 	restore_backup: __( 'Restored', 'nhrrob-options-table-manager' ),
 };
 
-const columns = [
+const baseColumns = [
 	{
 		key: 'message',
 		label: __( 'Change', 'nhrrob-options-table-manager' ),
@@ -98,8 +106,11 @@ export default function ActivityScreen() {
 	const [ rows, setRows ] = useState( [] );
 	const [ total, setTotal ] = useState( 0 );
 	const [ status, setStatus ] = useState( 'loading' );
+	const [ busy, setBusy ] = useState( false );
+	const confirm = useConfirm();
+	const toast = useToast();
 
-	useEffect( () => {
+	const load = useCallback( () => {
 		apiFetch( {
 			path: `nhrotm/v1/dashboard/activity?page=1&per_page=${ FETCH_LIMIT }`,
 		} )
@@ -110,6 +121,81 @@ export default function ActivityScreen() {
 			} )
 			.catch( () => setStatus( 'error' ) );
 	}, [] );
+
+	useEffect( () => {
+		load();
+	}, [ load ] );
+
+	const restore = async ( row ) => {
+		if (
+			! ( await confirm(
+				__(
+					'Restore this option to its previous value?',
+					'nhrrob-options-table-manager'
+				),
+				{
+					description: __(
+						'The current value is logged first, so this restore can itself be undone from Activity.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Restore',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
+		) {
+			return;
+		}
+		setBusy( true );
+		apiFetch( {
+			path: `nhrotm/v1/dashboard/activity/${ row.id }/restore`,
+			method: 'POST',
+		} )
+			.then( () => {
+				toast(
+					__(
+						'Option restored successfully.',
+						'nhrrob-options-table-manager'
+					)
+				);
+				load();
+			} )
+			.catch( () =>
+				toast(
+					__(
+						'This entry could not be restored.',
+						'nhrrob-options-table-manager'
+					),
+					'error'
+				)
+			)
+			.finally( () => setBusy( false ) );
+	};
+
+	const columns = [
+		...baseColumns,
+		{
+			key: 'actions',
+			label: __( 'Actions', 'nhrrob-options-table-manager' ),
+			align: 'right',
+			colClassName: 'nhrotm-col-act-sm',
+			render: ( r ) =>
+				r.restorable ? (
+					<div className="nhrotm-grid__actions">
+						<button
+							type="button"
+							className="nhrotm-iconbtn"
+							disabled={ busy }
+							onClick={ () => restore( r ) }
+						>
+							<Icon name="refresh" size={ 14 } />
+							{ __( 'Restore', 'nhrrob-options-table-manager' ) }
+						</button>
+					</div>
+				) : null,
+		},
+	];
 
 	return (
 		<div className="nhrotm-activity-screen">

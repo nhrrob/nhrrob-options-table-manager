@@ -14,88 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Trait GlobalTrait
  *
- * Collects the helpers shared across managers, services and admin pages: the
- * wp_kses allow-list used when echoing rendered views, the protected-key lists
- * that guard core options and meta from edits/deletes, and the transient_*
- * helpers for building transient SQL fragments and option_name pairs.
+ * Collects the helpers shared across managers and services: the protected-key
+ * lists that guard core options and meta from edits/deletes, and the
+ * transient_* helpers for building transient SQL fragments and option_name pairs.
  */
 trait GlobalTrait {
-
-	/**
-	 * Extend wp_kses' "post" allow-list with the tags the plugin's views emit.
-	 *
-	 * @return array
-	 */
-	public function allowed_html() {
-		$allowed_tags = wp_kses_allowed_html( 'post' );
-
-		$allowed_tags_extra = array(
-			'a'      => array(
-				'href'   => 1,
-				'class'  => 1,
-				'id'     => 1,
-				'target' => 1,
-			),
-			'svg'    => array(
-				'class'           => 1,
-				'xmlns'           => 1,
-				'aria-hidden'     => 1,
-				'aria-labelledby' => 1,
-				'fill'            => 1,
-				'role'            => 1,
-				'width'           => 1,
-				'height'          => 1,
-				'viewbox'         => 1,
-				'stroke-width'    => 1,
-				'stroke'          => 1,
-			),
-			'g'      => array(
-				'fill' => 1,
-			),
-			'title'  => array(
-				'title' => 1,
-			),
-			'path'   => array(
-				'stroke-linecap'  => 1,
-				'stroke-linejoin' => 1,
-				'd'               => 1,
-				'fill'            => 1,
-			),
-			'input'  => array(
-				'class'       => 1,
-				'type'        => 1,
-				'name'        => 1,
-				'placeholder' => 1,
-				'value'       => 1,
-				'id'          => 1,
-				'required'    => 1,
-				'readonly'    => 1,
-				'disabled'    => 1,
-				'checked'     => 1,
-				'min'         => 1,
-			),
-			'select' => array(
-				'class'    => 1,
-				'name'     => 1,
-				'id'       => 1,
-				'required' => 1,
-			),
-			'option' => array(
-				'value'    => 1,
-				'selected' => 1,
-			),
-			'form'   => array(
-				'action' => 1,
-				'method' => 1,
-				'id'     => 1,
-				'class'  => 1,
-			),
-		);
-
-		$allowed_tags = array_merge( $allowed_tags, $allowed_tags_extra );
-
-		return $allowed_tags;
-	}
 
 	/**
 	 * Core and well-known plugin options that must not be edited or deleted.
@@ -267,6 +190,13 @@ trait GlobalTrait {
 			'auto_core_update_notified',
 		);
 
+		// The roles option is named after the table prefix (wp_2_user_roles on a
+		// network site, xyz_user_roles with a custom prefix).
+		global $wpdb;
+		if ( isset( $wpdb->prefix ) ) {
+			$core_options[] = $wpdb->prefix . 'user_roles';
+		}
+
 		$default_options = array(
 			'_site_transient_timeout_theme_roots',
 			'_site_transient_theme_roots',
@@ -285,7 +215,9 @@ trait GlobalTrait {
 			'widget_recent-comments',
 		);
 
-		return array_merge( $core_options, $default_options );
+		// The plugin's own recorded data (history log, snapshots) lives in
+		// options too: editing or deleting one by hand would corrupt it.
+		return array_values( array_unique( array_merge( $core_options, $default_options, \Nhrotm\OptionsTableManager\Managers\BackupManager::data_options() ) ) );
 	}
 
 	/**
@@ -306,14 +238,18 @@ trait GlobalTrait {
 			'use_ssl',
 			'show_admin_bar_front',
 			'locale',
-			'wp_capabilities',
-			'wp_user_level',
 			'show_welcome_panel',
 			'session_tokens',
-			'wp_user-settings',
-			'wp_user-settings-time',
-			'wp_persisted_preferences',
 		);
+
+		// Per-site keys carry the table prefix (wp_2_capabilities on multisite,
+		// xyz_capabilities with a custom prefix). List this site's own here;
+		// is_protected_usermeta() also matches every other site's.
+		global $wpdb;
+		foreach ( $this->prefixed_usermeta_suffixes() as $suffix ) {
+			$core_usermetas[] = $wpdb->get_blog_prefix() . $suffix;
+			$core_usermetas[] = $wpdb->base_prefix . $suffix;
+		}
 
 		$default_usermetas = array(
 			'_last_login',
@@ -322,7 +258,45 @@ trait GlobalTrait {
 			'_woocommerce_tracks_anon_id',
 		);
 
-		return array_merge( $core_usermetas, $default_usermetas );
+		return array_values( array_unique( array_merge( $core_usermetas, $default_usermetas ) ) );
+	}
+
+	/**
+	 * User meta keys WordPress stores with the site's table prefix.
+	 * (A method, not a trait constant: those need PHP 8.2.)
+	 *
+	 * @return string[]
+	 */
+	public function prefixed_usermeta_suffixes() {
+		return [ 'capabilities', 'user_level', 'user-settings', 'user-settings-time', 'persisted_preferences', 'dashboard_quick_press_last_post_id' ];
+	}
+
+	/**
+	 * Whether a user meta key must not be edited or deleted.
+	 *
+	 * Also matches the role/capability keys of every site in a network
+	 * ({base_prefix}{blog_id}_capabilities …): user meta is one table shared
+	 * by all sites, so without this a site admin could grant themselves a
+	 * role on another site.
+	 *
+	 * @param string $key Meta key.
+	 * @return bool
+	 */
+	public function is_protected_usermeta( $key ) {
+		global $wpdb;
+		if ( in_array( $key, $this->get_protected_usermetas(), true ) ) {
+			return true;
+		}
+		$suffixes = implode(
+			'|',
+			array_map(
+				function ( $suffix ) {
+					return preg_quote( $suffix, '/' );
+				},
+				$this->prefixed_usermeta_suffixes()
+			)
+		);
+		return (bool) preg_match( '/^' . preg_quote( $wpdb->base_prefix, '/' ) . '(\d+_)?(' . $suffixes . ')$/', (string) $key );
 	}
 
 	/**
@@ -363,27 +337,6 @@ trait GlobalTrait {
 	 */
 	public function get_protected_termmetas() {
 		return array();
-	}
-
-	/**
-	 * Option names exempted from the usual protected-prefix matching.
-	 *
-	 * @return array
-	 */
-	public function exceptional_option_names() {
-		return [
-			'betterlinks_notices',
-		];
-	}
-
-	/**
-	 * Whether a plugin is active, detected by one of its class names.
-	 *
-	 * @param string $class_name Fully-qualified class name to probe for.
-	 * @return bool
-	 */
-	public function is_plugin_installed( $class_name = '\WP_Recipe_Maker' ) {
-		return class_exists( $class_name );
 	}
 
 	/**

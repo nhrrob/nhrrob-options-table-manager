@@ -28,42 +28,6 @@ class OptimizationManager extends BaseTableManager {
 	}
 
 	/**
-	 * Get searchable columns (required by BaseTableManager).
-	 *
-	 * @return array
-	 */
-	protected function get_searchable_columns() {
-		return [];
-	}
-
-	/**
-	 * Not used by this manager; autoload analysis has its own dedicated methods below.
-	 *
-	 * @return array Always an empty array.
-	 */
-	public function get_data() {
-		return [];
-	}
-
-	/**
-	 * Not used by this manager; autoload analysis has its own dedicated methods below.
-	 *
-	 * @return bool Always false.
-	 */
-	public function edit_record() {
-		return false;
-	}
-
-	/**
-	 * Not used by this manager; autoload analysis has its own dedicated methods below.
-	 *
-	 * @return bool Always false.
-	 */
-	public function delete_record() {
-		return false;
-	}
-
-	/**
 	 * Get autoloaded options, heaviest first.
 	 *
 	 * @param int $limit Safety cap on rows returned (not a "top N" — the
@@ -105,52 +69,6 @@ class OptimizationManager extends BaseTableManager {
 			},
 			$results
 		);
-	}
-
-	/**
-	 * Toggle autoload status for an option
-	 *
-	 * @return bool
-	 * @throws \Exception When the nonce/permissions/status are invalid, the option is protected, or the update fails.
-	 */
-	public function toggle_autoload() {
-		// Verify nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'nhrotm-admin-nonce' ) ) {
-			throw new \Exception( 'Invalid nonce' );
-		}
-
-		$this->validate_permissions();
-
-		$option_name = isset( $_POST['option_name'] ) ? sanitize_text_field( wp_unslash( $_POST['option_name'] ) ) : '';
-		$new_status  = isset( $_POST['autoload_status'] ) ? sanitize_text_field( wp_unslash( $_POST['autoload_status'] ) ) : '';
-
-		if ( empty( $option_name ) ) {
-			throw new \Exception( 'Option name is required' );
-		}
-
-		if ( ! in_array( $new_status, [ 'yes', 'no' ], true ) ) {
-			throw new \Exception( 'Invalid status' );
-		}
-
-		if ( $this->is_protected_item( $option_name ) ) {
-			throw new \Exception( 'Cannot modify protected option' );
-		}
-
-		// We use $wpdb update because update_option might fail if value is unchanged,
-		// and we only want to change autoload.
-		$result = $this->wpdb->update(
-			$this->table_name,
-			[ 'autoload' => $new_status ],
-			[ 'option_name' => $option_name ],
-			[ '%s' ],
-			[ '%s' ]
-		);
-
-		if ( false === $result ) {
-			throw new \Exception( 'Database update failed' );
-		}
-
-		return true;
 	}
 
 	/**

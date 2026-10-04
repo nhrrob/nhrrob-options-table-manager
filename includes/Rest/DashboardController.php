@@ -19,6 +19,7 @@ use Nhrotm\OptionsTableManager\Services\ActivityService;
  *
  * GET /nhrotm/v1/dashboard          → score, headline, cards, recommendations.
  * GET /nhrotm/v1/dashboard/activity → paginated change feed ("View all").
+ * POST /nhrotm/v1/dashboard/activity/{id}/restore → put an option back to the value in that entry.
  */
 class DashboardController extends RestController {
 
@@ -87,6 +88,23 @@ class DashboardController extends RestController {
 				],
 			]
 		);
+
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/dashboard/activity/(?P<id>\d+)/restore',
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'restore_activity' ],
+				'permission_callback' => [ $this, 'can_manage' ],
+				'args'                => [
+					'id' => [
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					],
+				],
+			]
+		);
 	}
 
 	/**
@@ -108,5 +126,19 @@ class DashboardController extends RestController {
 		return $this->ok(
 			$this->activity->paged( $request->get_param( 'page' ), $request->get_param( 'per_page' ) )
 		);
+	}
+
+	/**
+	 * Restore the option recorded in one activity entry to its previous value.
+	 *
+	 * @param \WP_REST_Request $request Full REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function restore_activity( $request ) {
+		$result = $this->activity->restore( $request->get_param( 'id' ) );
+		if ( true !== $result ) {
+			return $this->fail( 'nhrotm_restore_failed', __( 'This entry could not be restored.', 'nhrrob-options-table-manager' ), 400 );
+		}
+		return $this->ok( [ 'restored' => true ] );
 	}
 }

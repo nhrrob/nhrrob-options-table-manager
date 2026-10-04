@@ -1,11 +1,13 @@
 /**
  * Integrations — read-only browser for third-party tables (e.g. WPRM).
- * Wired to nhrotm/v1/integrations.
+ * Wired to nhrotm/v1/integrations. Search and column sort run server-side
+ * (the table can be large), same as Browse.
  */
-import { useEffect, useState, useCallback } from '@wordpress/element';
+import { useEffect, useRef, useState, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
+import Icon from './Icon';
 import Panel from './Panel';
 import ScreenHeader from './ScreenHeader';
 
@@ -17,6 +19,32 @@ export default function IntegrationsScreen() {
 	const [ rows, setRows ] = useState( { columns: [], items: [], total: 0 } );
 	const [ page, setPage ] = useState( 1 );
 	const [ status, setStatus ] = useState( 'loading' );
+	const [ searchInput, setSearchInput ] = useState( '' );
+	const [ search, setSearch ] = useState( '' );
+	const [ orderby, setOrderby ] = useState( '' );
+	const [ order, setOrder ] = useState( 'desc' );
+	const debounceRef = useRef( null );
+
+	useEffect( () => () => clearTimeout( debounceRef.current ), [] );
+
+	const onSearch = ( value ) => {
+		setSearchInput( value );
+		clearTimeout( debounceRef.current );
+		debounceRef.current = setTimeout( () => {
+			setSearch( value );
+			setPage( 1 );
+		}, 300 );
+	};
+
+	const sortBy = ( column ) => {
+		if ( orderby === column ) {
+			setOrder( order === 'asc' ? 'desc' : 'asc' );
+		} else {
+			setOrderby( column );
+			setOrder( 'desc' );
+		}
+		setPage( 1 );
+	};
 
 	useEffect( () => {
 		apiFetch( { path: 'nhrotm/v1/integrations' } )
@@ -35,11 +63,14 @@ export default function IntegrationsScreen() {
 			return;
 		}
 		apiFetch( {
-			path: `nhrotm/v1/integrations/${ active }?page=${ page }&per_page=${ PER_PAGE }`,
+			path:
+				`nhrotm/v1/integrations/${ active }?page=${ page }&per_page=${ PER_PAGE }` +
+				`&search=${ encodeURIComponent( search ) }` +
+				`&orderby=${ encodeURIComponent( orderby ) }&order=${ order }`,
 		} )
 			.then( ( res ) => setRows( res.data ) )
 			.catch( () => {} );
-	}, [ active, page ] );
+	}, [ active, page, search, orderby, order ] );
 
 	useEffect( () => {
 		loadRows();
@@ -104,20 +135,79 @@ export default function IntegrationsScreen() {
 							onClick={ () => {
 								setActive( it.slug );
 								setPage( 1 );
+								setSearchInput( '' );
+								setSearch( '' );
+								setOrderby( '' );
+								setOrder( 'desc' );
 							} }
 						>
 							{ it.label } ({ it.count })
+							{ it.active === false && (
+								<>
+									{ ' ' }
+									<span className="nhrotm-badge nhrotm-badge--warning">
+										{ __(
+											'Plugin inactive',
+											'nhrrob-options-table-manager'
+										) }
+									</span>
+								</>
+							) }
 						</button>
 					) ) }
+				</div>
+
+				<div className="nhrotm-actions">
+					<span className="nhrotm-search">
+						<Icon name="search" size={ 15 } />
+						<input
+							type="search"
+							className="nhrotm-browse__search"
+							style={ { WebkitAppearance: 'textfield' } }
+							placeholder={ __(
+								'Search this table…',
+								'nhrrob-options-table-manager'
+							) }
+							value={ searchInput }
+							onChange={ ( e ) => onSearch( e.target.value ) }
+						/>
+					</span>
 				</div>
 
 				<div className="nhrotm-grid__scroll">
 					<table className="nhrotm-grid nhrotm-grid--fluid">
 						<thead>
 							<tr>
-								{ rows.columns.map( ( c ) => (
-									<th key={ c }>{ c }</th>
-								) ) }
+								{ rows.columns.map( ( c ) => {
+									const isActive = orderby === c;
+									let iconName = 'sort';
+									if ( isActive ) {
+										iconName =
+											order === 'asc'
+												? 'sortUp'
+												: 'sortDown';
+									}
+									return (
+										<th key={ c }>
+											<button
+												type="button"
+												className={
+													'nhrotm-grid__sort' +
+													( isActive
+														? ' is-active'
+														: '' )
+												}
+												onClick={ () => sortBy( c ) }
+											>
+												{ c }
+												<Icon
+													name={ iconName }
+													size={ 13 }
+												/>
+											</button>
+										</th>
+									);
+								} ) }
 							</tr>
 						</thead>
 						<tbody>

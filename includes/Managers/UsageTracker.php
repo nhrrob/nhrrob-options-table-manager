@@ -27,15 +27,22 @@ class UsageTracker {
 
 	use GlobalTrait;
 
-	const USED_OPTION    = 'nhrotm_used_autoload_options';
-	const SINCE_OPTION   = 'nhrotm_usage_tracking_since';
-	const ENABLED_OPTION = 'nhrotm_usage_tracking_enabled';
-	const LOADS_OPTION   = 'nhrotm_usage_load_count';
+	/**
+	 * All collected data in one non-autoloaded option:
+	 * [ 'since' => mysql datetime, 'loads' => int, 'used' => [ name => hits ] ].
+	 */
+	const DATA_OPTION = 'nhrotm_usage';
 
 	// Stop counting once the sample proves the point. Past this the extra
 	// write on every front-end request buys nothing, and an undercounted
 	// "never used across N loads" is still a true statement.
 	const LOADS_CAP = 10000;
+
+	// The first loads are all recorded so results show up quickly. After that
+	// one load in SAMPLE_RATE is recorded and counted SAMPLE_RATE times, so a
+	// busy site is not written to on every page view.
+	const SAMPLE_AFTER = 200;
+	const SAMPLE_RATE  = 10;
 
 	/**
 	 * Option names read during the current request.
@@ -45,17 +52,35 @@ class UsageTracker {
 	private $used = [];
 
 	/**
+	 * How many loads this request stands for (1, or SAMPLE_RATE when sampling).
+	 *
+	 * @var int
+	 */
+	private $weight = 1;
+
+	/**
 	 * Attach front-end tracking hooks when enabled.
 	 *
 	 * @return void
 	 */
 	public function maybe_track() {
-		if ( get_option( self::ENABLED_OPTION, 'false' ) !== 'true' ) {
+		if ( ! self::enabled() ) {
 			return;
 		}
 
 		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return;
+		}
+
+		$loads = self::data()['loads'];
+		if ( $loads >= self::LOADS_CAP ) {
+			return; // The sample is complete; nothing more to record.
+		}
+		if ( $loads >= self::SAMPLE_AFTER ) {
+			if ( 1 !== wp_rand( 1, self::SAMPLE_RATE ) ) {
+				return;
+			}
+			$this->weight = self::SAMPLE_RATE;
 		}
 
 		add_filter( 'all', [ $this, 'record_hook' ] );
@@ -82,39 +107,87 @@ class UsageTracker {
 	 * @return void
 	 */
 	public function persist() {
+		$data   = self::data();
+		$before = $data;
+
 		// Count every tracked front-end load, even one that read nothing new.
 		// The sample size is what makes "never used" trustworthy, so it has to
 		// be recorded independently of whether new names were seen.
-		$loads = $this->get_load_count();
-		if ( $loads < self::LOADS_CAP ) {
-			update_option( self::LOADS_OPTION, $loads + 1, false );
-		}
+		$data['loads'] = min( self::LOADS_CAP, $data['loads'] + $this->weight );
 
-		if ( empty( $this->used ) ) {
-			return;
-		}
-
-		$autoloaded = wp_load_alloptions();
-		// Per-option hit count, not just a seen/unseen flag — lets the UI show
-		// "used 12x" instead of a flat "Used" label. Values written before this
-		// change are the boolean `true`; `(int) true === 1`, so old data upgrades
-		// in place with no migration.
-		$stored = (array) get_option( self::USED_OPTION, [] );
-		$before = $stored;
-
-		foreach ( array_keys( $this->used ) as $name ) {
-			if ( isset( $autoloaded[ $name ] ) ) {
-				$stored[ $name ] = ( isset( $stored[ $name ] ) ? (int) $stored[ $name ] : 0 ) + 1;
+		if ( ! empty( $this->used ) ) {
+			$autoloaded = wp_load_alloptions();
+			// Per-option hit count, not just a seen/unseen flag — lets the UI show
+			// "used 12x" instead of a flat "Used" label.
+			foreach ( array_keys( $this->used ) as $name ) {
+				if ( isset( $autoloaded[ $name ] ) ) {
+					$data['used'][ $name ] = ( isset( $data['used'][ $name ] ) ? (int) $data['used'][ $name ] : 0 ) + $this->weight;
+				}
+			}
+			if ( '' === $data['since'] ) {
+				$data['since'] = current_time( 'mysql' );
 			}
 		}
 
-		if ( $stored !== $before ) {
-			update_option( self::USED_OPTION, $stored, false );
+		if ( $data !== $before ) {
+			update_option( self::DATA_OPTION, $data, false );
 		}
+	}
 
-		if ( ! get_option( self::SINCE_OPTION ) ) {
-			update_option( self::SINCE_OPTION, current_time( 'mysql' ), false );
+	/**
+	 * Whether tracking is switched on. Reads the autoloaded settings option,
+	 * so the check costs no query on a front-end request.
+	 *
+	 * @return bool
+	 */
+	public static function enabled() {
+		$settings = get_option( \Nhrotm\OptionsTableManager\Services\SettingsService::OPTION, [] );
+		return is_array( $settings ) && ! empty( $settings['usage_tracking_enabled'] ) && 'false' !== $settings['usage_tracking_enabled'];
+	}
+
+	/**
+	 * The collected data, normalized.
+	 *
+	 * @return array { since, loads, used }
+	 */
+	private static function data() {
+		$data = get_option( self::DATA_OPTION, [] );
+		$data = is_array( $data ) ? $data : [];
+		return [
+			'since' => isset( $data['since'] ) ? (string) $data['since'] : '',
+			'loads' => isset( $data['loads'] ) ? (int) $data['loads'] : 0,
+			'used'  => isset( $data['used'] ) && is_array( $data['used'] ) ? $data['used'] : [],
+		];
+	}
+
+	/**
+	 * 2.1 migration: fold the three options earlier versions kept (used
+	 * names, start date, load count) into DATA_OPTION.
+	 *
+	 * @return void
+	 */
+	public static function migrate() {
+		$used  = get_option( 'nhrotm_used_autoload_options', null );
+		$since = get_option( 'nhrotm_usage_tracking_since', null );
+		$loads = get_option( 'nhrotm_usage_load_count', null );
+		if ( null === $used && null === $since && null === $loads ) {
+			return;
 		}
+		if ( false === get_option( self::DATA_OPTION, false ) ) {
+			update_option(
+				self::DATA_OPTION,
+				[
+					'since' => (string) $since,
+					'loads' => (int) $loads,
+					// Values written before hit counts existed are the boolean true.
+					'used'  => array_map( 'intval', is_array( $used ) ? $used : [] ),
+				],
+				false
+			);
+		}
+		delete_option( 'nhrotm_used_autoload_options' );
+		delete_option( 'nhrotm_usage_tracking_since' );
+		delete_option( 'nhrotm_usage_load_count' );
 	}
 
 	/**
@@ -124,7 +197,8 @@ class UsageTracker {
 	 */
 	public function get_unused_autoload_options() {
 		$autoloaded = wp_load_alloptions();
-		$used       = (array) get_option( self::USED_OPTION, [] );
+		$data       = self::data();
+		$used       = $data['used'];
 		$protected  = $this->get_protected_options();
 
 		$unused = [];
@@ -148,10 +222,10 @@ class UsageTracker {
 		);
 
 		return [
-			'tracking'    => get_option( self::ENABLED_OPTION, 'false' ) === 'true',
-			'since'       => get_option( self::SINCE_OPTION, '' ),
+			'tracking'    => self::enabled(),
+			'since'       => $data['since'],
 			'seen_count'  => count( $used ),
-			'load_count'  => $this->get_load_count(),
+			'load_count'  => $data['loads'],
 			'used_counts' => array_map( 'intval', $used ),
 			'options'     => $unused,
 		];
@@ -163,7 +237,7 @@ class UsageTracker {
 	 * @return int
 	 */
 	public function get_load_count() {
-		return (int) get_option( self::LOADS_OPTION, 0 );
+		return self::data()['loads'];
 	}
 
 	/**
@@ -172,8 +246,6 @@ class UsageTracker {
 	 * @return void
 	 */
 	public function reset() {
-		delete_option( self::USED_OPTION );
-		delete_option( self::SINCE_OPTION );
-		delete_option( self::LOADS_OPTION );
+		delete_option( self::DATA_OPTION );
 	}
 }

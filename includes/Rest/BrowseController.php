@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Nhrotm\OptionsTableManager\Services\ActivityService;
 use Nhrotm\OptionsTableManager\Services\BrowseService;
 
 /**
@@ -220,6 +221,22 @@ class BrowseController extends RestController {
 
 		register_rest_route(
 			self::NAMESPACE_V1,
+			'/option-history',
+			[
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'get_history' ],
+				'permission_callback' => [ $this, 'can_manage' ],
+				'args'                => [
+					'name' => [
+						'type'     => 'string',
+						'required' => true,
+					],
+				],
+			]
+		);
+
+		register_rest_route(
+			self::NAMESPACE_V1,
 			'/browse/(?P<id>[a-zA-Z0-9_\-]+)',
 			[
 				[
@@ -248,6 +265,25 @@ class BrowseController extends RestController {
 				],
 			]
 		);
+	}
+
+	/**
+	 * Route gate: manage_options, plus — on multisite — user meta only for
+	 * users who can manage network users (see BrowseService::can_manage_usermeta()).
+	 * Every Browse route passes through here, so no handler can skip it.
+	 *
+	 * @param \WP_REST_Request|null $request Request (WordPress passes it to permission callbacks).
+	 * @return bool
+	 */
+	public function can_manage( $request = null ) {
+		if ( ! parent::can_manage() ) {
+			return false;
+		}
+		if ( $request instanceof \WP_REST_Request
+			&& ( 'usermeta' === $request->get_param( 'type' ) || 'user' === $request->get_param( 'target' ) ) ) {
+			return BrowseService::can_manage_usermeta();
+		}
+		return true;
 	}
 
 	/**
@@ -356,5 +392,15 @@ class BrowseController extends RestController {
 			return $this->fail( 'nhrotm_delete_failed', __( 'This record is protected or could not be deleted.', 'nhrrob-options-table-manager' ), 400 );
 		}
 		return $this->ok( [ 'deleted' => true ] );
+	}
+
+	/**
+	 * Every recorded version of one option (Browse → History).
+	 *
+	 * @param \WP_REST_Request $request Full REST request.
+	 * @return \WP_REST_Response
+	 */
+	public function get_history( $request ) {
+		return $this->ok( ( new ActivityService() )->for_option( (string) $request->get_param( 'name' ) ) );
 	}
 }

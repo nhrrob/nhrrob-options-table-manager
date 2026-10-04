@@ -1,5 +1,5 @@
 /**
- * NHR Options Manager 2.0 — colorful, modern admin UI.
+ * NHR Database Cleaner & Optimizer — colorful, modern admin UI.
  * All colour is CSS custom properties (zero bundle cost). Violet/indigo brand.
  * Light + dark themes (token remap); dense, professional data grid.
  * Mirrors .ai/DESIGN.md §9/§12/§13.
@@ -11,8 +11,7 @@
 	// `.nhrotm-linkbtn`, panel links) it was designed against a light surface.
 	// `--nhrotm-gradient-soft` does flip dark below, so the unremapped
 	// primary/primary-600 text sitting on top of it lost most of its contrast
-	// (~2.6:1, well under the 4.5:1 the docs call for). Lightened here the
-	// same way `--nhrotm-pro-text` already was for the identical pairing.
+	// (~2.6:1, well under the 4.5:1 the docs call for). Lightened here.
 	--nhrotm-primary: #8a7cff;
 	--nhrotm-primary-600: #b9adff;
 	--nhrotm-gradient-soft: linear-gradient(135deg, #242a4d 0%, #2c2350 100%);
@@ -20,9 +19,6 @@
 	--nhrotm-card-options: rgba(109, 94, 252, 0.16);
 	--nhrotm-card-transients: rgba(247, 144, 9, 0.14);
 	--nhrotm-card-backup: rgba(18, 183, 106, 0.14);
-	--nhrotm-pro: rgba(109, 94, 252, 0.16);
-	--nhrotm-pro-text: #b9adff;
-	--nhrotm-pro-border: rgba(109, 94, 252, 0.35);
 	--nhrotm-surface: #1b1e2b;
 	--nhrotm-bg: #14161f;
 	--nhrotm-border: #2a2e3f;
@@ -50,10 +46,6 @@
 	--nhrotm-card-options: #f4f0ff;
 	--nhrotm-card-transients: #fff4ec;
 	--nhrotm-card-backup: #ecfdf3;
-
-	--nhrotm-pro: #f4f0ff;
-	--nhrotm-pro-text: #6d5efc;
-	--nhrotm-pro-border: #e4dcff;
 
 	--nhrotm-surface: #ffffff;
 	--nhrotm-bg: #f7f8fc;
@@ -286,31 +278,6 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 	&__icon {
 		flex: 0 0 auto;
 		opacity: 0.9;
-	}
-
-	&__spacer {
-		flex: 1;
-	}
-
-	&__sep {
-		height: 1px;
-		margin: 10px 8px;
-		background: var(--nhrotm-border);
-	}
-
-	&__item--upgrade {
-		color: var(--nhrotm-text-muted);
-
-		&:hover {
-			background: var(--nhrotm-pro);
-			color: var(--nhrotm-pro-text);
-		}
-
-		&.is-active {
-			background: var(--nhrotm-pro);
-			color: var(--nhrotm-pro-text);
-			box-shadow: none;
-		}
 	}
 }
 
@@ -674,36 +641,6 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 	}
 }
 
-// ---- PRO tag (muted, quiet — reads as metadata, not a button) ----
-.nhrotm-pro-tag {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	padding: 2px 8px 2px 7px;
-	border-radius: 20px;
-	background: var(--nhrotm-pro);
-	border: 1px solid var(--nhrotm-pro-border);
-	color: var(--nhrotm-pro-text);
-	font: inherit;
-	font-size: 10.5px;
-	font-weight: 700;
-	letter-spacing: 0.5px;
-	text-transform: uppercase;
-	cursor: pointer;
-
-	&::before {
-		content: '';
-		width: 5px;
-		height: 5px;
-		border-radius: 50%;
-		background: currentColor;
-	}
-
-	&:hover {
-		filter: brightness(0.97);
-	}
-}
-
 .nhrotm-hint {
 	display: inline-flex;
 	align-items: center;
@@ -870,32 +807,6 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 			border-color: var(--nhrotm-primary);
 		}
 	}
-}
-
-// Cleanup panel body (Optimize): description + action beside a stat tile.
-// Reuses the plain .nhrotm-card component (same one the Dashboard's
-// autoload/options/transients/backup tiles use) instead of a one-off — the
-// panel previously had only a description, a count line and a button, all
-// left-aligned, leaving the whole right half of the (full-width) panel
-// visibly blank next to sibling panels that fill the width with a table.
-.nhrotm-cleanup {
-	display: flex;
-	// The copy column (paragraph + one button) is much shorter than the stat
-	// card (icon row + label + metric + subtext + button) — center-align so
-	// leftover height distributes around the shorter column instead of
-	// pooling below it as dead space.
-	align-items: center;
-	gap: 24px;
-	flex-wrap: wrap;
-}
-
-.nhrotm-cleanup__copy {
-	flex: 1 1 320px;
-	min-width: 0;
-}
-
-.nhrotm-cleanup__stat {
-	flex: 0 0 220px;
 }
 
 // Dark-mode fallback for a .nhrotm-card__ico with none of the 4 tint
@@ -1289,6 +1200,11 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 	col.nhrotm-col-act {
 		width: 210px;
 	}
+
+	// Browse → Options rows carry a third action (History) beside Edit/Delete.
+	col.nhrotm-col-act-lg {
+		width: 300px;
+	}
 	// Optimize's row actions are ever only one button (+ an occasional inline
 	// score-impact badge) — Browse's 210px .nhrotm-col-act was sized for its
 	// two-button (Edit + Delete) rows and left a visibly empty gutter here.
@@ -1510,6 +1426,47 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 	table-layout: auto;
 	width: auto;
 	min-width: 100%;
+}
+
+// Optimize → Tables. Under table-layout:fixed the one flexible column (the
+// table name) only gets what the fixed columns leave, and the panel is ~930px
+// wide on a typical laptop: with seven columns at the shared widths the fixed
+// ones added up to 924px, the name got 0px, wrapped one letter per line and
+// Owner drew on top of it. So the engine is shown under the name instead of
+// in its own column, and the five fixed columns here total 706px:
+// owner 150 + rows 96 + size 100 + overhead 128 + actions 232. The min-width
+// keeps ~200px for the name in a narrower window, where the grid scrolls.
+.nhrotm-grid--tables {
+	min-width: 910px;
+
+	col.nhrotm-col-count {
+		width: 96px;
+	}
+	col.nhrotm-col-size {
+		width: 100px;
+	}
+	// Wide enough for two buttons side by side (Empty + Drop, Optimize +
+	// Repair); a table with more wraps onto a second line.
+	col.nhrotm-col-act {
+		width: 232px;
+	}
+	.nhrotm-grid__actions {
+		flex-wrap: wrap;
+	}
+	// Rows and Size never break across lines.
+	td:nth-child(3),
+	td:nth-child(4) {
+		white-space: nowrap;
+	}
+}
+
+.nhrotm-tables__engine {
+	display: block;
+	margin-top: 2px;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		sans-serif;
+	font-size: 11.5px;
+	color: var(--nhrotm-text-muted);
 }
 
 // Placeholder rows shown while a type/sort/search/page change is loading, so
@@ -1849,96 +1806,6 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 	color: var(--nhrotm-text-muted);
 }
 
-// ---- Upgrade screen ----
-.nhrotm-upgrade {
-	&__hero {
-		border-radius: var(--nhrotm-radius);
-		background: var(--nhrotm-gradient-soft);
-		border: 1px solid var(--nhrotm-pro-border);
-		padding: 24px 26px;
-		margin-bottom: 20px;
-	}
-
-	&__eyebrow {
-		font-size: 11px;
-		font-weight: 700;
-		letter-spacing: 0.6px;
-		text-transform: uppercase;
-		color: var(--nhrotm-pro-text);
-	}
-
-	&__title {
-		margin: 8px 0 6px;
-		font-size: 21px;
-		font-weight: 800;
-		letter-spacing: -0.3px;
-	}
-
-	&__lede {
-		margin: 0;
-		color: var(--nhrotm-text-muted);
-		font-size: 14px;
-		max-width: 60ch;
-	}
-
-	&__cta {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		margin-top: 20px;
-		flex-wrap: wrap;
-	}
-
-	&__fine {
-		font-size: 12px;
-		color: var(--nhrotm-text-muted);
-	}
-}
-
-.nhrotm-compare {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 13.5px;
-
-	th,
-	td {
-		padding: 12px 16px;
-		border-bottom: 1px solid var(--nhrotm-border);
-		text-align: left;
-	}
-
-	thead th {
-		font-size: 11px;
-		text-transform: uppercase;
-		letter-spacing: 0.4px;
-		color: var(--nhrotm-text-muted);
-	}
-
-	.nhrotm-compare__pro {
-		background: var(--nhrotm-pro);
-	}
-
-	tbody tr:last-child td {
-		border-bottom: 0;
-	}
-
-	&__cap {
-		font-weight: 600;
-	}
-
-	.yes {
-		color: var(--nhrotm-success);
-		font-weight: 700;
-	}
-	.no {
-		color: var(--nhrotm-text-muted);
-	}
-	.plus {
-		color: var(--nhrotm-pro-text);
-		font-weight: 600;
-	}
-}
-
 // ---- Modal ----
 .nhrotm-modal__overlay {
 	position: fixed;
@@ -1990,6 +1857,12 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 	// as an empty void around a title and two buttons.
 	&--sm {
 		width: min(420px, 100%);
+	}
+
+	// Wide variant for a modal that holds a data grid (Browse → History):
+	// five columns don't fit the default 640px without truncating every value.
+	&--wide {
+		width: min(960px, 100%);
 	}
 
 	// The confirm dialog skips the body entirely when it has no description
@@ -2323,5 +2196,37 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 	.nhrotm-screen {
 		transition: none !important;
 		animation: none !important;
+	}
+}
+
+// Cleanup: the "keep the last N days" input + its unit, kept on one line.
+.nhrotm-cleanup__days {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+
+	input {
+		width: 72px;
+	}
+}
+
+// Cleanup: caveat line under a type whose "unused" is a judgement call.
+.nhrotm-cleanup__note {
+	display: block;
+	margin-top: 2px;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--nhrotm-text-muted);
+	white-space: normal;
+}
+
+// A row action that is a link (Network → Open) must look like its button siblings.
+.nhrotm-app a.nhrotm-iconbtn {
+	text-decoration: none;
+
+	&:focus {
+		outline: none;
+		box-shadow: none;
 	}
 }

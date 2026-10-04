@@ -27,37 +27,6 @@ class SearchReplaceManager extends BaseTableManager {
 	}
 
 	/**
-	 * Get searchable columns (required by BaseTableManager)
-	 */
-	protected function get_searchable_columns() {
-		return [ 'option_name', 'option_value' ];
-	}
-
-	/**
-	 * Not used — this manager exposes no DataTables grid of its own.
-	 *
-	 * @return array
-	 */
-	public function get_data() {
-		return []; }
-
-	/**
-	 * Not used — replacements go through execute_replace() instead.
-	 *
-	 * @return bool
-	 */
-	public function edit_record() {
-		return false; }
-
-	/**
-	 * Not used — this manager never deletes rows.
-	 *
-	 * @return bool
-	 */
-	public function delete_record() {
-		return false; }
-
-	/**
 	 * Preview search results
 	 *
 	 * @param string $search String to look for across option names and values.
@@ -85,7 +54,8 @@ class SearchReplaceManager extends BaseTableManager {
 			$value = $row['option_value'];
 			$count = substr_count( $value, $search );
 
-			if ( $count > 0 ) {
+			// Protected options are never rewritten, so they don't count as matches.
+			if ( $count > 0 && ! $this->is_protected_item( $row['option_name'] ) ) {
 				$matches[] = [
 					'option_name' => $row['option_name'],
 					'occurrences' => $count,
@@ -116,24 +86,28 @@ class SearchReplaceManager extends BaseTableManager {
 		$search_like = '%' . $wpdb->esc_like( $search ) . '%';
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Plugin-specific query; $this->excluded_from_replace_where() is a literal fragment, never user input
-		$results = $wpdb->get_results(
+		// Names first, then one value at a time: every match is handled without
+		// holding all the matching values in memory at once.
+		$names = (array) $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_value LIKE %s AND {$this->excluded_from_replace_where()} LIMIT 100",
+				"SELECT option_name FROM {$wpdb->options} WHERE option_value LIKE %s AND {$this->excluded_from_replace_where()}",
 				$search_like
-			),
-			ARRAY_A
+			)
 		);
         // phpcs:enable
 
 		$updated_options   = [];
 		$total_occurrences = 0;
 
-		foreach ( $results as $row ) {
-			$option_name    = $row['option_name'];
-			$original_value = $row['option_value'];
-
+		foreach ( $names as $option_name ) {
 			// Skip protected options for safety.
 			if ( $this->is_protected_item( $option_name ) ) {
+				continue;
+			}
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$original_value = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $option_name ) );
+			if ( null === $original_value ) {
 				continue;
 			}
 
@@ -167,6 +141,9 @@ class SearchReplaceManager extends BaseTableManager {
 						[ 'option_value' => $processed_value ],
 						[ 'option_name' => $option_name ]
 					);
+					// A raw write: drop the cached copy, or get_option() (and a
+					// persistent object cache) keeps serving the old value.
+					wp_cache_delete( $option_name, 'options' );
 				}
 
 				$updated_options[]  = [
@@ -175,6 +152,10 @@ class SearchReplaceManager extends BaseTableManager {
 				];
 				$total_occurrences += $occurrences;
 			}
+		}
+
+		if ( ! $dry_run && $updated_options ) {
+			wp_cache_delete( 'alloptions', 'options' );
 		}
 
 		return [
@@ -237,6 +218,9 @@ class SearchReplaceManager extends BaseTableManager {
 	private function excluded_from_replace_where() {
 		return 'NOT (' . $this->transient_value_where( 'option_name' )
 			. ' OR ' . $this->transient_timeout_where( 'option_name' )
-			. " OR option_name LIKE 'feed\_%')";
+			. " OR option_name LIKE 'feed\_%'"
+			// This plugin's own history log and snapshots: rewriting them
+			// would falsify the record of what a value used to be.
+			. " OR option_name = 'nhrotm_history' OR option_name LIKE 'nhrotm\_snapshot%')";
 	}
 }

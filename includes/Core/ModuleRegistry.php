@@ -19,7 +19,7 @@ use Nhrotm\OptionsTableManager\Interfaces\ModuleInterface;
  * Core registers its own modules, then opens the list to add-ons via the
  * `nhrotm_modules` filter. Everything downstream (REST routes, admin nav,
  * dashboard cards) is driven from this single collection — the free build
- * and any PRO add-on wire in the same way.
+ * and any add-on wire in the same way.
  */
 class ModuleRegistry {
 
