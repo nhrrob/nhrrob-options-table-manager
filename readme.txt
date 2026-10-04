@@ -15,8 +15,6 @@ Clean, optimize and manage your database: revisions, spam, transients and leftov
 🚀 [GitHub Repository](https://github.com/nhrrob/nhrrob-options-table-manager) – Found a bug or have a feature request? Let us know!  
 💬 [Slack Community](https://join.slack.com/t/nhrrob/shared_invite/zt-2m3nyrl1f-eKv7wwJzsiALcg0nY6~e0Q) – Got questions or just want to chat? Come hang out with us on Slack!
 
-https://www.youtube.com/watch?v=le89m1qfb0U
-
 A WordPress database collects data it no longer needs: old post revisions, auto-drafts, trashed posts, spam comments, expired transients, meta left behind by deleted content, and options and tables left behind by plugins you removed. This plugin shows you all of it, lets you preview exactly what would be deleted, and cleans it up on demand or on a schedule.
 
 It is a database cleaner and optimizer, not a malware scanner: it removes unused data, it does not look for malicious code.
