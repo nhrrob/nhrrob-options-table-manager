@@ -100,7 +100,7 @@ export default function DashboardScreen( { onNavigate } ) {
 			<ScreenHeader
 				title={ __( 'Dashboard', 'nhrrob-options-table-manager' ) }
 				lede={ __(
-					'Is your options table healthy — and what should you do next?',
+					'Is your database healthy — and what should you do next?',
 					'nhrrob-options-table-manager'
 				) }
 			/>

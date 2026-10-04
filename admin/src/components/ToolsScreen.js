@@ -7,19 +7,38 @@ import { useEffect, useState, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
+import CronPanel from './CronPanel';
+import ExportBasket from './ExportBasket';
+import formatBytes from './formatBytes';
 import JumpNav from './JumpNav';
 import Panel from './Panel';
-import ProTag from './ProTag';
 import ScreenHeader from './ScreenHeader';
 import Icon from './Icon';
 import { useConfirm } from './ConfirmProvider';
 import { useToast } from './ToastProvider';
 
-export default function ToolsScreen( { boot, onNavigate } ) {
+const IMPORT_STATUS = {
+	new: {
+		label: __( 'New', 'nhrrob-options-table-manager' ),
+		tone: 'nhrotm-badge--success',
+	},
+	modified: {
+		label: __( 'Modified', 'nhrrob-options-table-manager' ),
+		tone: 'nhrotm-badge--warning',
+	},
+	unchanged: {
+		label: __( 'Unchanged', 'nhrrob-options-table-manager' ),
+		tone: 'nhrotm-badge--muted',
+	},
+	protected: {
+		label: __( 'Protected', 'nhrrob-options-table-manager' ),
+		tone: 'nhrotm-badge--danger',
+	},
+};
+
+export default function ToolsScreen( { boot } ) {
 	const confirm = useConfirm();
 	const toast = useToast();
-	const hasPro = !! ( boot && boot.hasPro );
-	const proAvailable = !! ( boot && boot.proAvailable );
 	const [ backups, setBackups ] = useState( [] );
 	const [ busy, setBusy ] = useState( false );
 	const [ label, setLabel ] = useState( '' );
@@ -27,13 +46,36 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 	const [ search, setSearch ] = useState( '' );
 	const [ replace, setReplace ] = useState( '' );
 	const [ srResult, setSrResult ] = useState( null );
+	// Live "N options, M occurrences" for the current search string.
+	const [ srCount, setSrCount ] = useState( null );
+
+	useEffect( () => {
+		if ( ! search ) {
+			setSrCount( null );
+			return undefined;
+		}
+		const timer = setTimeout( () => {
+			apiFetch( {
+				path: 'nhrotm/v1/tools/search-replace/count',
+				method: 'POST',
+				data: { search },
+			} )
+				.then( ( res ) => setSrCount( res.data ) )
+				.catch( () => setSrCount( null ) );
+		}, 400 );
+		return () => clearTimeout( timer );
+	}, [ search ] );
 
 	const [ importJson, setImportJson ] = useState( '' );
 	const [ importFileName, setImportFileName ] = useState( '' );
 	const [ isDropzoneActive, setIsDropzoneActive ] = useState( false );
 	const fileInputRef = useRef( null );
-	const [ overwrite, setOverwrite ] = useState( false );
 	const [ importResult, setImportResult ] = useState( null );
+	const [ exportBasket, setExportBasket ] = useState( [] );
+	// Import preview rows ({ name, status, current, autoload }) and the
+	// names ticked for import. Changing the JSON discards a stale preview.
+	const [ preview, setPreview ] = useState( null );
+	const [ picked, setPicked ] = useState( [] );
 
 	const loadBackups = useCallback( () => {
 		apiFetch( { path: 'nhrotm/v1/tools/backups' } )
@@ -193,8 +235,13 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			.finally( () => setBusy( false ) );
 	};
 
-	const exportJson = () => {
-		apiFetch( { path: 'nhrotm/v1/tools/export' } )
+	const exportJson = ( names = [] ) => {
+		const query = names
+			.map( ( n ) => `names[]=${ encodeURIComponent( n ) }` )
+			.join( '&' );
+		apiFetch( {
+			path: 'nhrotm/v1/tools/export' + ( query ? `?${ query }` : '' ),
+		} )
 			.then( ( res ) => {
 				const blob = new Blob(
 					[ JSON.stringify( res.data, null, 2 ) ],
@@ -216,8 +263,52 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			);
 	};
 
+	const setJson = ( json, fileName = '' ) => {
+		setImportJson( json );
+		setImportFileName( fileName );
+		setPreview( null );
+		setPicked( [] );
+	};
+
+	const runPreview = () => {
+		setBusy( true );
+		setImportResult( null );
+		apiFetch( {
+			path: 'nhrotm/v1/tools/import/preview',
+			method: 'POST',
+			data: { json: importJson },
+		} )
+			.then( ( res ) => {
+				setPreview( res.data );
+				// Pre-tick what would actually change; unchanged rows are a
+				// no-op and protected ones can never be imported.
+				setPicked(
+					res.data
+						.filter( ( r ) =>
+							[ 'new', 'modified' ].includes( r.status )
+						)
+						.map( ( r ) => r.name )
+				);
+			} )
+			.catch( ( e ) =>
+				toast(
+					( e && e.message ) ||
+						__( 'Preview failed.', 'nhrrob-options-table-manager' ),
+					'error'
+				)
+			)
+			.finally( () => setBusy( false ) );
+	};
+
+	const togglePicked = ( name ) =>
+		setPicked(
+			picked.includes( name )
+				? picked.filter( ( n ) => n !== name )
+				: [ ...picked, name ]
+		);
+
 	const runImport = async () => {
-		if ( ! importJson.trim() ) {
+		if ( ! importJson.trim() || picked.length === 0 ) {
 			return;
 		}
 		if (
@@ -242,12 +333,11 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 		apiFetch( {
 			path: 'nhrotm/v1/tools/import',
 			method: 'POST',
-			data: { json: importJson, overwrite },
+			data: { json: importJson, selected: picked },
 		} )
 			.then( ( res ) => {
 				setImportResult( res.data );
-				setImportJson( '' );
-				setImportFileName( '' );
+				setJson( '' );
 				loadBackups();
 			} )
 			.catch( ( e ) =>
@@ -264,18 +354,15 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			return;
 		}
 		const reader = new window.FileReader();
-		reader.onload = ( ev ) => {
-			setImportJson( String( ev.target.result ) );
-			setImportFileName( file.name );
-		};
+		reader.onload = ( ev ) =>
+			setJson( String( ev.target.result ), file.name );
 		reader.readAsText( file );
 	};
 
 	const onFile = ( e ) => readFile( e.target.files && e.target.files[ 0 ] );
 
 	const clearImportFile = () => {
-		setImportFileName( '' );
-		setImportJson( '' );
+		setJson( '' );
 		if ( fileInputRef.current ) {
 			fileInputRef.current.value = '';
 		}
@@ -323,6 +410,10 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 						id: 'import',
 						label: __( 'Import', 'nhrrob-options-table-manager' ),
 					},
+					{
+						id: 'cron',
+						label: __( 'Cron', 'nhrrob-options-table-manager' ),
+					},
 				] }
 			/>
 			<Panel
@@ -331,7 +422,7 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			>
 				<p className="nhrotm-muted">
 					{ __(
-						'A full snapshot of the entire options table, taken before anything risky — restore it in one click if something goes wrong.',
+						'A compressed snapshot of the options table (transients excluded — they are cache), taken before anything risky. Restore it in one click if something goes wrong.',
 						'nhrrob-options-table-manager'
 					) }
 				</p>
@@ -475,20 +566,25 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 						</table>
 					</div>
 				) }
-				{ proAvailable && ! hasPro && (
-					<div className="nhrotm-actions">
-						<span className="nhrotm-hint">
-							{ __(
-								'Local, last 15 kept. Unlimited + off-site backups & emergency recovery',
+				{ backups.length > 0 && (
+					<p className="nhrotm-muted">
+						{ sprintf(
+							/* translators: 1: number of snapshots, 2: maximum kept, 3: total size, e.g. "120 KB". */
+							__(
+								'%1$d of %2$d snapshots, using %3$s of database space. The oldest is removed automatically when a new one is added.',
 								'nhrrob-options-table-manager'
-							) }
-						</span>
-						<ProTag
-							hasPro={ hasPro }
-							proAvailable={ proAvailable }
-							onNavigate={ onNavigate }
-						/>
-					</div>
+							),
+							backups.length,
+							Number( ( boot && boot.maxSnapshots ) || 15 ),
+							formatBytes(
+								backups.reduce(
+									( sum, b ) =>
+										sum + Number( b.size_bytes || 0 ),
+									0
+								)
+							)
+						) }
+					</p>
 				) }
 			</Panel>
 
@@ -548,22 +644,20 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 					>
 						{ __( 'Replace', 'nhrrob-options-table-manager' ) }
 					</button>
-					{ proAvailable && ! hasPro && (
-						<>
-							<span className="nhrotm-hint">
-								{ __(
-									'Regex & all-table replacement',
-									'nhrrob-options-table-manager'
-								) }
-							</span>
-							<ProTag
-								hasPro={ hasPro }
-								proAvailable={ proAvailable }
-								onNavigate={ onNavigate }
-							/>
-						</>
-					) }
 				</div>
+				{ srCount && ! srResult && (
+					<p className="nhrotm-muted">
+						{ sprintf(
+							/* translators: 1: number of options, 2: number of occurrences. */
+							__(
+								'Found in %1$s options, %2$s occurrences.',
+								'nhrrob-options-table-manager'
+							),
+							srCount.options.toLocaleString(),
+							srCount.occurrences.toLocaleString()
+						) }
+					</p>
+				) }
 				{ srResult && (
 					<>
 						<p
@@ -642,17 +736,41 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 			>
 				<p className="nhrotm-muted">
 					{ __(
-						'Download all options (excluding transients) as JSON.',
+						'Download every option (excluding transients) as JSON, or search and pick just the options you need.',
 						'nhrrob-options-table-manager'
 					) }
 				</p>
-				<button
-					type="button"
-					className="nhrotm-btn nhrotm-btn--primary"
-					onClick={ exportJson }
-				>
-					{ __( 'Export JSON', 'nhrrob-options-table-manager' ) }
-				</button>
+				<ExportBasket
+					basket={ exportBasket }
+					setBasket={ setExportBasket }
+				/>
+				<div className="nhrotm-actions">
+					<button
+						type="button"
+						className="nhrotm-btn nhrotm-btn--primary"
+						disabled={ exportBasket.length === 0 }
+						onClick={ () => exportJson( exportBasket ) }
+					>
+						{ sprintf(
+							/* translators: %d: number of selected options. */
+							__(
+								'Export selected (%d)',
+								'nhrrob-options-table-manager'
+							),
+							exportBasket.length
+						) }
+					</button>
+					<button
+						type="button"
+						className="nhrotm-btn"
+						onClick={ () => exportJson() }
+					>
+						{ __(
+							'Export all options',
+							'nhrrob-options-table-manager'
+						) }
+					</button>
+				</div>
 			</Panel>
 
 			<Panel
@@ -740,36 +858,165 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 							'nhrrob-options-table-manager'
 						) }
 						value={ importJson }
-						onChange={ ( e ) => {
-							setImportJson( e.target.value );
-							setImportFileName( '' );
-						} }
+						onChange={ ( e ) => setJson( e.target.value ) }
 					/>
 				</div>
-				<div className="nhrotm-field">
-					<label htmlFor="nhrotm-import-overwrite">
-						<input
-							id="nhrotm-import-overwrite"
-							type="checkbox"
-							checked={ overwrite }
-							onChange={ ( e ) =>
-								setOverwrite( e.target.checked )
-							}
-						/>
+				{ ! preview && (
+					<button
+						type="button"
+						className="nhrotm-btn nhrotm-btn--primary"
+						disabled={ busy || ! importJson.trim() }
+						onClick={ runPreview }
+					>
 						{ __(
-							'Overwrite existing options',
+							'Preview import',
 							'nhrrob-options-table-manager'
 						) }
-					</label>
-				</div>
-				<button
-					type="button"
-					className="nhrotm-btn nhrotm-btn--primary"
-					disabled={ busy || ! importJson.trim() }
-					onClick={ runImport }
-				>
-					{ __( 'Import', 'nhrrob-options-table-manager' ) }
-				</button>
+					</button>
+				) }
+				{ preview && (
+					<>
+						<div className="nhrotm-grid__scroll">
+							<table className="nhrotm-grid">
+								<colgroup>
+									<col className="nhrotm-col-check" />
+									<col className="nhrotm-col-name" />
+									<col className="nhrotm-col-badge" />
+									<col />
+								</colgroup>
+								<thead>
+									<tr>
+										<th>
+											<input
+												type="checkbox"
+												aria-label={ __(
+													'Select all importable options',
+													'nhrrob-options-table-manager'
+												) }
+												checked={
+													picked.length > 0 &&
+													picked.length ===
+														preview.filter(
+															( r ) =>
+																r.status !==
+																'protected'
+														).length
+												}
+												onChange={ ( e ) =>
+													setPicked(
+														e.target.checked
+															? preview
+																	.filter(
+																		( r ) =>
+																			r.status !==
+																			'protected'
+																	)
+																	.map(
+																		( r ) =>
+																			r.name
+																	)
+															: []
+													)
+												}
+											/>
+										</th>
+										<th>
+											{ __(
+												'Option',
+												'nhrrob-options-table-manager'
+											) }
+										</th>
+										<th>
+											{ __(
+												'Status',
+												'nhrrob-options-table-manager'
+											) }
+										</th>
+										<th>
+											{ __(
+												'Current value',
+												'nhrrob-options-table-manager'
+											) }
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									{ preview.map( ( r ) => (
+										<tr key={ r.name }>
+											<td>
+												<input
+													type="checkbox"
+													aria-label={ r.name }
+													disabled={
+														r.status === 'protected'
+													}
+													checked={ picked.includes(
+														r.name
+													) }
+													onChange={ () =>
+														togglePicked( r.name )
+													}
+												/>
+											</td>
+											<td className="nhrotm-grid__name">
+												{ r.name }
+											</td>
+											<td>
+												<span
+													className={
+														'nhrotm-badge ' +
+														( IMPORT_STATUS[
+															r.status
+														]?.tone ||
+															'nhrotm-badge--muted' )
+													}
+												>
+													{ IMPORT_STATUS[ r.status ]
+														?.label || r.status }
+												</span>
+											</td>
+											<td title={ r.current || '' }>
+												<div className="nhrotm-grid__preview">
+													{ r.current === null
+														? '—'
+														: r.current }
+												</div>
+											</td>
+										</tr>
+									) ) }
+								</tbody>
+							</table>
+						</div>
+						<div className="nhrotm-actions">
+							<button
+								type="button"
+								className="nhrotm-btn nhrotm-btn--primary"
+								disabled={ busy || picked.length === 0 }
+								onClick={ runImport }
+							>
+								{ sprintf(
+									/* translators: %d: number of options ticked for import. */
+									__(
+										'Import selected (%d)',
+										'nhrrob-options-table-manager'
+									),
+									picked.length
+								) }
+							</button>
+							<button
+								type="button"
+								className="nhrotm-btn"
+								disabled={ busy }
+								onClick={ () => setPreview( null ) }
+							>
+								{ __(
+									'Cancel',
+									'nhrrob-options-table-manager'
+								) }
+							</button>
+						</div>
+					</>
+				) }
 				{ importResult && (
 					<p className="nhrotm-notice">
 						{ sprintf(
@@ -784,6 +1031,8 @@ export default function ToolsScreen( { boot, onNavigate } ) {
 					</p>
 				) }
 			</Panel>
+
+			<CronPanel />
 		</div>
 	);
 }

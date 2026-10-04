@@ -1,7 +1,6 @@
 /**
  * App shell — gradient hero app bar + collapsible left nav + content slot.
- * Nav is registry-driven; a pinned, de-emphasized Upgrade item is the single
- * PRO-awareness surface (hidden when the PRO add-on is active). See DESIGN.md §1/§12.
+ * Nav is registry-driven. See DESIGN.md §1.
  */
 import { useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
@@ -16,8 +15,6 @@ export default function AppShell( {
 	active,
 	onNavigate,
 	title,
-	showUpgrade,
-	classicUrl,
 	children,
 } ) {
 	// Starts collapsed so the content area gets the extra width by default;
@@ -114,14 +111,6 @@ export default function AppShell( {
 				</span>
 				<span className="nhrotm-appbar__title">{ title }</span>
 				<span className="nhrotm-appbar__spacer"></span>
-				{ classicUrl && (
-					<a
-						className="nhrotm-appbar__btn nhrotm-appbar__link"
-						href={ classicUrl }
-					>
-						{ __( 'Classic view', 'nhrrob-options-table-manager' ) }
-					</a>
-				) }
 				<button
 					type="button"
 					className="nhrotm-appbar__btn nhrotm-appbar__icobtn"
@@ -140,21 +129,6 @@ export default function AppShell( {
 			<div className="nhrotm-body">
 				<nav className="nhrotm-nav" aria-label={ title }>
 					{ modules.map( ( m ) => navItem( m.id, m.label ) ) }
-
-					{ showUpgrade && (
-						<>
-							<span className="nhrotm-nav__spacer"></span>
-							<span
-								className="nhrotm-nav__sep"
-								role="separator"
-							></span>
-							{ navItem(
-								'upgrade',
-								__( 'Upgrade', 'nhrrob-options-table-manager' ),
-								' nhrotm-nav__item--upgrade'
-							) }
-						</>
-					) }
 				</nav>
 
 				<main className="nhrotm-content">

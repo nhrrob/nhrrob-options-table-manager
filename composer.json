@@ -1,6 +1,6 @@
 {
     "name": "nhrotm/options-table-manager",
-    "description": "Clean DataTable view of wp-options table to make decisions and boost your site performance!",
+    "description": "Clean, optimize and manage the WordPress database: revisions, spam, transients, leftovers, autoload and wp_options.",
     "type": "wordpress-plugin",
     "license": "GPLv2",
     "authors": [

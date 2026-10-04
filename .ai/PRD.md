@@ -1,176 +1,142 @@
-# PRD — NHR Options Manager 2.0 (Free)
+# PRD — Database Cleaner (Free) — "NHR Database Cleaner & Optimizer", slug `nhrrob-options-table-manager`
 
-Status: Draft for sign-off · Owner: Nazmul Hasan Robin (nhrrob) · Date: 2026-06-29
-Last revised: 2026-09-07 (Browse gained postmeta/commentmeta/termmeta parity with usermeta, plus a search-as-you-type post/user filter on those two tabs — see §4, §8.1)
+Status: **2.0.0 released 2026-09-25** · **2.1.0 built, verified and release-ready 2026-10-04** (uncommitted; Robin reviews, commits and tags) · Owner: Nazmul Hasan Robin (nhrrob)
+Last revised: 2026-09-28 (repositioned as a full database cleaner; every database-cleaning feature is free, see §7)
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
-> PRO/monetization scope lives in a separate doc: **[PRD-PRO.md](./PRD-PRO.md)**.
+> PRO/monetization scope: **[PRD-PRO.md](./PRD-PRO.md)** · UI/visual spec: **[DESIGN.md](./DESIGN.md)**.
+> What already shipped is recorded in `readme.txt` (changelog + feature list), not here.
 
-## 0. Locked decisions (free scope)
+## 1. Principles (non-negotiable)
 
-| Decision | Choice |
+### 1.1 Minimal footprint
+
+**The shipped plugin zip must not grow.** Anything that adds weight needs an equal or larger removal to justify it.
+
+**Budget for 2.1.0: the zip must stay no larger than the released 2.0.0 zip (280 KB).** Result: **261 KB** with the whole database-cleaner pass, because removing the Classic UI freed more than the new features cost. Measure after every feature, not only at release.
+
+- No runtime PHP dependencies. `vendor/` is dev-only (autoloader only).
+- No JS/CSS frameworks beyond what `@wordpress/scripts` and WP core provide. Hand-rolled data grid, inline-SVG charts, Tabler-icon/CSS approach.
+- Measure before adding a library. Run `check:pcp` + a zip-size diff before every release.
+- Baseline at 2.0.0: `admin/build/` ≈ 156 KB, legacy `assets/` ≈ 212 KB (removable, see §4).
+
+### 1.2 No PRO in the free codebase
+
+The free plugin carries **no PRO surface and no PRO wording**: no `Pro` tags, no Upgrade screen or nav item, no upgrade URL, no `hasPro`/`proAvailable` boot keys, and no "PRO" in code comments or UI strings. Removed 2026-10-04 (the dormant `ProTag.js`/`UpgradeScreen.js` UI and the `nhrotm_has_pro`, `nhrotm_pro_available` and `nhrotm_upgrade_url` filters); do not reintroduce them.
+
+The free plugin only exposes a neutral **add-on API** (§3). Any discovery of a paid add-on happens outside this plugin (WP.org-independent site, the add-on itself). `ScannerManager` keeps a `nhrotmp_` prefix entry, labelled "Database Cleaner Add-on", so the add-on's own options are not reported as orphans.
+
+**Anything free in another plugin is free here.** The full rule is [PRD-PRO.md](./PRD-PRO.md) §0.
+
+## 2. Product (target IA for 2.1.0)
+
+**Positioning (decided 2026-09-28):** a full **database cleaner and optimizer**, competing directly with Advanced Database Cleaner (100k+ installs) and WP-Optimize (1M+), while keeping the options/autoload depth neither has (usage tracker, per-option history and restore, snapshots before every risky action, import preview).
+
+**One home per action.** A new feature must slot into one section; no duplicate entry points. The nav grows from six to seven sections (Cleanup is new); Cron and Tables go inside existing sections rather than adding more nav.
+
+| Section | Owns |
 |---|---|
-| Frontend revamp | **Full React rewrite** (`@wordpress/scripts` SPA), built as parallel `2.0` |
-| Autoload Usage Tracker | **Fully free** (acquisition hook — no paywalled tier) |
-| Extensibility | **Module registry** with `nhrotm_modules` filter — the single hook the PRO add-on consumes |
-| Backend | **REST-only** (`nhrotm/v1`); retire the monolithic `AjaxHandler` switch |
-| PRO awareness in free UI | **Tasteful, low-touch** — subtle `Pro` tags on locked features + one in-plugin **Upgrade** screen. No banners/nags. See §0.2 |
+| **Dashboard** | Health score, database size, stat cards, recommendations, recent activity |
+| **Browse** | Options · Usermeta · Postmeta · Commentmeta · Termmeta · Transients (CRUD, per-option History) |
+| **Cleanup** *(new)* | Posts/comments/meta/transient/oEmbed/Action Scheduler cleanup with counts + preview, and all cleanup schedules |
+| **Optimize** | Autoload health + Usage Tracker · Orphaned options · **Tables** (size, overhead, optimize/repair, leftover tables) · Options analytics |
+| **Tools** | Search & Replace · Import/Export · Backups · **Cron** (scheduled events) |
+| **Integrations** | Third-party tables, shown only when the table exists |
+| **Settings** | All settings in one `nhrotm_settings` object |
+| **Activity** | Unified change log (reached from Dashboard "View all") |
+| *Network Admin (multisite)* | Separate network screen: site switcher, network options (`wp_sitemeta`), per-site overview |
 
-Monetization, pricing, licensing (Freemius), and the free-vs-PRO split are **out of scope for this doc** → see [PRD-PRO.md](./PRD-PRO.md).
+Health score gains cleanup inputs (revisions, spam, orphaned meta, table overhead) so the Dashboard reflects the new work. Nothing in the free UI carries a PRO surface (§1.2).
 
-## 0.2 PRO awareness in the free UI (policy)
+## 3. Architecture constraints
 
-Users **should be able to discover that a PRO version exists**, without the free plugin feeling like an ad. This replaces the earlier "zero upsell surface" stance — the new rule is *quiet discoverability*, not *invisibility*.
+- **Extension point:** `ModuleRegistry` → `apply_filters( 'nhrotm_modules', $modules )`. New features are modules (`ModuleInterface`) with their own REST routes and dashboard cards.
+- **Add-on API.** The complete contract an add-on relies on. There is no API-level constant (removed 2026-10-04): the add-on checks `NHROTM_VERSION` against its own minimum, so a breaking change here means raising that minimum in the add-on:
+  - PHP filters: `nhrotm_modules`, `nhrotm_app_boot` (whole `window.nhrotmApp` payload), `nhrotm_health_recommendations`, `nhrotm_activity_describe`.
+  - PHP action: `nhrotm_app_enqueued` (add-ons enqueue their bundle here with `nhrotm-app` as a dependency).
+  - JS: `window.nhrotm` = `{ components: { Panel, ScreenHeader, DataTable, JumpNav, Icon }, useToast, useConfirm, registerIcons }`, and the `nhrotm.screens` filter (`@wordpress/hooks`) applied once when `App` mounts.
+- **REST only** (`nhrotm/v1`). No AJAX actions; the Classic UI and its `AjaxHandler` were removed in 2.1.
+- **Two-layer auth:** route capability gate (`manage_options`) + per-object `current_user_can` on any ID-taking route.
+- **Multisite (2.1):** user meta is one table for the whole network, so the Usermeta type and user lookup are served only to users with `manage_network_users` (`BrowseService::can_manage_usermeta()`, enforced in `BrowseController::can_manage()`; the React tab hides via `boot.canUsermeta`). Role/capability user meta is protected for every site and any table prefix (`GlobalTrait::is_protected_usermeta()`). Released 2.0.0 let a site admin make themselves administrator of another site; reproduced and fixed 2026-09-28. Per-site lifecycle: `ensure_crons()` schedules each site's jobs on its first admin/cron request (network activation only runs the activation hook for the main site); `deactivate_plugin( $network_wide )` and `uninstall.php` loop every site. Raw HTML follows `unfiltered_html` (a site admin's values are always stripped; Import and live Search & Replace are refused), the per-site roles option is protected, and table actions on the main site need `manage_network`. Not in 2.1: a Network Admin screen and `wp_sitemeta` (network options / site transients).
+- **Ships:** `admin/build/` and `admin/src/` (WP.org source requirement). Never exclude either.
+- **Stable contracts:** WP-CLI `wp nhrotm` (primary since 2.1.0) with `wp nhr-options` kept as a working alias for pre-2.1 scripts — `list`/`delete` behave identically under both, stored data in options `nhrotm_history`, `nhrotm_snapshots` and `nhrotm_snapshot_{id}` (the plugin creates **no database tables**, decided 2026-10-04; the two pre-2.1 tables are migrated and dropped on update; a change of stored shape needs a migration: bump `Nhrotm_Options_Table_Manager::DB_VERSION`, add the step to `maybe_upgrade_db()`).
+- **History rows carry `record_type`** (`options` | `usermeta` | `postmeta` | `commentmeta` | `termmeta` | `transients` | `event` | `unknown`). Only `options` rows with an `update`/`delete`/`restore*` action are restorable (`HistoryManager::is_restorable()`); callers logging meta `update`/`create` must pass the type explicitly to `ActivityService::record()`.
+- **Settings live only in `nhrotm_settings`**, one small autoloaded option that also holds the data version; the front-end tracker reads its switch from it, so there is no separate flag option (decided 2026-10-04). The plugin's whole footprint is four fixed options (`nhrotm_settings`, `nhrotm_usage`, `nhrotm_history`, `nhrotm_snapshots`) plus one per snapshot.
 
-Allowed (and the only allowed) PRO surfaces in the free build:
+## 4. Next release — 2.1.0 (one big release)
 
-1. **`Pro` tags** — a small, muted pill next to features that are free-manual today but gain automation/scale in PRO (e.g. "Scheduled cleanup", "Auto-disable autoload", "Off-site backups"). The tag is informational; the underlying free feature still works. Clicking a tag routes to the Upgrade screen.
-2. **One `Upgrade` screen** — a single, calm section (last nav item, visually de-emphasized) with a plain free-vs-PRO comparison table and **one** outbound button ("View plans →"). No countdown timers, no "SALE", no repeated modals.
+### 4.0 Already done, unreleased (2026-09-27/28)
+History `record_type` + restore guard · compressed, transient-free snapshots (skip unchanged, size shown, 15-cap shown) · Classic UI removed with full parity (per-option History, selective export, import preview + checksum, WPRM tables, Integrations search/sort, Prune now, Allow HTML enforced) · Activity → Restore · settings that 2.0.0 ignored fixed · 1.x export import fixed · **multisite**: user-meta privilege-escalation fix, per-site crons, network deactivation + network-wide uninstall · history size shown in Settings · version already bumped to 2.1.0, screenshots retaken. Details in `readme.txt` changelog.
 
-Forbidden: dashboard banners, popups/toasts pushing PRO, "limited time" language, more than one outbound CTA per view, colored/animated nag chrome, or gating any 1.5.x-parity feature behind the tag.
+### 4.1 Built 2026-10-04 (all 13 done; kept as the record of what shipped and why)
 
-WP.org compliance: this is the same pattern used by compliant freemium plugins (single upgrade menu + inert feature tags). The `Upgrade` nav item and all `Pro` tags are **rendered by the free build itself** (static, no Freemius in free) so review is trivial. Author-identity/branding rules (no visible "NHR" label) still apply.
+1. ✅ **Done 2026-10-04** (also removed the unused `ValidationService`, three unused `GlobalTrait` helpers and a duplicate history-prune method; no `$_POST`/`$_GET` read is left anywhere in the plugin). **Remove dead Classic code.** `Interfaces/TableManagerInterface`, the `get_data()`/`edit_record()`/`delete_record()` stubs in the managers that implement it, `BaseTableManager` leftovers, `OptimizationManager::toggle_autoload()` (still reads `$_POST`; unreachable but exactly what WP.org's scanner flags) and `OptionsTableManager::perform_cleanup()` callers. Keep `SearchReplaceManager::preview_search()` (item 9).
+2. ✅ **Rename** once §6 picks the name: plugin header `Plugin Name`, readme title + short description + tags (max 5), in-app `pluginName`, Tools menu label, screenshot captions, banner/icon text if any. The slug `nhrrob-options-table-manager`, text domain, prefixes and REST namespace **never change**.
+3. ✅ **Cleanup section (new nav item).** Each cleanup type is a row with a live count and the space it frees, a **Preview** (paged list of exactly what will be deleted), **Clean**, and a per-type **keep last N days** rule. Types:
+   - post revisions · auto-drafts · trashed posts
+   - spam comments · trashed comments · pingbacks/trackbacks
+   - orphaned post/comment/term/user meta (parent row gone) · exact-duplicate meta rows
+   - orphaned term relationships · oEmbed caches (`_oembed_*` postmeta)
+   - expired transients (moves here from Optimize → Cleanup)
+   - *(parity with ADC free)* orphaned post-type content: posts whose post type is no longer registered by any active plugin or theme (list per type with counts; delete behind a confirm)
+   - *(optional, off by default in schedules)* pending comments older than N days
+   Rules: use core delete functions where they exist (`wp_delete_post_revision()`, `wp_delete_post()`, `wp_delete_comment()`) so hooks fire; batch large deletes; auto-snapshots don't cover posts/meta tables, so every Clean needs a confirm that names the count; record every run in Activity (`cleanup_<type>` events).
+4. ✅ **Scheduled cleanups.** Per cleanup type: off / hourly / twice daily / daily / weekly / monthly, with its keep-N-days rule. No task limit (ADC caps free at 5). Replaces the single `auto_cleanup_enabled` switch — migrate it to "expired transients: daily". One cron hook per type; `ensure_crons()` and uninstall must cover them (per site on multisite).
+5. ✅ **Action Scheduler cleanup** (shown only when `{prefix}actionscheduler_actions` exists): completed / failed / canceled actions and their logs, older than N days, batched. Manual + schedulable via item 4. (ADC charges for this.)
+6. ✅ **Tables** (in Optimize). Every table in the database: rows, data + index size, overhead, engine, owner guess (core / installed plugin / **leftover** from a removed plugin, via `ScannerManager` prefix matching). Actions: optimize (only where overhead > 0), repair, convert MyISAM → InnoDB, empty a leftover table, and **drop a leftover table** behind a typed confirmation (the user types the table name). Core tables can never be dropped or emptied. Multisite: only the current site's tables unless in Network Admin.
+7. ✅ **Cron** (in Tools). Every scheduled event: hook, next run, recurrence, owner guess. Actions: run now, delete, delete all events of a hook. Flag hooks with **no callback whose owner is unknown or removed** as "possibly orphaned" — only a flag, because many plugins attach cron callbacks only during cron requests (lesson from PRO). Core hooks are protected.
+8. ✅ **Multisite Network Admin screen.** A Network Admin → Settings → Database Cleaner page for super admins: site switcher (open any site's app), a per-site overview table (health score, DB size, autoload size, last backup), and Browse for **network options + site transients** (`wp_sitemeta`) with the same protected-key rules. Routes gated on `manage_network_options`.
+9. ✅ **Search & Replace live match count:** "N options, M occurrences" as you type, debounced, via `preview_search()` over REST. Not an option-name autocomplete — it searches values.
+10. ✅ **Integrations: leftover tables** get a "plugin inactive" badge instead of being hidden (item 6's owner guess reused).
+11. ✅ **Dashboard + health score:** database size card; cleanup counts and table overhead feed the score and recommendations ("1,240 post revisions — Clean").
+12. ✅ **WP-CLI for cleanup** (WP-Optimize charges for CLI): `wp nhrotm cleanup list` (types + counts), `cleanup run <type> [--older-than=<days>] [--dry-run]`, `tables optimize [--all]`. Existing `list`/`delete` commands stay unchanged (stable contract, §3).
+13. ✅ **Positioning + WP.org listing:** readme rewrite (description, Key Features, FAQ for the cleaner features and their safety), tags, screenshots for the new screens (Cleanup, Tables, Cron, Network Admin), PRO Upgrade rows unchanged (still 3 features, still off).
 
-**Currently OFF — PRO doesn't exist yet.** All of it (Upgrade nav item + every `Pro` tag) is gated on one flag, `apply_filters('nhrotm_pro_available', false)` in `AppPage.php`, localized to React as `boot.proAvailable`. It defaults `false`, so none of this UI renders in the shipped build today — no vaporware upsell. **To switch it on once PRO ships:** flip that one `false` to `true` in `AppPage.php` (`includes/Admin/AppPage.php`), rebuild (`npm run build`), release. No other file needs to change. This is separate from `hasPro` (`nhrotm_has_pro` filter), which stays about whether *this specific install* owns a PRO license once PRO exists.
+**Deviations from the plan above (deliberate):**
+- **Database size** went into the Dashboard's stats strip, not a fifth card (four cards is the grid).
+- **Empty / Drop** are offered only for tables no installed plugin claims (`leftover` / `unknown`), not for every non-core table: a button to drop an active plugin's table is a foot-gun.
+- **Network options** are view + delete (protected keys refused) + "delete expired site transients". No add/edit of network options in 2.1.
+- **Health score** gained one new penalty: up to 10 points for cleanable rows (`cleanable / 2000`). Table overhead is shown but not scored.
+- **Snapshots no longer contain or restore the `cron` option** (found by the upgrade test: restoring an old snapshot rewound every plugin's schedule). After a restore, `SettingsService::migrate()` and `CleanupService::sync_cron()` re-normalise our own settings and events.
+- Risky cleanup types (unregistered post types, duplicate meta) are **manual only**, and carry a plain-language caveat in the UI.
 
-Design realization of this policy → [DESIGN.md](./DESIGN.md) §12.
+### 4.1a Feature parity check (2026-10-04)
 
-## 0.1 Hard constraint — minimal footprint (non-negotiable)
+After §4.1 ships, versus **Advanced Database Cleaner free**: everything it has, except its debug-log viewer (not a database feature; skipped). Versus **ADC Premium**: we give Action Scheduler cleanup, unlimited schedules, owner filter and per-site multisite free; we skip growth charts and the activation timeline (§5), and our owner detection is local prefix matching, not their cloud scan. Versus **WP-Optimize**: all of its *database* features incl. the premium ones (scheduling, preview, per-table optimize, multisite, WP-CLI). **Deliberately out of scope:** WP-Optimize's other two pillars (page caching, image compression, minify) and its WooCommerce query tweak / postmeta indexing — that is a caching plugin's job, and schema changes on other plugins' tables are too risky.
 
-**The shipped plugin zip must not grow.** Minimal code, minimal dependencies, minimal build output. This governs every decision below; if a choice adds weight, it needs an equal-or-larger removal to justify it.
+### 4.2 Release gate — passed 2026-10-04 on the final code
+Results: PHPCS clean · lint clean · 23 unit tests · probe 80 checks / 0 failures (single site) + 76 / 0 (multisite) · Semgrep 0 findings · PHPStan clean · Plugin Check clean (only the two known `update_plugins` false positives) · PHP 7.4 compatible · upgrade from released 2.0.0 verified on otm-shots (snapshots 1,224 → 67 KB, history backfilled, settings kept, old daily-cleanup switch → daily expired-transients schedule) · multisite verified on otm-ms · zip 261 KB · 10 screenshots retaken. Checklist that was run: PHPCS + lint + PHPUnit (new unit tests for every cleanup query builder and the protected-table/hook lists) · build · security probe (every new route, anonymous + subscriber) · Semgrep `p/php` · PHPStan · Plugin Check on a production build · PHP 7.4 compatibility · upgrade test from the released 2.0.0 on otm-shots · multisite test on `~/Sites/otm-ms` (network activation, subsite crons, Network Admin, uninstall) · zip ≤ 287 KB (§1.1) · doc sync (readme, this PRD, DESIGN, CLAUDE.md) · screenshots. Then Robin reviews, commits and tags.
 
-- **No new runtime PHP dependencies.** `vendor/` stays dev-only (autoloader only). No Composer prod libs.
-- **React rewrite must be net-neutral or smaller.** `@wordpress/scripts` externalizes React + all `wp-*` packages (provided by WP core — not bundled). We *remove* jQuery + DataTables from our assets; the React build replaces them. Target: `admin/build/` ≤ the current `assets/` payload it supersedes.
-- **Prefer a tiny/no data-grid library** — build a minimal grid over `@tanstack/react-table` only if the bundle delta is negligible; otherwise hand-roll. Measure before adding.
-- **No JS/CSS frameworks** beyond what `@wordpress/scripts` + WP core already provide. Reuse the Tabler-icon/CSS approach already in-house.
-- **CI size gate**: track the built zip size; a PR that increases it must document why. Run `check:pcp` + a size diff before cutover.
+## 5. Not planned (decided 2026-09-28 — would add weight without real demand)
 
-## 1. Problem & goals
+Revisit only on real user requests. Anything here is still free if it ever ships (PRD-PRO §0).
 
-The free plugin reached feature sprawl: ~11 tabs with real duplication (transients, autoload editing, cleanup, and settings each have multiple entry points). The IA grew tab-by-tab per release with no consolidation pass, so related actions are scattered and some appear in two places.
+- **AI layer** (explain option / score, plain-language query, Abilities API, MCP write): needs WP 7.0 + the user's own AI provider; small audience.
+- **Database growth charts, weekly email digest, plugin/theme activation log:** nice to have, not why people install a cleaner.
+- **Backups — download, compare, configurable retention, off-site copy:** snapshots already cover rollback; off-site conflicts with §1.1.
+- **Tree/GUI value editor, serialized-data repair, regex / all-table Search & Replace, cron execution monitoring.**
+- **Integrations as a separate add-on:** not worth a second plugin to maintain.
 
-Goals:
-1. **Consolidate** 11 tabs → 6 sections with a dashboard-first UX, removing all duplication.
-2. **Re-architect** for extensibility (module registry + REST + centralized settings) so features are self-contained and a future add-on can extend core without modifying it — keeping any PRO awareness to the quiet, single-surface pattern in §0.2 (WP.org rule).
-3. **Modernize the frontend** to a React SPA for a faster, more maintainable UI with a modern, professional look (see [DESIGN.md](./DESIGN.md)).
+## 6. Open decisions
 
-Non-goals: changing author identity; dropping existing DB tables; breaking existing WP-CLI commands; adding *marketing-heavy* upsell chrome (banners/popups/nags) — quiet PRO discoverability per §0.2 is in scope, aggressive upsell is not.
+- **Health panel weight** and **gauge warning color** (minor UI, carry over).
 
-## 2. Information architecture (target)
+## 7. Decided (don't relitigate)
 
-11 tabs → 6 sections:
+- **Positioning (2026-09-28):** full database cleaner/optimizer (§2). **Every database-cleaning feature is free** — the market check (ADC, WP-Optimize) showed that everything either charges for is free in another plugin (§8). PRO stays the three features nobody offers (PRD-PRO §3) and launches after this release has grown the install base (PRD-PRO §6).
+- **Classic UI:** removed in 2.1 with full feature parity; nothing it did may be lost.
+- **Name (2026-10-04):** display name **NHR Database Cleaner & Optimizer – Revisions, Transients, Autoload & Options Manager** (short form "NHR Database Cleaner & Optimizer"; the tail lists real features only — it both cleans and optimizes, via autoload tuning and table optimize/repair, and "Options Manager" keeps the editing side and the original identity in the title); in-app title and menu label **Database Cleaner** (Tools → Database Cleaner; Network Admin → Settings → Database Cleaner). The slug `nhrrob-options-table-manager`, text domain, `nhrotm` prefixes, and REST namespace never change. The CLI command is `wp nhrotm` from 2.1.0 (full plugin prefix); `wp nhr-options` stays registered as an alias. "Database cleaner" is the WordPress term for removing unused data (ADC uses it); the readme states it is not a malware scanner.
 
-1. **Dashboard** — health score (0–100), recommendations feed, quick actions, recent activity. (NEW)
-2. **Browse** — Options · Usermeta · Postmeta · Commentmeta · Termmeta · Transients in one data browser with a type switcher. (merges 3 tabs; removes the duplicate transient filter on the Options tab)
-3. **Optimize** — Autoload health · Usage Tracker · Orphan Scanner · Cleanup (+ schedule). Sole owner of the autoload toggle.
-4. **Tools** — Search & Replace · Import/Export · Backups.
-5. **Integrations** — third-party tables such as WPRM (conditional; quarantined so it stops inflating core nav).
-6. **Settings** — all settings centralized (incl. history retention, currently misplaced inside Optimizer).
+- **Free vs PRO line:** anything free in another plugin, or listed in this PRD, is free. See PRD-PRO §0. (It settled "Download snapshot: free or PRO?" → free.)
+- **Data grid:** hand-rolled, no `@tanstack/react-table` (§1.1).
+- **Safe Redirect Manager in Integrations:** no. It stores redirects as a CPT + postmeta, and has no standalone table for `IntegrationsService` to point at.
+- **`nhrotm-options-table-manager/menu/capability` → `nhrotm_menu_capability`:** shipped in 2.0.0 as a hard break with no shim (changelogged).
 
-Plus one **de-emphasized** nav item pinned to the bottom, visually separated from the six functional sections:
+## 8. Sources
 
-7. **Upgrade** — the single PRO-awareness surface (§0.2). Not a "feature"; a quiet comparison + one outbound CTA. Rendered by the free build; never registered through the `nhrotm_modules` add-on hook (so an installed PRO add-on can hide it).
+- Advanced Database Cleaner free vs premium (checked 2026-09-28): https://wordpress.org/plugins/advanced-database-cleaner/ — free: general cleanup, orphaned/duplicate meta, tables optimize/repair, cron, options, transients, 5 scheduled tasks, multisite; premium: cloud ownership scan, Action Scheduler cleanup, unlimited tasks, filters, growth charts, activation timeline, per-site multisite.
+- WP-Optimize free vs premium (checked 2026-09-28): https://wordpress.org/plugins/wp-optimize/ — premium: exact-time scheduling, multisite, per-table optimization, WP-CLI, preview before delete, WooCommerce query tweak, postmeta indexing.
 
-### Duplication to eliminate
-- **Transients**: one home (Browse); remove the "All Transients" filter + "Delete Expired" button from Options.
-- **Autoload editing**: Optimize owns it; Browse shows a read-only autoload badge linking to Optimize.
-- **Cleanup**: single home under Optimize (manual + scheduled).
-- **Settings**: single Settings section; migrate history-retention out of Optimizer.
-
-## 3. Architecture (free core)
-
-- **Module registry**: every feature implements `ModuleInterface` (`id`, `label`, `capability`, `register_routes`, `dashboard_cards`, `render`). `ModuleRegistry` exposes `apply_filters('nhrotm_modules', $modules)` — the single extension point an add-on can use. Core modules: Dashboard, Browse, Optimize, Tools, Integrations, Settings.
-- **REST API only** (`nhrotm/v1`), per-module controllers; retire the monolithic `AjaxHandler` switch. Two-layer auth: route capability gate (`manage_options`) + per-object `current_user_can` on ID-taking routes.
-- **Centralized settings**: collapse scattered `nhrotm_*` options into one `nhrotm_settings` array behind a Settings service; migrate on upgrade (see §5).
-- **Frontend**: full React SPA via `@wordpress/scripts`, mounted on the admin page; reuse the Tabler-icon/CSS approach from `nhrrob-smart-media-manager`. Drop jQuery + DataTables (replace tables with a React data-grid, server-side paginated via REST).
-- **Build/dist**: ship `admin/build/` (never excluded); keep `admin/src/` in the zip per WP.org. `vendor/` dev-only; plugin self-autoloads (`--no-dev` if a prod dep is added).
-
-### Module contract (sketch)
-
-```php
-interface ModuleInterface {
-    public function id(): string;            // 'optimize'
-    public function label(): string;         // 'Optimize'
-    public function capability(): string;    // 'manage_options'
-    public function register_routes(): void; // REST controllers for this module
-    public function dashboard_cards(): array;// cards this module contributes
-    public function render(): void;          // React mount metadata / localize
-}
-```
-
-## 4. Free feature specs (2.0)
-
-Everything shipped in 1.5.x remains free and reaches parity before cutover:
-
-| Feature | Notes for 2.0 |
-|---|---|
-| Browse/edit options, usermeta, postmeta, commentmeta, termmeta, transients | Single data browser w/ type switcher; React data-grid, REST-paginated. Postmeta/commentmeta/termmeta added 2026-09-07, same CRUD + protected-key pattern as usermeta. Usermeta/postmeta filterable to one user/post via a search-as-you-type name/title picker (added 2026-09-07). |
-| Autoload health + manual toggle | Sole owner of autoload toggle; size analysis vs 1 MB budget. |
-| **Autoload Usage Tracker** | Fully free. Records used autoloaded options on real front-end loads; flags never-used ones with one-click disable, filterable (All/Unused/Untracked/Used) with bulk-disable across the filtered set. Front-end-only sampling (non-admin/ajax/cron/REST). |
-| Orphan scanner | Manual scan for leftovers from uninstalled plugins. |
-| Search & Replace | Manual, with dry-run preview; auto-snapshot before a live run. |
-| Import / Export | JSON portability between sites; auto-snapshot before import. |
-| Backups / snapshots | Local snapshots of `wp_options`, manual + daily/weekly cron, restore, last 15 pruned. |
-| Cleanup | Manual + scheduled deletion of expired transients. |
-| Option History & Rollback | Per-option change tracking + restore; retention setting moves to Settings. |
-| Integrations | Third-party tables (e.g. WPRM), quarantined under Integrations. |
-| WP-CLI | Existing `nhr-options list/delete` commands preserved. |
-
-## 5. Migration / rollback (full-rewrite risk control)
-
-- Build 2.0 on a branch; keep 1.x maintained for fixes.
-- 2.0 must reach **feature parity** with 1.5.x before cutover.
-- One-time settings migration on activate: fold scattered `nhrotm_*` options into `nhrotm_settings`; keep reading legacy keys during a deprecation window.
-- DB tables (`nhrotm_option_history`, `nhrotm_option_backups`) unchanged.
-- Ship a beta channel (GitHub zip) before the WP.org cutover.
-
-## 6. Dashboard spec (free)
-
-Health score = weighted blend of: autoload size vs 1 MB, expired-transient ratio, orphan count, options count, backup age. Cards: **Autoload**, **Options**, **Transients**, **Last Backup** (each with a primary action). Recommendations feed = prioritized actionable items. Recent activity sourced from history. Add-ons can register extra cards/recommendations through the `nhrotm_modules` hook. **The dashboard itself carries no PRO surface** — no banner, no card, no recommendation pushes PRO (§0.2 confines PRO awareness to inert feature tags + the Upgrade screen).
-
-## 7. Roadmap (free)
-
-- **Phase 0** — PRD sign-off (this doc).
-- **Phase 1** — Free 2.0 core: module registry + REST + settings service + React shell, with parity for existing features; consolidated IA. No new features.
-- **Phase 2** — Dashboard + health score.
-- **Phase 3+** — see [PRD-PRO.md](./PRD-PRO.md).
-
-## 8. Open questions (free)
-
-- ~~React data-grid: build vs library~~ → **Resolved: hand-rolled grid** (no `@tanstack/react-table`). Current `admin/build/index.js` is ~34 KB; a table lib would breach §0.1. Server-side pagination via REST keeps the hand-rolled grid simple.
-- ~~PRO awareness in the free UI~~ → **Resolved in §0.2**: quiet discoverability (feature tags + one Upgrade screen), not invisibility.
-- ~~Should Safe Redirect Manager be added to Integrations?~~ → **Resolved: no.** Confirmed via its own source — no `CREATE TABLE`/`dbDelta` anywhere; redirects are a `redirect_rule` custom post type (`class-srm-post-type.php:647`) with fields stored as postmeta, entirely inside core's `wp_posts`/`wp_postmeta`. `IntegrationsService` only supports standalone third-party tables (`available()`/`rows()` both key off `SHOW TABLES LIKE`); there's no table to point it at. Making SRM browsable would need a generic custom-post-type viewer, a different feature from Integrations, not a `$definitions()` entry.
-- Whether Integrations (WPRM and future third-party tables) should eventually move to their own free add-on.
-- Deprecation window length for legacy `nhrotm_*` option keys after the settings migration.
-- Should the in-app header's plugin name ("Options Table Manager," `AppPage.php:130`) change? Found this plugin currently has **three different name variants** across its surfaces: the WP.org listing/plugin-header name is "NHR Advanced Options Table Manager & Autoload Optimizer" (`readme.txt` + `nhrrob-options-table-manager.php`, in sync with each other); the WP admin Tools submenu label is the terser "Options Table" (`AppPage.php` ~60-61); the in-app header is "Options Table Manager." Lean: keep the in-app header short — the WP.org title's "& Autoload Optimizer" suffix is discoverability/SEO copy for the plugin repository, not core identity, and doesn't need to be repeated in a compact app header bar; if anything, tightening it to match the even more minimal Tools-menu label ("Options Table") would be more consistent than lengthening it. This is a naming call, not something to decide unilaterally — needs an explicit answer.
-- Whether to expose an MCP (Model Context Protocol) server so AI agents can query/edit the options table directly. No prior art in this plugin. In tension with the §0.1 minimal-footprint constraint for the free plugin, and it's a new write-access surface (an agent mutating `wp_options`/usermeta/postmeta/etc.) that needs its own auth story — needs real scoping before it's worth building, likely a PRO/companion-add-on candidate rather than free-core.
-- Should Tools → Backups get a manual "Download snapshot" button (a DIY way to get a snapshot off the server, e.g. before a migration or to archive past the last-15-kept prune)? In tension with PRD-PRO.md's guiding rule — "safety (snapshots/recovery/off-site) are paid" — and the free Backups panel's own inline PRO teaser ("Unlimited + off-site backups & emergency recovery"). A manual one-off download arguably stays on the free side of that line (per [[feedback_no_pro_features]], the free plugin shouldn't feel crippled), but it's functionally a DIY off-site copy, so worth a deliberate call rather than building it by default.
-
-## 8.1 Backlog / to-do (unscheduled — planned, not yet phased)
-
-Features to add. Move an item into §7 Roadmap once it's actually scheduled; don't let this list silently become the roadmap.
-
-- [ ] General DB cleanup: post revisions/auto-drafts/trash, spam/pingback comments.
-- [ ] Orphan + duplicate meta-row scanner (postmeta/commentmeta/termmeta/usermeta) — finds meta rows pointing at deleted posts/comments/terms/users, plus exact-duplicate meta rows, with bulk delete. Doesn't exist for any meta type yet — the existing Optimize orphan scanner (`ScannerManager`) only scans `wp_options` prefixes, not meta tables; not the same feature as browse+edit parity (already shipped).
-- [ ] Table OPTIMIZE/REPAIR.
-- [ ] Cron job management (view/edit/delete scheduled cron events).
-- [ ] Multisite support (network-admin view, per-site vs. network-wide handling).
-- [ ] True tree/GUI value editor (vs. current JSON textarea).
-- [ ] Retire the legacy Classic (jQuery/DataTables) UI once 2.0 is proven in the wild — footprint win (~1699-line `assets/js/admin.js` removed).
-- [ ] **Breaking:** `nhrotm-options-table-manager/menu/capability` filter renamed to `nhrotm_menu_capability` (WPCS `ValidHookName` requires underscores) — shipped in v1.0.1–v1.4.3, so this breaks any integrator using the old name. Changelogged under unreleased 2.0.0 (readme.txt). Decide: ship as a hard break, or add a back-compat shim (fire both hooks, or alias old→new) before 2.0.0 release.
-- [ ] `composer install` fails to fetch `10up/wp_mock` with the current global GitHub PAT — the fine-grained token gets a 403 on the `10up` org specifically (other orgs work fine; anonymous/no-token install also works). Workaround documented in CLAUDE.md (`COMPOSER_HOME=$(mktemp -d) composer install`). Real fix is re-scoping the PAT to include the `10up` org, outside this plugin's repo.
-- [ ] Decide whether Integrations (WPRM and future third-party tables) should move to its own free add-on (duplicate of the open question in §8).
-- [ ] Decide deprecation-window length for legacy `nhrotm_*` option keys after the settings migration (duplicate of the open question in §8).
-- [ ] Retake WP.org screenshots (`.wordpress-org/screenshot-1..6`, dated Jan 2026) — they still show the pre-2.0 DataTables UI, predating both the React rewrite (2026-09-06) and the postmeta/commentmeta/termmeta Browse tabs (2026-09-07). Must ship updated before the 2.0.0 WP.org release; readme.txt Screenshots section copy also needs rewriting to match (currently describes "DataTable view of the wp_options table" etc., not the new Dashboard/Browse/Optimize screens).
-- [ ] **Feature (pending the open question above):** If a Backups "Download snapshot" button is approved, it can't just dump `BackupManager`'s raw stored JSON — confirmed the two formats are incompatible with the existing Import flow. A snapshot's `data` column is a flat array (`[{option_name, option_value, autoload}, ...]`), but `ImportExportManager::preview_import()` (`includes/Managers/ImportExportManager.php` ~line 115) requires a wrapped object (`{meta: {...}, options: [{name, value, autoload}, ...], checksum: ...}`) and checks `isset($json_data['options'])` first thing — a raw snapshot download fed straight into Import would fail immediately with "Invalid import file structure," and even past that check the field names don't match (`option_name`/`option_value` vs `name`/`value`). Needs either a conversion step when serving the download (reshape into the Export format) or extending Import to accept both shapes.
-- [ ] **Feature idea (needs a decision, not a default build):** Search & Replace could show live "N options, M occurrences" feedback as the user types the Search field, before Dry Run is even clicked. `SearchReplaceManager::preview_search()` (~line 67) already does exactly this — returns `[{option_name, occurrences}, ...]` for a search string — but it's currently only wired into the legacy AJAX handler (`includes/Ajax/AjaxHandler.php` ~line 639), not exposed via the REST API or called anywhere in the current React UI, so it's dead code from the 2.0 rewrite's perspective. Note: an option-*name* autocomplete (the pattern `ImportExportManager::search_options_for_export()` and `IdLookupFilter` already use elsewhere in the app) would NOT fit here — this feature searches inside option *values*, not names, so suggesting matching option names would misrepresent what's being searched. A live match-count via `preview_search()` fits the feature's actual semantics; a name-suggestion dropdown doesn't.
-- [ ] **Design gap (not a bug — verified the current 0-row Recipe Maker table is legitimate):** confirmed `wp-recipe-maker` is active and `wp_wprm_ratings` genuinely has 0 rows on this dev site (no ratings submitted yet) — the "0 rows" display is correct. But the check exposed a real gap: `IntegrationsService::available()` decides what to list purely by `SHOW TABLES LIKE '{table}'` (~line 47) — it never checks whether the source plugin is actually active, only whether its table happens to exist. If WP Recipe Maker (or Better Payment) were later deactivated or fully deleted while its table stayed behind, Integrations would keep listing and letting you browse that now-orphaned table indefinitely, with no indication the plugin is gone. Worth deciding whether `available()` should also check `is_plugin_active()`-equivalent, or at least flag a table whose owning plugin isn't currently active.
-- [ ] **Bug, found 2026-09-21 while implementing the Activity tab — blocks safely adding a "Restore" action to it:** `HistoryManager::restore_version()` unconditionally calls `update_option( $record['option_name'], ... )` on whatever `option_name` a history row stored — but `BrowseService::save()`/`remove()` log `usermeta`/`postmeta`/`commentmeta`/`termmeta` changes into the *same* table under the *same* generic `'update'`/`'create'` action strings, storing the meta row's `meta_key` in that same `option_name` column (e.g. `BrowseService.php` ~1026, ~1055, ~1084, ~1113 all call `$this->activity->record( 'update', $existing['meta_key'], ... )`). There is no `record_type` column, so a history row's real type (options vs. one of 4 meta tables) can't be recovered from the row alone. Restoring a meta-table row through `restore_version()` would silently call `update_option()` with that meta key as the option name — writing a bogus, unrelated `wp_options` row instead of restoring the actual usermeta/postmeta/commentmeta/termmeta value, with no error or warning. This was previously unreachable in practice (the Classic UI's per-option history view only ever showed `option_name`-scoped history, via `get_history( $option_name )` called from an options-specific screen), but the new unified Activity feed aggregates every record type together, so exposing "Restore" there for the first time would surface this risk broadly. **Needs a schema migration** (add a `record_type` column to `wp_nhrotm_option_history`, backfill best-effort from the distinct `delete_usermeta`/`delete_postmeta`/etc. action strings where determinable, mark the rest `unknown`) before a "Restore" action can be safely added to the Activity tab — restore should refuse (or route to the correct table's update function) for anything not confirmed `options`.
-- [ ] **Needs a decision, not a clear bug:** Dashboard's health-score panel (`.nhrotm-health__copy`, `style.scss` ~654-671) already has the headline `h3` bold (`font-weight: 700`) and the description `p` at normal weight — no override needed there, it already matches what was asked for. If it still reads as "too bold" overall, the likely source is one of two *other* bold elements in the same panel: the gauge's center score number (`ScoreGauge.js`, wrapped in `<strong>`, bold via the browser default) and/or the stat-figures strip below it (`.nhrotm-health__stats b`, ~682-686, deliberately bold to set numbers off from labels — same convention as the Dashboard card metrics). Needs the user to say which of these, if either, should also drop to normal weight before a change is made.
-- [ ] **Needs a decision, not a clear bug:** the health gauge's warning-band color (`ScoreGauge.js` `band()`, scores 50-79) uses `var(--nhrotm-warning)` (`#f79009`) — the same shared token used for every warning-severity element app-wide (Dashboard's Transients card accent, warning recommendations, etc.), not an inconsistent one-off. Painted as a thick 12px full ring rather than a small icon, the same color reads more intense than it does elsewhere as an accent. Since it's a shared token, changing it affects every warning-context usage in the app at once — needs a decision on whether that's wanted (one consistently softer warning color everywhere) versus giving the gauge its own dedicated shade that diverges from the rest of the app.
-
-## 9. Sources
-
-- AAA Option Optimizer — https://wordpress.org/plugins/aaa-option-optimizer/
-- Perfmatters (autoload/disable patterns) — https://perfmatters.io/
-- (Monetization/competitive sources live in [PRD-PRO.md](./PRD-PRO.md).)
+- AAA Option Optimizer: https://wordpress.org/plugins/aaa-option-optimizer/
+- Perfmatters (autoload/disable patterns): https://perfmatters.io/
+- Competitor gap analysis: [[project_otm_competitor_analysis]]

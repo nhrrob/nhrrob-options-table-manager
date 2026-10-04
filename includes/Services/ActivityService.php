@@ -16,8 +16,8 @@ use Nhrotm\OptionsTableManager\Managers\HistoryManager;
 /**
  * Records and reads the change feed shown as "Recent activity".
  *
- * Writes go to the existing wp_nhrotm_option_history table so option edits stay
- * restorable — this service only adds the non-option events (autoload changes,
+ * Writes go to the history log (HistoryManager, one capped option) so option
+ * edits stay restorable — this service only adds the non-option events (autoload changes,
  * orphan sweeps, transient cleanups) and turns rows into readable sentences.
  */
 class ActivityService {
@@ -30,6 +30,13 @@ class ActivityService {
 	private $history;
 
 	/**
+	 * Cleanup type labels, looked up once per request (see describe()).
+	 *
+	 * @var array|null
+	 */
+	private $cleanup_types = null;
+
+	/**
 	 * Set up the activity service.
 	 *
 	 * @param HistoryManager|null $history Injected for tests; defaults to a real instance.
@@ -39,15 +46,55 @@ class ActivityService {
 	}
 
 	/**
+	 * Record type implied by an action slug. update/create are shared by
+	 * options and meta, so callers editing meta pass the type explicitly.
+	 */
+	const ACTION_TYPES = [
+		'delete_usermeta'      => 'usermeta',
+		'delete_postmeta'      => 'postmeta',
+		'delete_commentmeta'   => 'commentmeta',
+		'delete_termmeta'      => 'termmeta',
+		'delete_transient'     => 'transients',
+		'create_transient'     => 'transients',
+		'update_transient'     => 'transients',
+		'snapshot'             => 'event',
+		'clean_transients'     => 'event',
+		'clean_transients_all' => 'event',
+		'cleanup'              => 'event',
+		'table_optimize'       => 'event',
+		'table_repair'         => 'event',
+		'table_convert'        => 'event',
+		'table_empty'          => 'event',
+		'table_drop'           => 'event',
+		'cron_run'             => 'event',
+		'cron_delete'          => 'event',
+		'delete_orphans'       => 'event',
+	];
+
+	/**
 	 * Record one event.
 	 *
-	 * @param string $action    Action slug (see describe()).
-	 * @param string $subject   Option name, prefix, or count — whatever the action acts on.
-	 * @param mixed  $old_value Previous value, kept so option edits stay restorable.
+	 * @param string      $action      Action slug (see describe()).
+	 * @param string      $subject     Option name, prefix, or count — whatever the action acts on.
+	 * @param mixed       $old_value   Previous value, kept so option edits stay restorable.
+	 * @param string|null $record_type Record type; derived from the action when null.
 	 * @return void
 	 */
-	public function record( $action, $subject, $old_value = '' ) {
-		$this->history->log_change( (string) $subject, $old_value, $action );
+	public function record( $action, $subject, $old_value = '', $record_type = null ) {
+		if ( null === $record_type ) {
+			$record_type = isset( self::ACTION_TYPES[ $action ] ) ? self::ACTION_TYPES[ $action ] : 'options';
+		}
+		$this->history->log_change( (string) $subject, $old_value, $action, $record_type );
+	}
+
+	/**
+	 * Restore an option to the value stored in one history row.
+	 *
+	 * @param int $id History row id.
+	 * @return true|string True on success, error message otherwise.
+	 */
+	public function restore( $id ) {
+		return $this->history->restore_version( (int) $id );
 	}
 
 	/**
@@ -58,6 +105,23 @@ class ActivityService {
 	 */
 	public function recent( $limit = 5 ) {
 		return $this->format( $this->history->get_recent( $limit ) );
+	}
+
+	/**
+	 * Every recorded version of one option, newest first (Browse → History).
+	 * Each entry adds `value`: the value it held before that change.
+	 *
+	 * @param string $option_name Option name.
+	 * @return array
+	 */
+	public function for_option( $option_name ) {
+		$rows = $this->history->get_history( $option_name );
+		$out  = $this->format( $rows );
+		foreach ( $out as $i => $entry ) {
+			$value              = (string) $rows[ $i ]['option_value'];
+			$out[ $i ]['value'] = strlen( $value ) > 300 ? substr( $value, 0, 300 ) . '…' : $value;
+		}
+		return $out;
 	}
 
 	/**
@@ -96,9 +160,12 @@ class ActivityService {
 		$name_cache = [];
 
 		foreach ( $rows as $r ) {
-			list($prefix, $code, $suffix) = $this->describe( $r['action'], $r['option_name'] );
+			$type                         = ! empty( $r['record_type'] ) ? $r['record_type'] : 'unknown';
+			list($prefix, $code, $suffix) = $this->describe( $r['action'], $r['option_name'], $type );
 
-			$ts = strtotime( $r['performed_at'] . ' UTC' );
+			// Stored in site-local time (current_time( 'mysql' )); convert before
+			// comparing with now, or every entry is off by the site's UTC offset.
+			$ts = strtotime( get_gmt_from_date( $r['performed_at'] ) . ' UTC' );
 			$by = isset( $r['performed_by'] ) ? (int) $r['performed_by'] : 0;
 			if ( ! isset( $name_cache[ $by ] ) ) {
 				$name_cache[ $by ] = $this->display_name_for( $by );
@@ -114,6 +181,8 @@ class ActivityService {
 				'who'             => $name_cache[ $by ],
 				'action'          => $r['action'],
 				'option_name'     => $r['option_name'],
+				'record_type'     => $type,
+				'restorable'      => HistoryManager::is_restorable( $r + [ 'record_type' => $type ] ),
 				'performed_at_ts' => $ts ? $ts : 0,
 			];
 		}
@@ -141,11 +210,26 @@ class ActivityService {
 	 * Sentence parts for one action. The middle part is rendered as code, so
 	 * the verb and any trailing words stay separately translatable.
 	 *
-	 * @param string $action  Action slug.
-	 * @param string $subject Row subject.
+	 * @param string $action      Action slug.
+	 * @param string $subject     Row subject.
+	 * @param string $record_type Row record type.
 	 * @return array [ prefix, code, suffix ]
 	 */
-	private function describe( $action, $subject ) {
+	private function describe( $action, $subject, $record_type = 'options' ) {
+		$meta_labels = [
+			'usermeta'    => [ __( 'Added user meta', 'nhrrob-options-table-manager' ), __( 'Updated user meta', 'nhrrob-options-table-manager' ) ],
+			'postmeta'    => [ __( 'Added post meta', 'nhrrob-options-table-manager' ), __( 'Updated post meta', 'nhrrob-options-table-manager' ) ],
+			'commentmeta' => [ __( 'Added comment meta', 'nhrrob-options-table-manager' ), __( 'Updated comment meta', 'nhrrob-options-table-manager' ) ],
+			'termmeta'    => [ __( 'Added term meta', 'nhrrob-options-table-manager' ), __( 'Updated term meta', 'nhrrob-options-table-manager' ) ],
+		];
+		if ( isset( $meta_labels[ $record_type ] ) && in_array( $action, [ 'create', 'update' ], true ) ) {
+			return [ $meta_labels[ $record_type ][ 'create' === $action ? 0 : 1 ], $subject, '' ];
+		}
+		// Pre-2.1 rows whose table can't be proven (option vs meta): don't claim either.
+		if ( 'unknown' === $record_type && in_array( $action, [ 'create', 'update' ], true ) ) {
+			return [ 'create' === $action ? __( 'Added', 'nhrrob-options-table-manager' ) : __( 'Updated', 'nhrrob-options-table-manager' ), $subject, '' ];
+		}
+
 		switch ( $action ) {
 			case 'create':
 				return [ __( 'Added option', 'nhrrob-options-table-manager' ), $subject, '' ];
@@ -218,6 +302,39 @@ class ActivityService {
 					'',
 				];
 
+			case 'cleanup':
+				// The subject holds the cleanup type id and the row count, pipe-separated.
+				list( $type, $count ) = array_pad( explode( '|', $subject, 2 ), 2, '0' );
+				if ( null === $this->cleanup_types ) {
+					$this->cleanup_types = ( new CleanupService( $this ) )->types();
+				}
+				$types = $this->cleanup_types;
+				return [
+					sprintf(
+						/* translators: 1: number of rows removed, 2: what was cleaned, e.g. "Post revisions". */
+						__( 'Cleaned %1$s rows: %2$s', 'nhrrob-options-table-manager' ),
+						number_format_i18n( (int) $count ),
+						isset( $types[ $type ] ) ? $types[ $type ]['label'] : $type
+					),
+					'',
+					'',
+				];
+
+			case 'table_optimize':
+				return [ __( 'Optimized table', 'nhrrob-options-table-manager' ), $subject, '' ];
+			case 'table_repair':
+				return [ __( 'Repaired table', 'nhrrob-options-table-manager' ), $subject, '' ];
+			case 'table_convert':
+				return [ __( 'Converted table to InnoDB', 'nhrrob-options-table-manager' ), $subject, '' ];
+			case 'table_empty':
+				return [ __( 'Emptied table', 'nhrrob-options-table-manager' ), $subject, '' ];
+			case 'table_drop':
+				return [ __( 'Dropped table', 'nhrrob-options-table-manager' ), $subject, '' ];
+			case 'cron_run':
+				return [ __( 'Ran scheduled event', 'nhrrob-options-table-manager' ), $subject, '' ];
+			case 'cron_delete':
+				return [ __( 'Deleted scheduled event', 'nhrrob-options-table-manager' ), $subject, '' ];
+
 			case 'snapshot':
 				return [ __( 'Snapshot taken', 'nhrrob-options-table-manager' ), '', $subject ];
 
@@ -228,6 +345,21 @@ class ActivityService {
 					$subject,
 					__( 'to a previous value', 'nhrrob-options-table-manager' ),
 				];
+		}
+
+		/**
+		 * Describe an activity action core doesn't know (add-on actions).
+		 *
+		 * Return [ prefix, code, suffix ] to render the feed sentence, or null
+		 * to fall back to the generic "Updated option" wording.
+		 *
+		 * @param array|null $parts   Sentence parts.
+		 * @param string     $action  Action slug.
+		 * @param string     $subject Row subject.
+		 */
+		$parts = apply_filters( 'nhrotm_activity_describe', null, $action, $subject );
+		if ( is_array( $parts ) && 3 === count( $parts ) ) {
+			return array_values( $parts );
 		}
 
 		return [ __( 'Updated option', 'nhrrob-options-table-manager' ), $subject, '' ];

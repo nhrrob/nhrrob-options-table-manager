@@ -1,4 +1,4 @@
-# Design Spec — NHR Options Manager 2.0 (Free UI)
+# Design Spec — NHR Database Cleaner & Optimizer (Free UI)
 
 Status: Draft · Owner: Nazmul Hasan Robin (nhrrob) · Date: 2026-07-06
 
@@ -7,7 +7,7 @@ Status: Draft · Owner: Nazmul Hasan Robin (nhrrob) · Date: 2026-07-06
 
 ## 0. Design principles
 
-1. **Native density, own identity.** Match wp-admin *spacing, typography, and information density* so it feels at home — but carry a **colorful, modern brand look** (gradients, colored cards/buttons). Not a gray wp-admin clone. Color is pure CSS — **zero bundle cost**, so it fully respects [[feedback_minimal_footprint]] / PRD §0.1. Still **no CSS framework**: colors ship as a small set of CSS custom properties, hand-authored.
+1. **Native density, own identity.** Match wp-admin *spacing, typography, and information density* so it feels at home — but carry a **colorful, modern brand look** (gradients, colored cards/buttons). Not a gray wp-admin clone. Color is pure CSS — **zero bundle cost**, so it fully respects [[feedback_minimal_footprint]] / PRD §1.1. Still **no CSS framework**: colors ship as a small set of CSS custom properties, hand-authored.
 2. **Dashboard-first.** Landing view answers "is my options table healthy, and what should I do next?" in one screen.
 3. **One home per action.** Every task lives in exactly one section (PRD §2). No duplicated entry points.
 4. **Progressive disclosure.** Show the score and top recommendations first; details are one click away.
@@ -16,11 +16,11 @@ Status: Draft · Owner: Nazmul Hasan Robin (nhrrob) · Date: 2026-07-06
 
 ## 1. App shell
 
-Single admin page under **Tools → Options Table**. React SPA mounts one root; sections are client-side routes (no full reloads).
+Single admin page under **Tools → Database Cleaner** (multisite adds **Network Admin → Settings → Database Cleaner**). Nav order: Dashboard · Browse · Cleanup · Optimize · Tools · Integrations · Settings. React SPA mounts one root; sections are client-side routes (no full reloads).
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  Options Table Manager                              [⟳ Refresh]  [⚙]   │  ← app bar
+│  Database Cleaner                                   [⟳ Refresh]  [⚙]   │  ← app bar
 ├────────────┬─────────────────────────────────────────────────────────┤
 │ ◹ Dashboard│                                                          │
 │ ▤ Browse   │                  ACTIVE SECTION CONTENT                  │
@@ -63,10 +63,10 @@ Single admin page under **Tools → Options Table**. React SPA mounts one root; 
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Health score gauge**: single number 0–100 in a ring. Color bands — red < 50, amber 50–79, green ≥ 80. Formula per PRD §6 (autoload size vs 1 MB budget, expired-transient ratio, orphan count, options count, backup age). Ring rendered as inline SVG (no chart lib).
+- **Health score gauge**: single number 0–100 in a ring. Color bands — red < 50, amber 50–79, green ≥ 80. Formula per PRD §2 (autoload size vs 1 MB budget, expired-transient ratio, orphan count, options count, backup age). Ring rendered as inline SVG (no chart lib).
 - **Stat cards** (4): Autoload, Options, Transients, Last Backup. Each = one headline metric, one sub-metric, one primary action that deep-links into the owning section. Cards are contributed by modules (`dashboard_cards()`), so PRO can append more.
 - **Recommendations feed**: prioritized, actionable rows (severity icon + text + single button). Empty state: "Nothing to fix — your options table is healthy. 🎉"
-- **Recent activity**: last ~5 events from Option History. Links to the full history.
+- **Recent activity**: last ~5 events from Option History. Links to the full history (the Activity screen), where option edit/delete rows carry a **Restore** row action (icon + label, `useConfirm` → `useToast`); meta, transient, event and pre-2.1 `unknown` rows show no action.
 
 ## 3. Browse
 
@@ -86,12 +86,13 @@ Unified data browser merging Options · Usermeta · Postmeta · Commentmeta · T
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Type switcher** (Options / Usermeta / Postmeta / Commentmeta / Termmeta / Transients) as a dropdown or segmented control; drives which REST collection loads. Left-aligned on its own row (matches the left-anchored screen title and grid below it — never centered, see §14.9).
+- **Type switcher** (Options / Usermeta / Postmeta / Commentmeta / Termmeta / Transients; on multisite the Usermeta tab is hidden unless `boot.canUsermeta` — note `wp_localize_script` sends `false` as `""`, so test truthiness) as a dropdown or segmented control; drives which REST collection loads. Left-aligned on its own row (matches the left-anchored screen title and grid below it — never centered, see §14.9).
 - **Toolbar row** (Add button + type-specific filters, then search) always sits directly below the type switcher. Left group = Add + filters (structured, related to *what's shown*); search is pushed to the row's right edge via `margin-left: auto` on `.nhrotm-search` — isolates free-text search from the structured controls beside it, matching WP core list-table convention (actions/filters top-left, search top-right).
 - **Data grid**: hand-rolled or minimal `@tanstack/react-table`, **server-side paginated** via `nhrotm/v1` (replaces DataTables). Columns: select, name, value preview, size, autoload badge, row actions.
 - **Autoload column is read-only here** — a badge with a "Manage in Optimize →" link (PRD duplication rule). No toggle on this screen.
 - **Row actions**: Edit (modal), Delete (confirm) as **compact icon buttons**, right-aligned, revealed/emphasised on row hover (not stacked red/black text links — that read as unfinished). Core-protected options show a muted `protected` label and expose **Edit only**, no Delete.
-- **Edit modal**: serialized/JSON values shown as a structured, editable tree (parity with 1.5.x); "Allow HTML in values" setting respected.
+- **Edit modal**: serialized/JSON values shown as a structured, editable tree (parity with 1.5.x). The "Allow HTML in option values" setting applies to the Options type: off (default) strips HTML from every string (each string leaf of a structured value, keys and numbers untouched); on saves exactly as entered. A user without WordPress's `unfiltered_html` capability always gets HTML stripped (meta values too), and Import and a live Search & Replace answer with a clear "needs the permission to save unfiltered HTML" error.
+- **History** row action (Options only, every row incl. protected): opens `HistoryModal` (`.nhrotm-modal--wide`, 960px) listing each recorded version (change, previous value, who, when) with a Restore action on restorable rows. Options rows carry three actions, so their action column uses `nhrotm-col-act-lg` (300px).
 - Transients view: shows status (persistent/expired/active), expiry, and a guessed owner (plugin/theme/WordPress core, via `ScannerManager::guess_owner()`); filterable by both status and owner. Select rows and bulk delete here — this is the only place a transient that hasn't expired yet can be deleted, so it's owner-filterable specifically to make that safe. Optimize/Cleanup only ever offers the risk-free "Delete expired" one-click action.
 - Usermeta/Postmeta views: a "Filter by user…" / "Filter by post…" combobox (`IdLookupFilter`, 2026-09-07) beside the search box narrows the grid to one user's or post's rows exactly — handy when a specific post or user has hundreds of meta rows the free-text search alone can't isolate. It's a search-as-you-type picker, not a raw id field: focusing it shows the 20 most recent posts/users as a browsable default, typing live-searches post titles / usernames+display names via `GET nhrotm/v1/browse/lookup` (debounced 300ms, same `get_posts()`/`WP_User_Query()` search WP core's own admin list tables use), and picking a result resolves to its id. The actual server-side filter stays a cheap, combinable `WHERE user_id = %d` / `WHERE post_id = %d` — the combobox only exists to make choosing that id possible without memorizing it.
 
@@ -108,7 +109,7 @@ The grid is the most-used surface, so its type discipline defines how profession
 
 ## 4. Optimize
 
-Sole owner of autoload editing + cleanup.
+Sole owner of autoload editing, orphaned options and database tables. (Cleanup of rows is its own section, §4a.)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -134,25 +135,41 @@ Sole owner of autoload editing + cleanup.
 - Five stacked panels: **Autoload health**, **Usage Tracker**, **Orphan scanner**, **Cleanup**, **Options table analytics**. Each panel is a module-owned card so it stays independent.
 - Autoload budget bar: green→amber→red vs the 1 MB budget.
 - Usage Tracker copy states plainly that it samples real front-end loads and never disables anything automatically (auto-disable is a PRO capability — but the free UI shows **no** PRO badge/upsell; it simply omits it).
-- Cleanup only offers "Delete expired" — a single risk-free action, no confirm dialog needed since it can never remove a still-valid cache entry. Deleting active/persistent transients (or a scoped subset by owner) is a deliberate Browse action instead: filter, select, bulk delete, confirm — never a single click here.
+- Expired transients are cleaned from the Cleanup screen (§4a); the old one-button Cleanup panel here was replaced by the Tables panel in 2.1. Deleting a still-active transient remains a Browse → Transients action.
 - Orphan scanner's **Options** count (e.g. "9") isn't a dead number — hovering it shows up to `ScannerManager::ORPHAN_SAMPLE_LIMIT` (5) real option names for that prefix as a native tooltip (collected during the existing scan, no extra query), and clicking it deep-links to Browse → Options pre-searched to that prefix, same `onNavigate('browse', undefined, { type, search })` pattern Cleanup's "N expired transients" link already used.
 - Options table analytics (ported from the legacy Classic UI, 2026-09-21): every option grouped by name prefix with a count, sorted desc — unlike Orphan scanner, this deliberately includes prefixes belonging to active/installed plugins too, since it answers "which prefix has the most rows" rather than "what's safe to delete." Same deep-link-the-count-into-Browse pattern as Orphan scanner.
 
+## 4a. Cleanup (new in 2.1)
+
+One screen, four panels (Posts · Comments · Meta and relationships · Caches and logs). Every cleanup type is one table row: **What** (label, plus a muted caveat line `.nhrotm-cleanup__note` for the risky types) · **Rows** (count badge: warning tone when > 0, muted at 0) · **Keep the last** (number input + "days", dated types only, else "—") · **Schedule** (select: Off / Hourly / Twice daily / Daily / Weekly / Monthly; "Manual only" text for types that can't be scheduled) · **Actions** (Preview, Clean — icon + label, Clean in the danger tone, both disabled at 0).
+
+- **Preview** opens a wide modal (`.nhrotm-modal--wide`) listing id / item / date for the first rows, with "Showing N of M rows that Clean would delete".
+- **Clean** re-reads the count, then confirms with it ("Delete 48 rows: Post revisions?") and says plainly that snapshots only cover options. It loops the run endpoint until nothing is left and ends with one toast ("N rows cleaned successfully.").
+- **Save schedules** is one primary button under the panels (enabled when something changed), with a hint that a schedule deletes without asking and uses the row's keep-the-last rule.
+- The same N-days value drives both the manual Clean and the schedule, so there is one rule per row, not two.
+- The days input and the schedule select use the compact field class `.nhrotm-pager__select` (also the pager's per-page select and Network's filter). Its rule is scoped `.nhrotm-app .nhrotm-pager__select` so it outranks wp-admin's own input/select styles (white in dark mode), and the select arrow is drawn in the text colour so it shows on both themes.
+
+**Tables panel (Optimize).** `DataTable` with owner-type filter and search (table, owner or engine); columns Table (name, with the storage engine as a muted line underneath) · Owner (plain name, or a badge: "Plugin removed" warning, "Unknown owner" info) · Rows · Size (B/KB/MB/GB) · Overhead (warning badge when > 0) · Actions. There is no Engine column: seven columns did not fit the ~930px panel (§14.13). Optimize appears only when there is overhead or the engine isn't InnoDB; Repair and "To InnoDB" only on MyISAM; **Empty** and **Drop** only on leftover/unknown tables, behind a small modal where the user types the table name (the primary button stays disabled until it matches). A row with no applicable action shows a muted "Nothing to do". Views are not listed. The grid carries the `.nhrotm-grid--tables` modifier (via `DataTable`'s `tableClassName` prop): owner 150 + rows 96 + size 100 + overhead 128 + actions 232 = 706px fixed, `min-width: 910px`; the Actions column fits two buttons per line and wraps the rest.
+
+**Scheduled events panel (Tools).** `DataTable`: Hook (with a "Possibly orphaned" warning badge) · Owner · Next run · Repeats · Actions (Run now; Delete, hidden for core hooks).
+
+**Network screen (multisite).** Sites table (name + URL, options, autoload, database, an "Open" link styled as a row action) and a Network options table (filter Everything / Options only / Site transients only, search, "Delete expired site transients", lock + "Protected" instead of Delete on core keys).
+
 ## 5. Tools
 
-Search & Replace · Import/Export · Backups (tabbed or stacked cards).
+Search & Replace · Import/Export · Backups · Scheduled events (stacked panels with a JumpNav).
 
-- **Search & Replace**: from/to fields, table scope, **Dry-run preview by default**, then Run. A pre-run snapshot is taken automatically (surfaced as a note: "A backup was saved before this change").
-- **Import / Export**: JSON download / upload; auto-snapshot before import.
-- **Backups**: list (label, type, option count, size, age) + Create, Restore (confirm), Delete. Shows the 15-snapshot local cap.
+- **Search & Replace**: a muted live line under the fields ("Found in N options, M occurrences.", debounced 400 ms) before any run; from/to fields, table scope, **Dry-run preview by default**, then Run. A pre-run snapshot is taken automatically (surfaced as a note: "A backup was saved before this change"). The live count and the run cover the same set: every matching option except protected ones.
+- **Import / Export**: Export = "Export all options" or an export list built with `ExportBasket` (option-name search reusing the `.nhrotm-lookup` combobox styles + a removable list), "Export selected (N)". Import = upload/paste → **Preview import** → grid with checkbox, name, status badge (New = success, Modified = warning, Unchanged = muted, Protected = danger and not selectable) and current value → "Import selected (N)" / Cancel. New + Modified rows are pre-ticked. Auto-snapshot before import; files carrying a checksum must match.
+- **Backups**: list (label, type, option count, size, age) + Create, Restore (confirm), Delete. Shows the 15-snapshot local cap, and a muted "N of 15 snapshots, using X of database space. The oldest is removed automatically when a new one is added." line under the table (cap from `boot.maxSnapshots`; snapshots are compressed and exclude transients since 2.1).
 
 ## 6. Integrations
 
-Conditional section — only rendered when a supported third-party table (e.g. WPRM) exists. Quarantined here so third-party tables never inflate the main nav. Same grid component as Browse, scoped to the integration's tables.
+Conditional section (a tab whose plugin is no longer active carries a warning "Plugin inactive" badge) — only rendered when a supported third-party table exists (WPRM Ratings, WPRM Analytics, WPRM Changelog, Better Payment). Quarantined here so third-party tables never inflate the main nav. Same grid component as Browse, scoped to the integration's tables, with a search box and sortable column headers (`.nhrotm-grid__sort`), both server-side.
 
 ## 7. Settings
 
-All settings centralized (PRD §2): Allow HTML in values, Auto-cleanup frequency, Usage-tracking on/off, Backup frequency (off/daily/weekly), **History retention** (migrated out of Optimizer). One `nhrotm_settings` object saved via REST.
+History is capped at the latest 300 changes regardless of the retention setting (it is stored in one option, not a table). All settings centralized (PRD §2): Allow HTML in option values, Usage-tracking on/off (cleanup schedules live on the Cleanup screen, not here), Backup frequency (off/daily/weekly), **History retention** (migrated out of Optimizer) with a hint showing the history's current entry count and size (`GET settings/history-stats`), and a secondary **Prune history now** button beside Save (confirm → toast with the count). One `nhrotm_settings` object saved via REST.
 
 ## 8. Component inventory (build once, reuse)
 
@@ -233,55 +250,9 @@ The look is branded and vibrant, delivered entirely through a small set of CSS c
 - Errors show the REST message + a retry; never a blank screen.
 - Breakpoints (CSS-only, `style.scss` bottom): **>900px** full · **≤900px** nav auto-collapses to the icon rail · **≤600px** phone pass. `.nhrotm-app` is `overflow: hidden` (rounded corners), so anything wider than a phone viewport is *clipped*, not scrollable — the phone pass exists to keep every control inside the width: segmented switchers (Browse types, Optimize, Tools) swipe sideways, panel headers and pager controls wrap, form fields and Browse's toolbar drop their 200px minimums and go full-row, the app bar tightens, and fixed-layout grids get `min-width: 1000px` so the flexible Name/Value columns aren't squeezed to ~90px inside their horizontal scroller. Every `.nhrotm-grid` must sit inside a `.nhrotm-grid__scroll` (Tools → Backups was the one that didn't).
 
-## 12. PRO awareness — visual realization (PRD §0.2)
+## 12. PRO awareness — none (PRD §1.2)
 
-The free build must let users *discover* PRO without feeling like an ad. Two — and only two — surfaces:
-
-### `Pro` tag
-
-A small, low-contrast pill placed inline next to a feature label whose free version is manual and whose PRO version adds automation/scale.
-
-```
-Auto-cleanup:  ◯ off  ● daily        Scheduled hourly→monthly  [ Pro ]
-```
-
-- Style: `--nhrotm-pro` tint background, no gradient, no icon-fill, 11px, uppercase, `letter-spacing`. **Muted, not brand-loud** — it should read as metadata, not a button. Deliberately quieter than a status badge.
-- Behaviour: the underlying free control still works. Clicking the pill routes to `#/upgrade?from=<feature>`. Cursor `help`/`pointer`; `title="Available in Pro"`; `aria-label` announces it.
-- Placement budget: at most one tag per panel. Tags allowed on — Scheduled cleanup, Auto-disable autoload, Regex/all-table Search & Replace, Off-site/unlimited backups, Reports & alerts, Multisite. Never on a plain free feature.
-
-### `Upgrade` screen
-
-Reached from the pinned, de-emphasized bottom nav item (a hairline separates it from the six sections; muted color, not the active-gradient treatment). It is one calm screen:
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  Options Table Manager Pro                                             │
-│  Automation, scale, and safety on top of everything you already have.  │
-├──────────────────────────────────────────────────────────────────────┤
-│  Capability                     Free            Pro                    │
-│  Browse / edit / autoload        ✓               ✓                     │
-│  Usage Tracker                   ✓  full         + auto-disable        │
-│  Cleanup                         manual          scheduled             │
-│  Search & Replace                dry-run         + regex / all tables  │
-│  Backups                         15, local       unlimited + off-site  │
-│  Reports & alerts                —               email + thresholds    │
-│  Multisite                       —               ✓                     │
-├──────────────────────────────────────────────────────────────────────┤
-│                         [ View plans → ]                               │
-│         One outbound link. No price countdowns, no second CTA.         │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-- The comparison table reuses `--nhrotm-*` tokens; the header strip may use `--nhrotm-gradient-soft` (not the full hero gradient) so it stays understated.
-- Exactly **one** primary button (`View plans →`, outbound). No timers, no "SALE", no testimonials carousel, no repeated CTA.
-- When the PRO add-on is active, `boot.hasPro === true` → the free build hides this nav item and suppresses every `Pro` tag (PRD-PRO §0 handoff).
-
-### Token addition
-
-```css
---nhrotm-pro:      #f4f0ff;  /* pill tint — soft, shares the options-card family */
---nhrotm-pro-text: #6d5efc;  /* pill text — brand, but small + uppercase = quiet */
-```
+The free build has no PRO surface: no `Pro` tag, no Upgrade nav item or screen, no `--nhrotm-pro*` tokens. They existed dormant until 2026-10-04 and were removed; do not design new ones. Where a paid add-on would add automation, the free UI simply omits it.
 
 ## 13. Dark theme
 
@@ -299,10 +270,9 @@ Rules: brand violet and the four status hues are **theme-invariant** (recognisab
 
 ## 11. Open questions
 
-- ~~`DataGrid`: hand-roll vs `@tanstack/react-table`~~ → **hand-rolled** (PRD §8: bundle budget). 
+- ~~`DataGrid`: hand-roll vs `@tanstack/react-table`~~ → **hand-rolled** (PRD §7: bundle budget). 
 - Health-score band thresholds — validate 50/80 against real sites before locking.
 - Type switcher: dropdown vs segmented control (a11y + narrow-width behavior). Mockup uses a **segmented control** (clearer state, keyboard-navigable); revisit for very narrow widths.
-- `Pro` tag exact hue vs the options-card tint — confirm they're distinguishable side by side (Optimize shows both).
 
 ## 14. UI implementation gotchas (read before touching CSS here)
 
@@ -385,3 +355,13 @@ Optimize's Cleanup panel (description + a count line + one button) sat in the sa
 Every `.nhrotm-grid` table except Integrations' has a known, fixed column set and renders an explicit `<colgroup>` of `nhrotm-col-*` widths (§ the base `.nhrotm-grid` rule) that add up sensibly under the base `table-layout: fixed`. `IntegrationsScreen.js` renders whatever columns the third-party plugin's own DB table happens to have (Better Payment: 15+) with no `<colgroup>` at all. Under `table-layout: fixed` with no `<colgroup>`, the browser still has to divide the table's fixed 100%-of-container width across however many columns showed up, so each one gets a sliver far narrower than its `white-space: nowrap` header text — which overflows out of its cell and on top of the neighbouring column's text instead of wrapping or scrolling (WP Recipe Maker's 8 short columns happened to fit and never surfaced this; Better Payment's 15 did, rendering as garbled overlapping header text).
 
 **Fix:** `.nhrotm-grid--fluid` modifier (`table-layout: auto; width: auto; min-width: 100%;`), added alongside `.nhrotm-grid` only on `IntegrationsScreen.js`'s table. `table-layout: auto` sizes the table to its actual content and lets it grow past the container, so `.nhrotm-grid__scroll`'s existing `overflow-x: auto` can do its job. **Rule:** `table-layout: fixed` is only safe with an explicit `<colgroup>` sizing every column; a table whose column set isn't known ahead of time (data-driven from an external schema) needs `table-layout: auto` instead, not the fixed-layout convention every other screen here uses.
+
+### 14.13 Count the fixed column widths before adding a column
+
+Under `table-layout: fixed` the flexible `nhrotm-col-name` column gets only what the fixed columns leave. The content panel is ~930px wide at a 1440px viewport, less on a 1366px laptop. Optimize → Tables first shipped with seven columns whose fixed widths summed to 924px: the table name got 0px, wrapped one letter per line, and the Owner cell painted over it. A first fix that only narrowed the columns left badges and headers with 0–2px of headroom and stacked every action button on its own line.
+
+**Rule:** sum the fixed widths against ~930px before reusing shared `nhrotm-col-*` classes; leave the name column 200px or more. If it does not fit, remove a column (fold a low-value one into another cell, as Engine went under the table name) rather than squeezing all of them. Give a per-table modifier (`.nhrotm-grid--tables`) its own widths and a `min-width`, size an Actions column for its common two-button case, and let rarer extra buttons wrap.
+
+## 15. PRO add-on screens
+
+PRO renders inside this app, not beside it: its three sections (Performance, Site Guard, Sandbox) are nav items from the same registry, and their screens are built only from the components exposed on `window.nhrotm` (Panel, ScreenHeader, DataTable, Icon, toasts, confirm) plus this spec's classes (`.nhrotm-segmented` for tabs, `.nhrotm-card` stat tiles, `.nhrotm-field`, `.nhrotm-badge`). The PRO stylesheet (~2 KB) only adds chips, code previews and a few layout helpers, all under `.nhrotm-app` so every `--nhrotm-*` token (and dark mode) applies. Rules in §14 bind PRO screens too.

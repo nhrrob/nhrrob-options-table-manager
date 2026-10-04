@@ -136,6 +136,10 @@ class HealthService {
 			'usage_tracking'     => (bool) $usage['tracking'],
 			'usage_loads'        => (int) $usage['load_count'],
 			'unused_autoload'    => count( $usage['options'] ),
+			// Rows Cleanup would remove (revisions, drafts, spam, orphaned meta…),
+			// not counting expired transients, which have their own metric above.
+			'cleanable'          => max( 0, ( new CleanupService( $this->activity ) )->total_cleanable() - $expired_transients ),
+			'db_bytes'           => ( new TablesService( $this->activity ) )->total_size(),
 		];
 	}
 
@@ -149,6 +153,17 @@ class HealthService {
 		$score = $this->score( $m );
 
 		$recommendations = $this->recommendations( $m );
+
+		/**
+		 * Filter the dashboard recommendations.
+		 *
+		 * Add-ons append items in the same shape (icon, lede, text, action,
+		 * section, focus, severity) so they surface in the Dashboard's list.
+		 *
+		 * @param array $recommendations Recommendations.
+		 * @param array $m               Raw health metrics.
+		 */
+		$recommendations = (array) apply_filters( 'nhrotm_health_recommendations', $recommendations, $m );
 
 		return [
 			'score'           => $score,
@@ -186,6 +201,12 @@ class HealthService {
 		// Options count over budget (up to 15).
 		if ( $m['options_count'] > self::OPTIONS_BUDGET ) {
 			$penalty += min( 15, ( ( $m['options_count'] - self::OPTIONS_BUDGET ) / self::OPTIONS_BUDGET ) * 15 );
+		}
+
+		// Cleanable rows: revisions, drafts, trash, spam, orphaned meta (up to 10).
+		// Optional key so callers simulating a metrics delta needn't supply it.
+		if ( ! empty( $m['cleanable'] ) ) {
+			$penalty += min( 10, ( $m['cleanable'] / 2000 ) * 10 );
 		}
 
 		// Backup age (up to 15).
@@ -290,8 +311,7 @@ class HealthService {
 				'metric'  => number_format_i18n( $m['transient_total'] ),
 				'sub'     => $transients_sub,
 				'action'  => $transients_action,
-				'section' => 'optimize',
-				'focus'   => 'cleanup',
+				'section' => 'cleanup',
 			],
 			[
 				'id'      => 'backup',
@@ -376,6 +396,10 @@ class HealthService {
 	private function stats( array $m ) {
 		return [
 			[
+				'value' => $this->format_bytes( isset( $m['db_bytes'] ) ? $m['db_bytes'] : 0 ),
+				'label' => __( 'database', 'nhrrob-options-table-manager' ),
+			],
+			[
 				'value' => size_format( $m['autoload_bytes'] ),
 				'label' => __( 'autoload', 'nhrrob-options-table-manager' ),
 			],
@@ -424,8 +448,27 @@ class HealthService {
 				// Cleanup, it doesn't delete anything itself (unlike Cleanup's own
 				// button, which keeps that exact label since it genuinely does).
 				'action'   => __( 'Review expired', 'nhrrob-options-table-manager' ),
-				'section'  => 'optimize',
-				'focus'    => 'cleanup',
+				'section'  => 'cleanup',
+			];
+		}
+
+		if ( ! empty( $m['cleanable'] ) ) {
+			$recs[] = [
+				'severity' => $m['cleanable'] > 2000 ? 'warning' : 'info',
+				'icon'     => 'cleanup',
+				'text'     => sprintf(
+					/* translators: %s: number of database rows. */
+					_n(
+						'%s row of revisions, drafts, spam or orphaned data can be cleaned up.',
+						'%s rows of revisions, drafts, spam and orphaned data can be cleaned up.',
+						$m['cleanable'],
+						'nhrrob-options-table-manager'
+					),
+					number_format_i18n( $m['cleanable'] )
+				),
+				'lede'     => __( 'cleaning up revisions, drafts and orphaned data', 'nhrrob-options-table-manager' ),
+				'action'   => __( 'Review cleanup', 'nhrrob-options-table-manager' ),
+				'section'  => 'cleanup',
 			];
 		}
 

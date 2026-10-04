@@ -18,82 +18,242 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class HistoryManager {
 
+	/**
+	 * Actions whose stored old value can be written back to wp_options.
+	 */
+	const RESTORABLE_ACTIONS = [ 'update', 'delete', 'restore', 'restore_backup' ];
 
 	/**
-	 * Table name for option history
+	 * The history log: [ 'next' => id, 'rows' => [ id => row ] ], oldest
+	 * first. One non-autoloaded option; the plugin creates no tables.
+	 */
+	const OPTION = 'nhrotm_history';
+
+	/**
+	 * Hard caps, so the log can never bloat the table it helps clean: the
+	 * oldest entries are dropped first, and a value too large to keep is
+	 * recorded without its content (that entry cannot be restored).
+	 */
+	const MAX_ROWS        = 300;
+	const MAX_VALUE_BYTES = 102400;
+	const MAX_TOTAL_BYTES = 1048576;
+
+	/**
+	 * Table used before 2.1 (migrated into OPTION, then dropped).
+	 */
+	const LEGACY_TABLE = 'nhrotm_option_history';
+
+	/**
+	 * The log held in memory while writes are deferred (see defer()), else null.
 	 *
-	 * @var string
+	 * @var array|null
 	 */
-	private $table_name;
+	private static $deferred = null;
 
 	/**
-	 * Resolve the option history table name.
-	 */
-	public function __construct() {
-		global $wpdb;
-		$this->table_name = $wpdb->prefix . 'nhrotm_option_history';
-	}
-
-	/**
-	 * Create the database table for storing history
+	 * Hold every write in memory until flush(). A bulk action logs one entry
+	 * per row; without this each entry would rewrite the whole option.
 	 *
 	 * @return void
 	 */
-	public function create_table() {
+	public static function defer() {
+		if ( null === self::$deferred ) {
+			self::$deferred = ( new self() )->read();
+		}
+	}
+
+	/**
+	 * Save the deferred log in one write and stop deferring.
+	 *
+	 * @return void
+	 */
+	public static function flush() {
+		if ( null !== self::$deferred ) {
+			$log            = self::$deferred;
+			self::$deferred = null;
+			update_option( self::OPTION, $log, false );
+		}
+	}
+
+	/**
+	 * Read the log.
+	 *
+	 * @return array { next, rows }
+	 */
+	private function read() {
+		if ( null !== self::$deferred ) {
+			return self::$deferred;
+		}
+		$log = get_option( self::OPTION, [] );
+		return [
+			'next' => isset( $log['next'] ) ? max( 1, (int) $log['next'] ) : 1,
+			'rows' => isset( $log['rows'] ) && is_array( $log['rows'] ) ? $log['rows'] : [],
+		];
+	}
+
+	/**
+	 * Enforce the caps and save the log.
+	 *
+	 * @param array $log { next, rows }.
+	 * @return void
+	 */
+	private function write( array $log ) {
+		$extra = count( $log['rows'] ) - self::MAX_ROWS;
+		if ( $extra > 0 ) {
+			$log['rows'] = array_slice( $log['rows'], $extra, null, true );
+		}
+		$bytes = 0;
+		foreach ( $log['rows'] as $row ) {
+			$bytes += strlen( (string) $row['option_value'] );
+		}
+		foreach ( array_keys( $log['rows'] ) as $id ) {
+			if ( $bytes <= self::MAX_TOTAL_BYTES || count( $log['rows'] ) <= 1 ) {
+				break;
+			}
+			$bytes -= strlen( (string) $log['rows'][ $id ]['option_value'] );
+			unset( $log['rows'][ $id ] );
+		}
+		if ( null !== self::$deferred ) {
+			self::$deferred = $log;
+			return;
+		}
+		update_option( self::OPTION, $log, false );
+	}
+
+	/**
+	 * Rows newest first, each with its id.
+	 *
+	 * @param bool $with_values Keep the stored value (lists don't need it).
+	 * @return array
+	 */
+	private function newest_first( $with_values = false ) {
+		$out = [];
+		foreach ( array_reverse( $this->read()['rows'], true ) as $id => $row ) {
+			if ( ! $with_values ) {
+				unset( $row['option_value'] );
+			}
+			$out[] = [ 'id' => (int) $id ] + $row;
+		}
+		return $out;
+	}
+
+	/**
+	 * 2.1 migration: copy the newest rows of the old history table into
+	 * the option, then drop the table.
+	 *
+	 * Rows written by 2.0 have no record_type. Meta edits were then logged
+	 * with the same update/create actions as options, so restoring one wrote a
+	 * bogus wp_options row: rows whose type the action proves are labelled, and
+	 * update/create rows whose name is not a current option become 'unknown'
+	 * so they can never be restored.
+	 *
+	 * @return void
+	 */
+	public function upgrade() {
 		global $wpdb;
+		$table = $wpdb->prefix . self::LEGACY_TABLE;
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- $table is the plugin's own pre-2.1 table name, never user input; one-time migration
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+			return;
+		}
 
-		$charset_collate = $wpdb->get_charset_collate();
+		if ( false === get_option( self::OPTION, false ) ) {
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} ORDER BY id DESC LIMIT %d", self::MAX_ROWS ), ARRAY_A );
+			$rows = array_reverse( $rows ? $rows : [] );
+			$log  = [
+				'next' => 1,
+				'rows' => [],
+			];
+			foreach ( $rows as $row ) {
+				$type = isset( $row['record_type'] ) ? (string) $row['record_type'] : '';
+				if ( '' === $type ) {
+					$type = self::legacy_record_type( (string) $row['action'] );
+					if ( 'options' === $type && in_array( $row['action'], [ 'update', 'create' ], true )
+						&& null === $wpdb->get_var( $wpdb->prepare( "SELECT option_id FROM {$wpdb->options} WHERE option_name = %s", $row['option_name'] ) ) ) {
+						$type = 'unknown';
+					}
+				}
+				$log['rows'][ $log['next'] ] = $this->row( $row['option_name'], (string) $row['option_value'], $row['action'], $type, (int) $row['performed_by'], $row['performed_at'] );
+				++$log['next'];
+			}
+			$this->write( $log );
+		}
 
-		$sql = "CREATE TABLE $this->table_name (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            option_name varchar(191) NOT NULL,
-            option_value longtext NOT NULL,
-            action varchar(50) NOT NULL,
-            performed_by bigint(20) NOT NULL,
-            performed_at datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-            PRIMARY KEY  (id),
-            KEY option_name (option_name)
-        ) $charset_collate;";
+		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+		// phpcs:enable
+	}
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( $sql );
+	/**
+	 * Record type a pre-2.1 action implies.
+	 *
+	 * @param string $action Logged action.
+	 * @return string
+	 */
+	private static function legacy_record_type( $action ) {
+		$map = [
+			'delete_usermeta'      => 'usermeta',
+			'delete_postmeta'      => 'postmeta',
+			'delete_commentmeta'   => 'commentmeta',
+			'delete_termmeta'      => 'termmeta',
+			'delete_transient'     => 'transients',
+			'create_transient'     => 'transients',
+			'update_transient'     => 'transients',
+			'snapshot'             => 'event',
+			'clean_transients'     => 'event',
+			'clean_transients_all' => 'event',
+			'delete_orphans'       => 'event',
+		];
+		return isset( $map[ $action ] ) ? $map[ $action ] : 'options';
+	}
+
+	/**
+	 * Build one log row; a value over MAX_VALUE_BYTES is not kept.
+	 *
+	 * @param string $option_name Option name (or meta key / transient name).
+	 * @param string $value       Value before the change (already a string).
+	 * @param string $action      Logged action.
+	 * @param string $record_type Record type.
+	 * @param int    $user_id     Who made the change.
+	 * @param string $when        MySQL datetime, site-local.
+	 * @return array
+	 */
+	private function row( $option_name, $value, $action, $record_type, $user_id, $when ) {
+		$row = [
+			'option_name'  => (string) $option_name,
+			'option_value' => $value,
+			'action'       => (string) $action,
+			'record_type'  => (string) $record_type,
+			'performed_by' => (int) $user_id,
+			'performed_at' => (string) $when,
+		];
+		if ( strlen( $value ) > self::MAX_VALUE_BYTES ) {
+			$row['option_value']  = '';
+			$row['value_dropped'] = 1;
+		}
+		return $row;
 	}
 
 	/**
 	 * Log a change to an option
 	 *
-	 * @param string $option_name Option name.
-	 * @param mixed  $old_value Value before the change.
-	 * @param string $action 'update' or 'delete'.
-	 * @return int|false The inserted ID or false on error
+	 * @param string $option_name Option name (or meta key / transient name).
+	 * @param mixed  $old_value   Value before the change.
+	 * @param string $action      'update' or 'delete'.
+	 * @param string $record_type options | usermeta | postmeta | commentmeta | termmeta | transients | event.
+	 * @return int The new entry's ID
 	 */
-	public function log_change( $option_name, $old_value, $action = 'update' ) {
-		global $wpdb;
-		$table = $this->table_name;
-
+	public function log_change( $option_name, $old_value, $action = 'update', $record_type = 'options' ) {
 		// If value is array or object, serialize it.
 		if ( is_array( $old_value ) || is_object( $old_value ) ) {
 			$old_value = maybe_serialize( $old_value );
 		}
 
-		// Ensure table exists (lazy creation).
-		if ( ! $this->table_exists() ) {
-			$this->create_table();
-		}
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific history tracking
-		return $wpdb->insert(
-			$table,
-			[
-				'option_name'  => $option_name,
-				'option_value' => $old_value,
-				'action'       => $action,
-				'performed_by' => get_current_user_id(),
-				'performed_at' => current_time( 'mysql' ),
-			],
-			[ '%s', '%s', '%s', '%d', '%s' ]
-		);
-		// phpcs:enable
+		$log                = $this->read();
+		$id                 = $log['next'];
+		$log['rows'][ $id ] = $this->row( $option_name, (string) $old_value, $action, $record_type, get_current_user_id(), current_time( 'mysql' ) );
+		$log['next']        = $id + 1;
+		$this->write( $log );
+		return $id;
 	}
 
 	/**
@@ -103,16 +263,16 @@ class HistoryManager {
 	 * @return array
 	 */
 	public function get_history( $option_name ) {
-		global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
-		return $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$wpdb->prefix}nhrotm_option_history WHERE option_name = %s ORDER BY performed_at DESC",
-				sanitize_text_field( wp_unslash( $option_name ) )
-			),
-			ARRAY_A
-		);
-		// phpcs:enable
+		$out = [];
+		foreach ( $this->newest_first( true ) as $row ) {
+			if ( (string) $option_name === $row['option_name'] && 'options' === $row['record_type'] ) {
+				$out[] = $row;
+				if ( count( $out ) >= 100 ) {
+					break;
+				}
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -122,22 +282,7 @@ class HistoryManager {
 	 * @return array
 	 */
 	public function get_recent( $limit = 5 ) {
-		global $wpdb;
-		$table = $this->table_name;
-		$limit = max( 1, min( 20, (int) $limit ) );
-
-		if ( ! $this->table_exists() ) {
-			return [];
-		}
-
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is $this->table_name, never user input
-		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT id, option_name, action, performed_by, performed_at FROM {$table} ORDER BY performed_at DESC, id DESC LIMIT %d", $limit ),
-			ARRAY_A
-		);
-		// phpcs:enable
-
-		return $rows ? $rows : [];
+		return array_slice( $this->newest_first(), 0, max( 1, min( 20, (int) $limit ) ) );
 	}
 
 	/**
@@ -146,15 +291,7 @@ class HistoryManager {
 	 * @return int
 	 */
 	public function count_all() {
-		global $wpdb;
-		$table = $this->table_name;
-
-		if ( ! $this->table_exists() ) {
-			return 0;
-		}
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is $this->table_name, never user input
-		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		return count( $this->read()['rows'] );
 	}
 
 	/**
@@ -165,59 +302,24 @@ class HistoryManager {
 	 * @return array
 	 */
 	public function get_page( $offset = 0, $limit = 20 ) {
-		global $wpdb;
-		$table  = $this->table_name;
-		$offset = max( 0, (int) $offset );
-		$limit  = max( 1, min( 100, (int) $limit ) );
+		return array_slice( $this->newest_first(), max( 0, (int) $offset ), max( 1, min( 100, (int) $limit ) ) );
+	}
 
-		if ( ! $this->table_exists() ) {
-			return [];
+	/**
+	 * Entry count and bytes of stored values (Settings → History retention).
+	 *
+	 * @return array { count, bytes }
+	 */
+	public function stats() {
+		$rows  = $this->read()['rows'];
+		$bytes = 0;
+		foreach ( $rows as $row ) {
+			$bytes += strlen( (string) $row['option_value'] );
 		}
-
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is $this->table_name, never user input
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT id, option_name, action, performed_by, performed_at FROM {$table} ORDER BY performed_at DESC, id DESC LIMIT %d OFFSET %d",
-				$limit,
-				$offset
-			),
-			ARRAY_A
-		);
-		// phpcs:enable
-
-		return $rows ? $rows : [];
-	}
-
-	/**
-	 * Whether the history table has been created yet.
-	 *
-	 * @return bool
-	 */
-	private function table_exists() {
-		global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time schema check
-		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $this->table_name ) ) === $this->table_name;
-	}
-
-	/**
-	 * Delete history older than a specified number of days.
-	 *
-	 * @param int $days The number of days to keep history for. Defaults to 30.
-	 * @return int|false The number of rows deleted, or false on error.
-	 */
-	public function delete_old_history( $days = 30 ) {
-		global $wpdb;
-		$table = $this->table_name;
-		$days  = intval( $days );
-
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-		return $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM $table WHERE performed_at < %s",
-				gmdate( 'Y-m-d H:i:s', strtotime( "-$days days" ) )
-			)
-		);
-        // phpcs:enable
+		return [
+			'count' => count( $rows ),
+			'bytes' => $bytes,
+		];
 	}
 
 	/**
@@ -227,31 +329,21 @@ class HistoryManager {
 	 * @return bool|string True on success, error message string on failure
 	 */
 	public function restore_version( $history_id ) {
-		global $wpdb;
-		$table = $this->table_name;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific query
-		$record = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$wpdb->prefix}nhrotm_option_history WHERE id = %d", $history_id ),
-			ARRAY_A
-		);
-		// phpcs:enable
+		$rows   = $this->read()['rows'];
+		$record = isset( $rows[ (int) $history_id ] ) ? $rows[ (int) $history_id ] : null;
 
 		if ( ! $record ) {
 			return 'Record not found';
 		}
 
+		// Only option rows carry a value update_option() can put back; a meta
+		// or transient row restored here would create a bogus wp_options row.
+		if ( ! self::is_restorable( $record ) ) {
+			return 'This entry cannot be restored';
+		}
+
 		$option_name  = $record['option_name'];
 		$option_value = $record['option_value'];
-
-		// If it was serialized, it might be double serialized or just serialized string.
-		// update_option expects the value as it should be used.
-		// If the stored value in DB is serialized, we should probably keep it as is if update_option handles serialization,
-		// BUT update_option expects the *unserialized* data if it's complex data.
-		// However, we stored the raw value from DB.
-
-		// Let's check how we retrieve it.
-		// In log_change, we did maybe_serialize.
 
 		// Restricted unserialize: no class is instantiated (no object
 		// injection); objects come back as __PHP_Incomplete_Class, which
@@ -286,24 +378,43 @@ class HistoryManager {
 	}
 
 	/**
+	 * Whether a history row can be restored with restore_version().
+	 *
+	 * @param array $row History row (needs action + record_type; value_dropped when set).
+	 * @return bool
+	 */
+	public static function is_restorable( array $row ) {
+		return isset( $row['record_type'], $row['action'] )
+			&& 'options' === $row['record_type']
+			&& empty( $row['value_dropped'] )
+			&& in_array( $row['action'], self::RESTORABLE_ACTIONS, true );
+	}
+
+	/**
 	 * Prune history logs older than X days
 	 *
 	 * @param int $days Number of days to retain.
-	 * @return int|false Number of rows deleted or false on error
+	 * @return int Number of entries deleted
 	 */
 	public function prune_history( $days = 30 ) {
-		global $wpdb;
 		$days = intval( $days );
 		if ( $days < 1 ) {
 			$days = 30;
 		}
+		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( current_time( 'mysql' ) ) - $days * DAY_IN_SECONDS );
+		$log    = $this->read();
+		$before = count( $log['rows'] );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-specific deletion
-		return $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->prefix}nhrotm_option_history WHERE performed_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
-				$days
-			)
+		$log['rows'] = array_filter(
+			$log['rows'],
+			function ( $row ) use ( $cutoff ) {
+				return (string) $row['performed_at'] >= $cutoff;
+			}
 		);
+		$deleted     = $before - count( $log['rows'] );
+		if ( $deleted ) {
+			$this->write( $log );
+		}
+		return $deleted;
 	}
 }

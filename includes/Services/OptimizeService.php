@@ -380,11 +380,11 @@ class OptimizeService {
 	}
 
 	/**
-	 * Count expired transients (both scopes), used by the Optimize overview.
+	 * Count expired transients (both scopes).
 	 *
 	 * @return int
 	 */
-	private function count_expired_transients() {
+	public function count_expired_transients() {
 		global $wpdb;
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- transient_timeout_where() returns a literal WHERE fragment, never user input
 		return (int) $wpdb->get_var(

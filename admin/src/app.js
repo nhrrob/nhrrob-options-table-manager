@@ -4,7 +4,8 @@
  * Sections are data-driven from the module list the server localizes
  * (mirrors the PHP ModuleRegistry), so add-ons surface here without core edits.
  */
-import { useState } from '@wordpress/element';
+import { useState, useMemo } from '@wordpress/element';
+import { applyFilters } from '@wordpress/hooks';
 import { __ } from '@wordpress/i18n';
 
 import AppShell from './components/AppShell';
@@ -12,11 +13,12 @@ import { ConfirmProvider } from './components/ConfirmProvider';
 import { ToastProvider } from './components/ToastProvider';
 import DashboardScreen from './components/DashboardScreen';
 import BrowseScreen from './components/BrowseScreen';
+import CleanupScreen from './components/CleanupScreen';
+import NetworkScreen from './components/NetworkScreen';
 import OptimizeScreen from './components/OptimizeScreen';
 import ToolsScreen from './components/ToolsScreen';
 import IntegrationsScreen from './components/IntegrationsScreen';
 import SettingsScreen from './components/SettingsScreen';
-import UpgradeScreen from './components/UpgradeScreen';
 import ActivityScreen from './components/ActivityScreen';
 import PlaceholderScreen from './components/PlaceholderScreen';
 import usePanelFocus from './components/usePanelFocus';
@@ -24,14 +26,14 @@ import usePanelFocus from './components/usePanelFocus';
 const SCREENS = {
 	dashboard: DashboardScreen,
 	browse: BrowseScreen,
+	cleanup: CleanupScreen,
+	network: NetworkScreen,
 	optimize: OptimizeScreen,
 	tools: ToolsScreen,
 	integrations: IntegrationsScreen,
 	settings: SettingsScreen,
-	upgrade: UpgradeScreen,
 	// Not a listed module (no permanent sidebar item) — reached only via
-	// Dashboard's "View all" activity link, same pattern as 'upgrade' having
-	// its own dedicated nav trigger outside the modules loop.
+	// Dashboard's "View all" activity link.
 	activity: ActivityScreen,
 };
 
@@ -75,12 +77,14 @@ export default function App( { boot } ) {
 
 	usePanelFocus( active, focus );
 
-	// The Upgrade item is the free build's only PRO surface; hide it while PRO
-	// doesn't exist yet (boot.proAvailable), and again once the PRO add-on is
-	// active (it flips boot.hasPro). See PRD §0.2 / PRD-PRO §0.
-	const showUpgrade = !! boot.proAvailable && ! boot.hasPro;
+	// Add-ons contribute screens for their own modules through this filter
+	// (registered via window.nhrotm before mount — see index.js).
+	const screens = useMemo(
+		() => applyFilters( 'nhrotm.screens', { ...SCREENS } ),
+		[]
+	);
 
-	const Screen = SCREENS[ active ] || PlaceholderScreen;
+	const Screen = screens[ active ] || PlaceholderScreen;
 	const current = modules.find( ( m ) => m.id === active ) || modules[ 0 ];
 
 	return (
@@ -88,11 +92,9 @@ export default function App( { boot } ) {
 			modules={ modules }
 			active={ active }
 			onNavigate={ navigate }
-			showUpgrade={ showUpgrade }
-			classicUrl={ boot.classicUrl }
 			title={
 				boot.pluginName ||
-				__( 'Options Table Manager', 'nhrrob-options-table-manager' )
+				__( 'Database Cleaner', 'nhrrob-options-table-manager' )
 			}
 		>
 			{ /* Nested inside AppShell (not wrapping it) so the confirm

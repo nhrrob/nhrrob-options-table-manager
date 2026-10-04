@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use Nhrotm\OptionsTableManager\Services\OptimizeService;
+use Nhrotm\OptionsTableManager\Services\TablesService;
 
 /**
  * REST endpoints for the Optimize section.
@@ -116,6 +117,43 @@ class OptimizeController extends RestController {
 				],
 			]
 		);
+
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/optimize/tables',
+			[
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'tables' ],
+				'permission_callback' => [ $this, 'can_manage' ],
+			]
+		);
+
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/optimize/tables/action',
+			[
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'table_action' ],
+				'permission_callback' => [ $this, 'can_manage' ],
+				'args'                => [
+					'table'   => [
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'action'  => [
+						'type'     => 'string',
+						'required' => true,
+						'enum'     => TablesService::ACTIONS,
+					],
+					'confirm' => [
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+				],
+			]
+		);
 	}
 
 	/**
@@ -175,5 +213,29 @@ class OptimizeController extends RestController {
 	public function clean_transients( $request ) {
 		$deleted = $this->optimize->clean_transients( $request->get_param( 'scope' ) );
 		return $this->ok( [ 'deleted' => $deleted ] );
+	}
+
+	/**
+	 * Every table of this site with size, overhead, engine and owner.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function tables() {
+		return $this->ok( ( new TablesService() )->all() );
+	}
+
+	/**
+	 * Optimize, repair, convert, empty or drop one table.
+	 *
+	 * @param \WP_REST_Request $request Full REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function table_action( $request ) {
+		$tables = new TablesService();
+		$result = $tables->run( $request->get_param( 'table' ), $request->get_param( 'action' ), $request->get_param( 'confirm' ) );
+		if ( true !== $result ) {
+			return $this->fail( 'nhrotm_table_action_failed', $result );
+		}
+		return $this->ok( $tables->all() );
 	}
 }

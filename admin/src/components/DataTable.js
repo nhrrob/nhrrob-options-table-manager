@@ -41,6 +41,7 @@ export default function DataTable( {
 	selectable,
 	bulkActions,
 	emptyMessage,
+	tableClassName,
 } ) {
 	const [ search, setSearch ] = useState( '' );
 	const [ filterValues, setFilterValues ] = useState( {} );
@@ -221,7 +222,12 @@ export default function DataTable( {
 
 			<div className="nhrotm-grid__wrap">
 				<div className="nhrotm-grid__scroll">
-					<table className="nhrotm-grid">
+					<table
+						className={
+							'nhrotm-grid' +
+							( tableClassName ? ' ' + tableClassName : '' )
+						}
+					>
 						<colgroup>
 							{ selectable && (
 								<col className="nhrotm-col-check" />

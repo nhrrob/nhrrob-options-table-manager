@@ -13,6 +13,12 @@ require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 WP_Mock::bootstrap();
 
+// Time constants WordPress defines in wp-includes/default-constants.php.
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+	define( 'MINUTE_IN_SECONDS', 60 );
+	define( 'DAY_IN_SECONDS', 86400 );
+}
+
 /**
  * Minimal $wpdb stub.
  *
@@ -77,6 +83,29 @@ class Nhrotm_Test_WPDB {
 	 * @var string
 	 */
 	public $posts = 'wp_posts';
+
+	/**
+	 * Network-wide table prefix.
+	 *
+	 * @var string
+	 */
+	public $base_prefix = 'wp_';
+
+	/**
+	 * Current site id.
+	 *
+	 * @var int
+	 */
+	public $blogid = 1;
+
+	/**
+	 * Table prefix for the current site (wp_ on the main site, wp_2_ …).
+	 *
+	 * @return string
+	 */
+	public function get_blog_prefix() {
+		return $this->base_prefix . ( $this->blogid > 1 ? $this->blogid . '_' : '' );
+	}
 
 	/**
 	 * Escape a LIKE operand.

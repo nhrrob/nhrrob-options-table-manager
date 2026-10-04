@@ -14,12 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 use Nhrotm\OptionsTableManager\Services\SettingsService;
 use Nhrotm\OptionsTableManager\Modules\DashboardModule;
 use Nhrotm\OptionsTableManager\Modules\BrowseModule;
+use Nhrotm\OptionsTableManager\Modules\CleanupModule;
 use Nhrotm\OptionsTableManager\Modules\OptimizeModule;
 use Nhrotm\OptionsTableManager\Modules\ToolsModule;
 use Nhrotm\OptionsTableManager\Modules\IntegrationsModule;
 use Nhrotm\OptionsTableManager\Modules\SettingsModule;
 use Nhrotm\OptionsTableManager\Services\IntegrationsService;
 use Nhrotm\OptionsTableManager\Admin\AppPage;
+use Nhrotm\OptionsTableManager\Rest\NetworkController;
 
 /**
  * 2.0 architecture bootstrap.
@@ -58,10 +60,38 @@ class Bootstrap {
 	 * @return void
 	 */
 	public function init() {
-		$this->registry->boot( $this->core_modules() );
-		add_action( 'rest_api_init', [ $this->registry, 'register_routes' ] );
+		// The module list is only needed by the admin screen and the REST API,
+		// so it is built there and a front-end request pays nothing for it.
+		add_action(
+			'rest_api_init',
+			function () {
+				$this->registry->boot( $this->core_modules() );
+				$this->registry->register_routes();
+			}
+		);
+		if ( is_multisite() ) {
+			// Outside the per-site module registry: gated on manage_network_options.
+			add_action(
+				'rest_api_init',
+				function () {
+					if ( current_user_can( 'manage_network_options' ) ) {
+						( new NetworkController() )->register();
+					}
+				}
+			);
+		}
 
 		if ( is_admin() ) {
+			// Built when the menu is registered (not on admin-ajax/admin-post
+			// requests, which never show the app). Add-ons hook `nhrotm_modules`
+			// on plugins_loaded, so the filter still sees them.
+			add_action(
+				'admin_menu',
+				function () {
+					$this->registry->boot( $this->core_modules() );
+				},
+				1
+			);
 			( new AppPage( $this->registry ) )->init();
 		}
 	}
@@ -84,6 +114,7 @@ class Bootstrap {
 		$modules = [
 			new DashboardModule(),
 			new BrowseModule(),
+			new CleanupModule(),
 			new OptimizeModule(),
 			new ToolsModule(),
 		];

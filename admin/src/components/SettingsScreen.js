@@ -3,15 +3,79 @@
  * Proves the React → REST → SettingsService round-trip.
  */
 import { useEffect, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
 import Panel from './Panel';
+import formatBytes from './formatBytes';
 import ScreenHeader from './ScreenHeader';
+import { useConfirm } from './ConfirmProvider';
 import { useToast } from './ToastProvider';
 
 export default function SettingsScreen() {
 	const toast = useToast();
+	const confirm = useConfirm();
+	const [ pruning, setPruning ] = useState( false );
+	const [ historyStats, setHistoryStats ] = useState( null );
+
+	useEffect( () => {
+		apiFetch( { path: 'nhrotm/v1/settings/history-stats' } )
+			.then( ( res ) => setHistoryStats( res.data ) )
+			.catch( () => {} );
+	}, [] );
+
+	const pruneNow = async () => {
+		if (
+			! ( await confirm(
+				__(
+					'Prune the history log now?',
+					'nhrrob-options-table-manager'
+				),
+				{
+					description: __(
+						'Entries older than the saved retention period are deleted and can no longer be restored. This action cannot be undone.',
+						'nhrrob-options-table-manager'
+					),
+					confirmLabel: __(
+						'Prune now',
+						'nhrrob-options-table-manager'
+					),
+				}
+			) )
+		) {
+			return;
+		}
+		setPruning( true );
+		apiFetch( {
+			path: 'nhrotm/v1/settings/prune-history',
+			method: 'POST',
+		} )
+			.then( ( res ) => {
+				setHistoryStats( {
+					count: res.data.count,
+					bytes: res.data.bytes,
+				} );
+				toast(
+					sprintf(
+						/* translators: %s: number of history entries deleted. */
+						_n(
+							'%s history entry pruned successfully.',
+							'%s history entries pruned successfully.',
+							res.data.deleted,
+							'nhrrob-options-table-manager'
+						),
+						res.data.deleted
+					)
+				);
+			} )
+			.catch( () =>
+				toast(
+					__( 'Prune failed.', 'nhrrob-options-table-manager' ),
+					'error'
+				)
+			)
+			.finally( () => setPruning( false ) );
+	};
 	const [ settings, setSettings ] = useState( null );
 	const [ status, setStatus ] = useState( 'loading' ); // loading | ready | saving | error
 
@@ -106,7 +170,7 @@ export default function SettingsScreen() {
 					</label>
 					<p className="nhrotm-field__hint">
 						{ __(
-							'Skips sanitization on save — only enable this if you trust every user who can edit options here.',
+							'Off: HTML tags are stripped from option values when you add or edit an option. On: values are stored exactly as entered — only enable this if you trust every user who can edit options here.',
 							'nhrrob-options-table-manager'
 						) }
 					</p>
@@ -133,32 +197,6 @@ export default function SettingsScreen() {
 					<p className="nhrotm-field__hint">
 						{ __(
 							'Required for Optimize\'s autoload Usage column and its "Unused" bulk-disable filter — leave off and those stay empty.',
-							'nhrrob-options-table-manager'
-						) }
-					</p>
-				</div>
-
-				<div className="nhrotm-field">
-					<label htmlFor="nhrotm-auto-cleanup">
-						<input
-							id="nhrotm-auto-cleanup"
-							type="checkbox"
-							checked={ !! settings.auto_cleanup_enabled }
-							onChange={ ( e ) =>
-								update(
-									'auto_cleanup_enabled',
-									e.target.checked
-								)
-							}
-						/>
-						{ __(
-							'Enable automated daily cleanup',
-							'nhrrob-options-table-manager'
-						) }
-					</label>
-					<p className="nhrotm-field__hint">
-						{ __(
-							'Automatically clears expired transients every day — the automated counterpart to Optimize Cleanup\'s manual "Delete expired" button.',
 							'nhrrob-options-table-manager'
 						) }
 					</p>
@@ -221,6 +259,21 @@ export default function SettingsScreen() {
 							'nhrrob-options-table-manager'
 						) }
 					</p>
+					{ historyStats && (
+						<p className="nhrotm-field__hint">
+							{ sprintf(
+								/* translators: 1: number of history entries, 2: size, e.g. "1.2 MB". */
+								_n(
+									'History currently holds %1$s entry using %2$s. Each edit or delete made here stores the previous value.',
+									'History currently holds %1$s entries using %2$s. Each edit or delete made here stores the previous value.',
+									historyStats.count,
+									'nhrrob-options-table-manager'
+								),
+								historyStats.count.toLocaleString(),
+								formatBytes( historyStats.bytes )
+							) }
+						</p>
+					) }
 				</div>
 
 				<div className="nhrotm-actions">
@@ -236,6 +289,17 @@ export default function SettingsScreen() {
 									'Save changes',
 									'nhrrob-options-table-manager'
 							  ) }
+					</button>
+					<button
+						type="button"
+						className="nhrotm-btn"
+						disabled={ pruning }
+						onClick={ pruneNow }
+					>
+						{ __(
+							'Prune history now',
+							'nhrrob-options-table-manager'
+						) }
 					</button>
 					{ status === 'error' && (
 						<span className="nhrotm-error">

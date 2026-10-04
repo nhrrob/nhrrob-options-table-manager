@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * A module is a self-contained feature (Dashboard, Browse, Optimize, ...).
  * The ModuleRegistry collects modules through the `nhrotm_modules` filter,
- * which is the single extension point a PRO add-on hooks into — core is
+ * which is the single extension point an add-on hooks into — core is
  * never edited to add a feature.
  */
 interface ModuleInterface {

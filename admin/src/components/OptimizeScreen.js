@@ -10,8 +10,8 @@ import apiFetch from '@wordpress/api-fetch';
 import DataTable from './DataTable';
 import Icon from './Icon';
 import JumpNav from './JumpNav';
+import TablesPanel from './TablesPanel';
 import Panel from './Panel';
-import ProTag from './ProTag';
 import ScreenHeader from './ScreenHeader';
 import { useConfirm } from './ConfirmProvider';
 import { useToast } from './ToastProvider';
@@ -38,11 +38,9 @@ function ScoreGainMeta( { gain, title } ) {
 	);
 }
 
-export default function OptimizeScreen( { boot, onNavigate } ) {
+export default function OptimizeScreen( { onNavigate } ) {
 	const confirm = useConfirm();
 	const toast = useToast();
-	const hasPro = !! ( boot && boot.hasPro );
-	const proAvailable = !! ( boot && boot.proAvailable );
 	const [ data, setData ] = useState( null );
 	const [ status, setStatus ] = useState( 'loading' );
 	const [ busy, setBusy ] = useState( false );
@@ -560,7 +558,7 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 				lede={ sprintf(
 					/* translators: %s: current health score, 0-100. */
 					__(
-						'The single home for autoload, usage tracking, orphan scanning and cleanup. Current health score: %s/100 — this updates live as you clean things up below.',
+						'The single home for autoload, usage tracking, orphaned options and database tables. Current health score: %s/100 — this updates live as you clean things up below.',
 						'nhrrob-options-table-manager'
 					),
 					data.score
@@ -577,8 +575,8 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 						label: __( 'Orphans', 'nhrrob-options-table-manager' ),
 					},
 					{
-						id: 'cleanup',
-						label: __( 'Cleanup', 'nhrrob-options-table-manager' ),
+						id: 'tables',
+						label: __( 'Tables', 'nhrrob-options-table-manager' ),
 					},
 					{
 						id: 'analytics',
@@ -786,116 +784,7 @@ export default function OptimizeScreen( { boot, onNavigate } ) {
 				/>
 			</Panel>
 
-			<Panel
-				anchor="cleanup"
-				title={ __( 'Cleanup', 'nhrrob-options-table-manager' ) }
-				meta={
-					<ScoreGainMeta
-						gain={ data.cleanup_score_gain }
-						title={ __(
-							'Health-score points available if all expired transients are deleted',
-							'nhrrob-options-table-manager'
-						) }
-					/>
-				}
-			>
-				<div className="nhrotm-cleanup">
-					<div className="nhrotm-cleanup__copy">
-						<p className="nhrotm-muted">
-							{ __(
-								'Transients are a temporary cache. WordPress does not delete expired ones on its own — this does.',
-								'nhrrob-options-table-manager'
-							) }
-						</p>
-						<div className="nhrotm-actions">
-							<button
-								type="button"
-								className="nhrotm-btn nhrotm-btn--primary"
-								disabled={
-									busy || data.expired_transients === 0
-								}
-								onClick={ () =>
-									action(
-										'clean-transients',
-										{ scope: 'expired' },
-										__(
-											'Expired transients deleted successfully.',
-											'nhrrob-options-table-manager'
-										)
-									)
-								}
-							>
-								{ __(
-									'Delete expired',
-									'nhrrob-options-table-manager'
-								) }
-							</button>
-						</div>
-						{ proAvailable && ! hasPro && (
-							<div className="nhrotm-actions">
-								<span className="nhrotm-hint">
-									{ __(
-										'Custom hourly→monthly scheduling',
-										'nhrrob-options-table-manager'
-									) }
-								</span>
-								<ProTag
-									hasPro={ hasPro }
-									proAvailable={ proAvailable }
-									onNavigate={ onNavigate }
-								/>
-							</div>
-						) }
-					</div>
-					<div className="nhrotm-card nhrotm-card--transients nhrotm-cleanup__stat">
-						<div className="nhrotm-card__top">
-							<span className="nhrotm-card__ico">
-								<Icon name="clock" size={ 16 } />
-							</span>
-							<span className="nhrotm-card__label">
-								{ __(
-									'Expired transients',
-									'nhrrob-options-table-manager'
-								) }
-							</span>
-						</div>
-						<span className="nhrotm-card__metric">
-							{ data.expired_transients }
-						</span>
-						<span className="nhrotm-card__sub">
-							{ data.expired_transients > 0
-								? __(
-										'Ready to delete.',
-										'nhrrob-options-table-manager'
-								  )
-								: __(
-										'Nothing to clean up right now.',
-										'nhrrob-options-table-manager'
-								  ) }
-						</span>
-						{ data.expired_transients > 0 && (
-							<div className="nhrotm-card__action">
-								<button
-									type="button"
-									className="nhrotm-btn nhrotm-btn--soft nhrotm-btn--sm"
-									onClick={ () =>
-										onNavigate( 'browse', undefined, {
-											type: 'transients',
-											status: 'expired',
-										} )
-									}
-								>
-									{ __(
-										'View in Browse',
-										'nhrrob-options-table-manager'
-									) }
-									<Icon name="arrowRight" size={ 13 } />
-								</button>
-							</div>
-						) }
-					</div>
-				</div>
-			</Panel>
+			<TablesPanel />
 
 			<Panel
 				anchor="analytics"

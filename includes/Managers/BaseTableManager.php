@@ -11,17 +11,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Nhrotm\OptionsTableManager\Interfaces\TableManagerInterface;
-use Nhrotm\OptionsTableManager\Services\ValidationService;
 use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 
 /**
  * Class BaseTableManager
  *
- * Common permission/nonce validation and protected-item checks shared by
- * every concrete table manager (options, usermeta, transients, etc).
+ * Permission and protected-option checks shared by the wp_options managers
+ * (autoload analysis, orphan scanning, search & replace).
  */
-abstract class BaseTableManager implements TableManagerInterface {
+abstract class BaseTableManager {
 
 	use GlobalTrait;
 
@@ -47,28 +45,12 @@ abstract class BaseTableManager implements TableManagerInterface {
 	protected $protected_items = [];
 
 	/**
-	 * Protected usermeta keys that cannot be edited/deleted.
-	 *
-	 * @var array
-	 */
-	protected $protected_items_usermetas = [];
-
-	/**
-	 * Shared value sanitization/validation service.
-	 *
-	 * @var ValidationService
-	 */
-	protected $validation_service;
-
-	/**
-	 * Load the protected-item lists and shared services.
+	 * Load the protected-option list.
 	 */
 	public function __construct() {
 		global $wpdb;
-		$this->wpdb                      = $wpdb;
-		$this->protected_items           = $this->get_protected_options();
-		$this->protected_items_usermetas = $this->get_protected_usermetas();
-		$this->validation_service        = new ValidationService();
+		$this->wpdb            = $wpdb;
+		$this->protected_items = $this->get_protected_options();
 	}
 
 	/**
@@ -83,34 +65,12 @@ abstract class BaseTableManager implements TableManagerInterface {
 	}
 
 	/**
-	 * Validate nonce
+	 * Check if an option is protected
 	 *
-	 * @param string $nonce Nonce to verify.
-	 * @param string $action Nonce action.
-	 * @throws \Exception If nonce is invalid.
-	 */
-	protected function validate_nonce( $nonce, $action = 'nhrotm-admin-nonce' ) {
-		if ( ! isset( $nonce ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $nonce ) ), $action ) ) {
-			throw new \Exception( 'Invalid nonce' );
-		}
-	}
-
-	/**
-	 * Check if an item is protected
-	 *
-	 * @param string $key Item key to check.
-	 * @param string $table_name Table to check against; usermeta uses a separate protected list.
+	 * @param string $key Option name.
 	 * @return bool
 	 */
-	protected function is_protected_item( $key, $table_name = '' ) {
-		$protected_items_array = $this->wpdb->prefix . 'usermeta' === $table_name ? $this->protected_items_usermetas : $this->protected_items;
-		return in_array( $key, $protected_items_array, true );
+	protected function is_protected_item( $key ) {
+		return in_array( $key, $this->protected_items, true );
 	}
-
-	/**
-	 * Get columns that can be searched
-	 *
-	 * @return array
-	 */
-	abstract protected function get_searchable_columns();
 }

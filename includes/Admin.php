@@ -24,7 +24,6 @@ class Admin extends App {
 		parent::__construct();
 
 		$this->dispatch_actions();
-		new Admin\Menu();
 	}
 
 	/**
@@ -49,7 +48,7 @@ class Admin extends App {
 		$nhrotm_plugin = plugin_basename( NHROTM_FILE );
 
 		if ( $nhrotm_plugin === $file && current_user_can( 'manage_options' ) ) {
-			$links[] = sprintf( '<a href="%s">%s</a>', admin_url( "tools.php?page={$this->page_slug}" ), __( 'Options Table', 'nhrrob-options-table-manager' ) );
+			$links[] = sprintf( '<a href="%s">%s</a>', admin_url( "tools.php?page={$this->page_slug}" ), __( 'Database Cleaner', 'nhrrob-options-table-manager' ) );
 		}
 
 		return $links;

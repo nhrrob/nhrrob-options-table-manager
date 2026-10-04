@@ -32,6 +32,20 @@ class AppPage {
 	private $registry;
 
 	/**
+	 * Hook suffix of the per-site page (Tools → Database Cleaner).
+	 *
+	 * @var string|false
+	 */
+	private $hook = false;
+
+	/**
+	 * Hook suffix of the Network Admin page (multisite only).
+	 *
+	 * @var string|false
+	 */
+	private $network_hook = false;
+
+	/**
 	 * Store the module registry backing the app.
 	 *
 	 * @param ModuleRegistry $registry Booted module registry.
@@ -47,19 +61,38 @@ class AppPage {
 	 */
 	public function init() {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
+		if ( is_multisite() ) {
+			add_action( 'network_admin_menu', [ $this, 'register_network_menu' ] );
+		}
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 	}
 
 	/**
-	 * Register the "Options Table" screen under Tools.
+	 * Register the app screen under Tools (Tools → Database Cleaner).
 	 *
 	 * @return void
 	 */
 	public function register_menu() {
-		add_management_page(
-			__( 'Options Table', 'nhrrob-options-table-manager' ),
-			__( 'Options Table', 'nhrrob-options-table-manager' ),
+		$this->hook = add_management_page(
+			__( 'Database Cleaner', 'nhrrob-options-table-manager' ),
+			__( 'Database Cleaner', 'nhrrob-options-table-manager' ),
 			'manage_options',
+			self::SLUG,
+			[ $this, 'render' ]
+		);
+	}
+
+	/**
+	 * Register the Network Admin page (multisite): Settings → Database Cleaner.
+	 *
+	 * @return void
+	 */
+	public function register_network_menu() {
+		$this->network_hook = add_submenu_page(
+			'settings.php',
+			__( 'Database Cleaner', 'nhrrob-options-table-manager' ),
+			__( 'Database Cleaner', 'nhrrob-options-table-manager' ),
+			'manage_network_options',
 			self::SLUG,
 			[ $this, 'render' ]
 		);
@@ -77,7 +110,7 @@ class AppPage {
 		// bar, so the h1 is for screen readers and notice placement only.
 		?>
 		<div class="wrap nhrotm-wrap">
-			<h1 class="screen-reader-text"><?php esc_html_e( 'Options Table Manager', 'nhrrob-options-table-manager' ); ?></h1>
+			<h1 class="screen-reader-text"><?php esc_html_e( 'Database Cleaner', 'nhrrob-options-table-manager' ); ?></h1>
 			<hr class="wp-header-end">
 			<div id="nhrotm-app"></div>
 		</div>
@@ -91,7 +124,8 @@ class AppPage {
 	 * @return void
 	 */
 	public function enqueue( $hook ) {
-		if ( 'tools_page_' . self::SLUG !== $hook ) {
+		$is_network = $this->network_hook && $hook === $this->network_hook;
+		if ( ! $is_network && ( ! $this->hook || $hook !== $this->hook ) ) {
 			return;
 		}
 
@@ -125,26 +159,45 @@ class AppPage {
 			);
 		}
 
-		wp_localize_script(
-			'nhrotm-app',
-			'nhrotmApp',
-			[
-				'restRoot'     => esc_url_raw( rest_url() ),
-				'nonce'        => wp_create_nonce( 'wp_rest' ),
-				'pluginName'   => __( 'Options Table Manager', 'nhrrob-options-table-manager' ),
-				'modules'      => $this->modules_payload(),
-				// Legacy DataTables UI — hidden from the menu, reached via this in-app link.
-				'classicUrl'   => esc_url_raw( admin_url( 'tools.php?page=nhrotm-classic' ) ),
-				// PRO-awareness handoff: an active PRO add-on flips this true to hide
-				// the free build's Upgrade item + feature tags. See PRD §0.2.
-				'hasPro'       => (bool) apply_filters( 'nhrotm_has_pro', false ),
-				'upgradeUrl'   => apply_filters( 'nhrotm_upgrade_url', 'https://wordpress.org/plugins/nhrrob-options-table-manager/' ),
-				// Single switch for the whole PRO-awareness UI (Pro tags + Upgrade nav item).
-				// PRO doesn't exist yet, so this stays false — flip to true (one word) the
-				// day PRO ships. Independent of hasPro (which only matters once PRO exists).
-				'proAvailable' => (bool) apply_filters( 'nhrotm_pro_available', false ),
-			]
-		);
+		$boot = [
+			'restRoot'     => esc_url_raw( rest_url() ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+			'pluginName'   => __( 'Database Cleaner', 'nhrrob-options-table-manager' ),
+			// The Network Admin page shows one screen: the network view.
+			'modules'      => $is_network
+				? [
+					[
+						'id'    => 'network',
+						'label' => __( 'Network', 'nhrrob-options-table-manager' ),
+					],
+				]
+				: $this->modules_payload(),
+			'network'      => $is_network,
+			// Multisite: user meta is network-wide, so only network user managers see it.
+			'canUsermeta'  => \Nhrotm\OptionsTableManager\Services\BrowseService::can_manage_usermeta(),
+			'maxSnapshots' => \Nhrotm\OptionsTableManager\Managers\BackupManager::MAX_SNAPSHOTS,
+		];
+
+		/**
+		 * Filter the data the React app boots with (window.nhrotmApp).
+		 *
+		 * Lets an add-on attach its own boot data or reshape the nav modules
+		 * (e.g. hide sections for a restricted user) without core edits.
+		 *
+		 * @param array $boot Localized boot payload.
+		 */
+		$boot = apply_filters( 'nhrotm_app_boot', $boot );
+
+		wp_localize_script( 'nhrotm-app', 'nhrotmApp', $boot );
+
+		/**
+		 * Fires after the app bundle is enqueued on its screen.
+		 *
+		 * Add-ons enqueue their own bundle here with 'nhrotm-app' as a
+		 * dependency, so window.nhrotm (screens/icons/components API) exists
+		 * before they register, and they run before the app mounts.
+		 */
+		do_action( 'nhrotm_app_enqueued' );
 	}
 
 	/**

@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Nhrotm\OptionsTableManager\Traits\GlobalTrait;
 use Nhrotm\OptionsTableManager\Managers\ScannerManager;
+use Nhrotm\OptionsTableManager\Managers\HistoryManager;
 
 /**
  * Read/delete service for the unified Browse data grid.
@@ -356,8 +357,6 @@ class BrowseService {
 	 */
 	private function query_usermeta( $search, $offset, $limit, $order_sql = 'ORDER BY umeta_id DESC', $user_id = 0 ) {
 		global $wpdb;
-		$protected = $this->get_protected_usermetas();
-
 		$conditions = [];
 		$params     = [];
 		if ( '' !== $search ) {
@@ -382,7 +381,7 @@ class BrowseService {
         // phpcs:enable
 
 		$items = array_map(
-			function ( $row ) use ( $protected ) {
+			function ( $row ) {
 				$user_id = (int) $row['user_id'];
 				return [
 					'id'          => (int) $row['umeta_id'],
@@ -392,7 +391,7 @@ class BrowseService {
 					'user_id'     => $user_id,
 					'owner_label' => $row['user_login'] ? $row['user_login'] : ( '#' . $user_id ),
 					'owner_url'   => $row['user_login'] ? get_edit_user_link( $user_id ) : '',
-					'protected'   => in_array( $row['meta_key'], $protected, true ),
+					'protected'   => $this->is_protected_usermeta( $row['meta_key'] ),
 				];
 			},
 			$rows ? $rows : []
@@ -727,7 +726,7 @@ class BrowseService {
 		if ( 'usermeta' === $type ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$row = $wpdb->get_row( $wpdb->prepare( "SELECT user_id, meta_key, meta_value FROM {$wpdb->usermeta} WHERE umeta_id = %d", (int) $id ), ARRAY_A );
-			if ( ! $row || in_array( $row['meta_key'], $this->get_protected_usermetas(), true ) ) {
+			if ( ! $row || $this->is_protected_usermeta( $row['meta_key'] ) ) {
 				return false;
 			}
 			if ( ! delete_metadata_by_mid( 'user', (int) $id ) ) {
@@ -825,7 +824,7 @@ class BrowseService {
 				'value'     => $analysis['value'],
 				'format'    => $analysis['format'],
 				'user_id'   => (int) $row['user_id'],
-				'protected' => in_array( $row['meta_key'], $this->get_protected_usermetas(), true ),
+				'protected' => $this->is_protected_usermeta( $row['meta_key'] ),
 			];
 		}
 
@@ -967,6 +966,73 @@ class BrowseService {
 	}
 
 	/**
+	 * Whether the current user may browse/edit user meta.
+	 *
+	 * User meta is one table shared by every site in a network, so on
+	 * multisite only users who can manage network users see it; a site
+	 * admin would otherwise read and edit other sites' users.
+	 *
+	 * @return bool
+	 */
+	public static function can_manage_usermeta() {
+		return ! is_multisite() || current_user_can( 'manage_network_users' );
+	}
+
+	/**
+	 * Whether the current user may store raw HTML: WordPress's own
+	 * `unfiltered_html` rule. WP-CLI runs as the server's operator.
+	 *
+	 * @return bool
+	 */
+	public static function can_store_html() {
+		return ( defined( 'WP_CLI' ) && WP_CLI ) || current_user_can( 'unfiltered_html' );
+	}
+
+	/**
+	 * Apply the "Allow HTML in option values" setting to an incoming value.
+	 *
+	 * Off (default): HTML is stripped from every string (plain values, and each
+	 * string leaf of a structured JSON/serialized value). On: stored exactly
+	 * as entered. Keys, numbers and booleans are never touched, so a
+	 * structured value keeps its shape.
+	 *
+	 * A user WordPress does not trust with raw HTML (no `unfiltered_html`: a
+	 * site admin on multisite, or any site with DISALLOW_UNFILTERED_HTML) gets
+	 * HTML stripped whatever the setting says, and for meta values too.
+	 *
+	 * @param string $raw_value Value as sent by the editor.
+	 * @param string $format    plain | json | serialized.
+	 * @param string $type      Record type being saved.
+	 * @return string
+	 */
+	private function apply_html_setting( $raw_value, $format, $type = 'options' ) {
+		if ( self::can_store_html() && ( 'options' !== $type || ( new SettingsService() )->get( 'allow_html_in_values' ) ) ) {
+			return $raw_value;
+		}
+		if ( ! in_array( $format, [ 'json', 'serialized' ], true ) ) {
+			return sanitize_text_field( $raw_value );
+		}
+		$data = json_decode( $raw_value, true );
+		if ( null === $data ) {
+			return $raw_value; // encode_for_storage() rejects invalid JSON.
+		}
+		return (string) wp_json_encode( $this->strip_html_deep( $data ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+	}
+
+	/**
+	 * Strip HTML from every string leaf, keeping keys and non-string types.
+	 *
+	 * @param mixed $data Decoded value.
+	 * @return mixed
+	 */
+	private function strip_html_deep( $data ) {
+		if ( is_array( $data ) ) {
+			return array_map( [ $this, 'strip_html_deep' ], $data );
+		}
+		return is_string( $data ) ? sanitize_text_field( $data ) : $data;
+	}
+
+	/**
 	 * Convert an edited value back into its storage form.
 	 *
 	 * @param string $value  Edited value (JSON for serialized/json formats).
@@ -1008,6 +1074,8 @@ class BrowseService {
 		$format    = isset( $args['format'] ) ? $args['format'] : 'plain';
 		$id        = isset( $args['id'] ) ? (int) $args['id'] : 0;
 
+		$raw_value = $this->apply_html_setting( $raw_value, $format, $type );
+
 		$value = $this->encode_for_storage( $raw_value, $format );
 		if ( null === $value ) {
 			return false; // Invalid JSON for a structured value.
@@ -1017,12 +1085,12 @@ class BrowseService {
 			if ( $id ) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$existing = $wpdb->get_row( $wpdb->prepare( "SELECT meta_key, meta_value FROM {$wpdb->usermeta} WHERE umeta_id = %d", $id ), ARRAY_A );
-				if ( ! $existing || in_array( $existing['meta_key'], $this->get_protected_usermetas(), true ) ) {
+				if ( ! $existing || $this->is_protected_usermeta( $existing['meta_key'] ) ) {
 					return false;
 				}
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value is a SET target here, not filtered/sorted on
 				$wpdb->update( $wpdb->usermeta, [ 'meta_value' => $value ], [ 'umeta_id' => $id ], [ '%s' ], [ '%d' ] );
-				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'] );
+				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'], 'usermeta' );
 				return $this->get( 'usermeta', $id );
 			}
 
@@ -1031,14 +1099,14 @@ class BrowseService {
 			if ( '' === $name || ! $user_id || ! get_userdata( $user_id ) ) {
 				return false;
 			}
-			if ( in_array( $name, $this->get_protected_usermetas(), true ) ) {
+			if ( $this->is_protected_usermeta( $name ) ) {
 				return false;
 			}
 			$mid = add_metadata( 'user', $user_id, $name, $value, false );
 			if ( ! $mid ) {
 				return false;
 			}
-			$this->activity->record( 'create', $name );
+			$this->activity->record( 'create', $name, '', 'usermeta' );
 			return $this->get( 'usermeta', $mid );
 		}
 
@@ -1051,7 +1119,7 @@ class BrowseService {
 				}
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value is a SET target here, not filtered/sorted on
 				$wpdb->update( $wpdb->postmeta, [ 'meta_value' => $value ], [ 'meta_id' => $id ], [ '%s' ], [ '%d' ] );
-				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'] );
+				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'], 'postmeta' );
 				return $this->get( 'postmeta', $id );
 			}
 
@@ -1067,7 +1135,7 @@ class BrowseService {
 			if ( ! $mid ) {
 				return false;
 			}
-			$this->activity->record( 'create', $name );
+			$this->activity->record( 'create', $name, '', 'postmeta' );
 			return $this->get( 'postmeta', $mid );
 		}
 
@@ -1080,7 +1148,7 @@ class BrowseService {
 				}
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value is a SET target here, not filtered/sorted on
 				$wpdb->update( $wpdb->commentmeta, [ 'meta_value' => $value ], [ 'meta_id' => $id ], [ '%s' ], [ '%d' ] );
-				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'] );
+				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'], 'commentmeta' );
 				return $this->get( 'commentmeta', $id );
 			}
 
@@ -1096,7 +1164,7 @@ class BrowseService {
 			if ( ! $mid ) {
 				return false;
 			}
-			$this->activity->record( 'create', $name );
+			$this->activity->record( 'create', $name, '', 'commentmeta' );
 			return $this->get( 'commentmeta', $mid );
 		}
 
@@ -1109,7 +1177,7 @@ class BrowseService {
 				}
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value is a SET target here, not filtered/sorted on
 				$wpdb->update( $wpdb->termmeta, [ 'meta_value' => $value ], [ 'meta_id' => $id ], [ '%s' ], [ '%d' ] );
-				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'] );
+				$this->activity->record( 'update', $existing['meta_key'], $existing['meta_value'], 'termmeta' );
 				return $this->get( 'termmeta', $id );
 			}
 
@@ -1126,7 +1194,7 @@ class BrowseService {
 			if ( ! $mid ) {
 				return false;
 			}
-			$this->activity->record( 'create', $name );
+			$this->activity->record( 'create', $name, '', 'termmeta' );
 			return $this->get( 'termmeta', $mid );
 		}
 
@@ -1210,6 +1278,14 @@ class BrowseService {
 				[ '%s', '%s', '%s' ]
 			);
 			$id = (int) $wpdb->insert_id;
+
+			// A name looked up before it existed is remembered as missing;
+			// forget that, or get_option() keeps returning the default.
+			$notoptions = wp_cache_get( 'notoptions', 'options' );
+			if ( is_array( $notoptions ) && isset( $notoptions[ $name ] ) ) {
+				unset( $notoptions[ $name ] );
+				wp_cache_set( 'notoptions', $notoptions, 'options' );
+			}
 		}
 
 		wp_cache_delete( 'alloptions', 'options' );
@@ -1248,10 +1324,16 @@ class BrowseService {
 	 */
 	public function bulk_delete( $type, array $ids ) {
 		$deleted = 0;
-		foreach ( $ids as $id ) {
-			if ( $this->delete( $type, $id ) ) {
-				++$deleted;
+		// One history write for the whole batch instead of one per row.
+		HistoryManager::defer();
+		try {
+			foreach ( $ids as $id ) {
+				if ( $this->delete( $type, $id ) ) {
+					++$deleted;
+				}
 			}
+		} finally {
+			HistoryManager::flush();
 		}
 		return $deleted;
 	}

@@ -71,6 +71,21 @@ class IntegrationsController extends RestController {
 						'default'           => 20,
 						'sanitize_callback' => 'absint',
 					],
+					'search'   => [
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'orderby'  => [
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'order'    => [
+						'type'    => 'string',
+						'enum'    => [ 'asc', 'desc' ],
+						'default' => 'desc',
+					],
 				],
 			]
 		);
@@ -96,7 +111,10 @@ class IntegrationsController extends RestController {
 			$this->integrations->rows(
 				$request->get_param( 'slug' ),
 				$request->get_param( 'page' ),
-				$request->get_param( 'per_page' )
+				$request->get_param( 'per_page' ),
+				$request->get_param( 'search' ),
+				$request->get_param( 'orderby' ),
+				$request->get_param( 'order' )
 			)
 		);
 	}
