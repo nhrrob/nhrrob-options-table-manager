@@ -1634,28 +1634,6 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 		gap: 8px;
 		font-size: 12.5px;
 		color: var(--nhrotm-text-muted);
-
-		select {
-			padding: 5px 8px;
-			border: 1px solid var(--nhrotm-border-strong);
-			border-radius: 8px;
-			background: var(--nhrotm-surface);
-			color: var(--nhrotm-text);
-			font: inherit;
-			font-size: 12.5px;
-
-			&:hover {
-				border-color: var(--nhrotm-text-muted);
-			}
-
-			// Focus gets the same darkened border as hover, beyond resetting
-			// WP core's own themed ring/outline.
-			&:focus {
-				outline: none;
-				border-color: var(--nhrotm-text-muted);
-				box-shadow: none;
-			}
-		}
 	}
 
 	.nhrotm-btn:disabled {
@@ -2197,6 +2175,47 @@ html:has(.nhrotm-app[data-theme='dark']) #wpfooter {
 		transition: none !important;
 		animation: none !important;
 	}
+}
+
+// Compact field: the pager's per-page select and, standalone, Cleanup's
+// days/schedule fields and Network's filter. `.nhrotm-app` in the selector
+// outranks wp-admin's own input/select rules, which otherwise paint these
+// white in dark mode.
+.nhrotm-app .nhrotm-pager__perpage select,
+.nhrotm-app .nhrotm-pager__select {
+	padding: 5px 8px;
+	border: 1px solid var(--nhrotm-border-strong);
+	border-radius: 8px;
+	background-color: var(--nhrotm-surface);
+	color: var(--nhrotm-text);
+	font: inherit;
+	font-size: 12.5px;
+
+	&:hover {
+		border-color: var(--nhrotm-text-muted);
+	}
+
+	// Focus gets the same darkened border as hover, beyond resetting
+	// WP core's own themed ring/outline.
+	&:focus {
+		outline: none;
+		border-color: var(--nhrotm-text-muted);
+		box-shadow: none;
+		color: var(--nhrotm-text);
+	}
+}
+
+// The arrow is drawn in the text colour, so it shows on either theme
+// (wp-admin's own arrow is a dark image).
+.nhrotm-app .nhrotm-pager__perpage select,
+.nhrotm-app select.nhrotm-pager__select {
+	padding-right: 26px;
+	background-image:
+		linear-gradient(45deg, transparent 50%, currentColor 50%),
+		linear-gradient(135deg, currentColor 50%, transparent 50%);
+	background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+	background-size: 5px 5px;
+	background-repeat: no-repeat;
 }
 
 // Cleanup: the "keep the last N days" input + its unit, kept on one line.
