@@ -5,7 +5,7 @@
  * Description: Clean, optimize and manage your database: revisions, spam, transients and leftovers. Edit options and meta, tune autoload, optimize tables.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 2.1.0
+ * Version: 2.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-options-table-manager
@@ -32,7 +32,7 @@ final class Nhrotm_Options_Table_Manager {
 	 *
 	 * @var string
 	 */
-	const VERSION = '2.1.0';
+	const VERSION = '2.2.0';
 
 	/**
 	 * Version of the plugin's stored data (options; it has no tables). Bump

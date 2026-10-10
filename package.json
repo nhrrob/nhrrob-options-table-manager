@@ -1,6 +1,6 @@
 {
   "name": "nhrrob-options-table-manager",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "React admin app for NHR Database Cleaner & Optimizer.",
   "author": "Nazmul Hasan Robin",
   "license": "GPL-2.0-or-later",
@@ -13,6 +13,7 @@
     "prepare": "git config core.hooksPath .husky || true"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^30.0.0"
+    "@wordpress/scripts": "^30.0.0",
+    "typescript": "~6.0.3"
   }
 }
