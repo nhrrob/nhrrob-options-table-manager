@@ -4,7 +4,7 @@ Tags: database, cleanup, optimize, autoload, revisions
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -152,7 +152,7 @@ Deleting the plugin removes its own settings, schedules, history and snapshots (
 
 == Changelog ==
 
-= 2.2.0 =
+= 2.2.0 - 10/10/2026 =
 - New: AI agent and MCP support. On WordPress 6.9+ the plugin registers twelve abilities with the WordPress Abilities API: eight read-only (health, cleanup counts and preview, autoload report, tables, cron events, option search, activity) and four safe actions (run a cleanup with dry run by default, disable autoload, optimize a table, create a snapshot). Administrators only; option values are never returned.
 - New: `--format=json` (also csv and yaml) for `wp nhrotm cleanup list` and `wp nhrotm tables list`.
 - Compatibility: verified on PHP 7.4 through 8.5 and on PHP 8.6 release candidates.
@@ -354,6 +354,9 @@ Deleting the plugin removes its own settings, schedules, history and snapshots (
 
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+AI agents and MCP clients can now use the plugin through the WordPress Abilities API (WordPress 6.9+, administrators only). Tested on PHP 7.4 through 8.5.
 
 = 2.1.0 =
 Security fix for multisite networks. New name and menu: Tools → Database Cleaner, now with cleanup of revisions, spam, transients and orphaned data. History and snapshots move from the plugin's two tables into options automatically. The Classic view has been removed.
