@@ -172,9 +172,13 @@ class CliCommands extends \WP_CLI_Command {
 	 * [--dry-run]
 	 * : Report what would be deleted without deleting.
 	 *
+	 * [--format=<format>]
+	 * : With list: output format (table, json, csv, yaml). Default is table.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp nhrotm cleanup list
+	 *     wp nhrotm cleanup list --format=json
 	 *     wp nhrotm cleanup run revisions --older-than=30
 	 *     wp nhrotm cleanup run spam_comments --dry-run
 	 *
@@ -187,6 +191,7 @@ class CliCommands extends \WP_CLI_Command {
 		$types   = $cleanup->types();
 		$action  = isset( $args[0] ) ? $args[0] : 'list';
 		$days    = isset( $assoc_args['older-than'] ) ? max( 0, (int) $assoc_args['older-than'] ) : 0;
+		$format  = isset( $assoc_args['format'] ) ? sanitize_text_field( $assoc_args['format'] ) : 'table';
 
 		if ( 'list' === $action ) {
 			$rows = [];
@@ -197,7 +202,7 @@ class CliCommands extends \WP_CLI_Command {
 					'rows'  => $cleanup->count( $id, $days ),
 				];
 			}
-			\WP_CLI\Utils\format_items( 'table', $rows, [ 'type', 'label', 'rows' ] );
+			\WP_CLI\Utils\format_items( $format, $rows, [ 'type', 'label', 'rows' ] );
 			return;
 		}
 
@@ -230,9 +235,13 @@ class CliCommands extends \WP_CLI_Command {
 	 * [--all]
 	 * : With optimize: every table, not only those with overhead.
 	 *
+	 * [--format=<format>]
+	 * : With list: output format (table, json, csv, yaml). Default is table.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp nhrotm tables list
+	 *     wp nhrotm tables list --format=json
 	 *     wp nhrotm tables optimize
 	 *
 	 * @param array $args       Positional arguments.
@@ -256,7 +265,7 @@ class CliCommands extends \WP_CLI_Command {
 		}
 
 		\WP_CLI\Utils\format_items(
-			'table',
+			isset( $assoc_args['format'] ) ? sanitize_text_field( $assoc_args['format'] ) : 'table',
 			array_map(
 				function ( $row ) {
 					return [

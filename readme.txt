@@ -52,7 +52,8 @@ Cleanup, table optimization, a scheduled-events (cron) manager, and the deepest 
 - **Allow HTML in Option Values** – Off by default: HTML is stripped from option values you add or edit. Turn it on to store values exactly as entered. Follows WordPress's own rule: only users allowed to save unfiltered HTML can store it.
 - **Core Option Protection** – WordPress core options can't be deleted by accident.
 - **Multisite Ready** – Network-activate it and every site gets its own Database Cleaner for its own data, history, snapshots and schedules. A Network Admin screen lists every site with its database and autoload size, and lets network administrators browse and clean network-wide options and site transients. User meta, which is shared across the network, is limited to network administrators, and uninstalling cleans up every site.
-- **WP-CLI Support** – `wp nhrotm list` and `delete` for options, `wp nhrotm cleanup list` and `cleanup run <type> [--older-than=<days>] [--dry-run]` for cleanups, and `wp nhrotm tables list` and `tables optimize`. The earlier `wp nhr-options` command name still works.
+- **WP-CLI Support** – `wp nhrotm list` and `delete` for options, `wp nhrotm cleanup list` and `cleanup run <type> [--older-than=<days>] [--dry-run]` for cleanups, and `wp nhrotm tables list` and `tables optimize`. Every list takes `--format=json`. The earlier `wp nhr-options` command name still works.
+- **AI Agent & MCP Ready** – On WordPress 6.9 and later the plugin registers its features with the WordPress Abilities API, so AI agents and MCP clients (through the WordPress MCP Adapter) can read the health score, cleanup counts, autoload report, tables and cron events, preview a cleanup, and run the safe actions: a cleanup (dry run by default), disabling autoload for an option, optimizing a table and taking a snapshot. Administrators only. Option values are never returned, and nothing irreversible beyond a cleanup is offered.
 
 ### ⚡ Easy Installation & Instant Setup
 No complex configurations needed! Just install, activate, and head to **Tools → Database Cleaner** for the dashboard-first interface.
@@ -119,7 +120,16 @@ Let it collect data across normal traffic for a few days, so rarely visited page
 Yes. You can create manual snapshots or schedule daily/weekly backups, and the plugin automatically snapshots before Search & Replace and Import operations.
 
 = Is there a command-line interface? =
-Yes. `wp nhrotm list` and `delete` manage options, `wp nhrotm cleanup list` and `cleanup run <type>` run cleanups (with `--older-than=<days>` and `--dry-run`), and `wp nhrotm tables list` and `tables optimize` cover tables. The earlier `wp nhr-options` command name still works as an alias.
+Yes. `wp nhrotm list` and `delete` manage options, `wp nhrotm cleanup list` and `cleanup run <type>` run cleanups (with `--older-than=<days>` and `--dry-run`), and `wp nhrotm tables list` and `tables optimize` cover tables. Add `--format=json` to any list for machine-readable output. The earlier `wp nhr-options` command name still works as an alias.
+
+= Can an AI agent or MCP client use this plugin? =
+Yes, on WordPress 6.9 or later. The plugin registers twelve abilities with the WordPress Abilities API (they all start with `nhrotm/`). Eight only read: health score, cleanup types and counts, cleanup preview, autoload report, tables, cron events, option search and the activity log. Four make changes: run a cleanup (it only counts rows unless the agent passes `dry_run: false`), disable autoload for an option, optimize a table, and create a snapshot. To use them over MCP, install the WordPress MCP Adapter plugin; this plugin does not bundle it and contains no AI model of its own.
+
+= What can an AI agent not do? =
+It can't read option or meta values (they often hold API keys), edit or delete individual options, empty or drop tables, run Search & Replace, import, delete cron events or change settings. Every ability requires an administrator (`manage_options`), the same as the admin screen.
+
+= Which PHP versions are supported? =
+PHP 7.4 and every later version. Each change is tested on PHP 7.4 through 8.5, and on the upcoming 8.6.
 
 = I used the menu capability filter in 1.x. Do I need to change anything? =
 Yes. In 2.0.0 the filter was renamed from `nhrotm-options-table-manager/menu/capability` to `nhrotm_menu_capability`. Update your callback to use the new name.
@@ -141,6 +151,12 @@ Deleting the plugin removes its own settings, schedules, history and snapshots (
 10. Activity — searchable log of every change and who made it, with one-click restore
 
 == Changelog ==
+
+= 2.2.0 =
+- New: AI agent and MCP support. On WordPress 6.9+ the plugin registers twelve abilities with the WordPress Abilities API: eight read-only (health, cleanup counts and preview, autoload report, tables, cron events, option search, activity) and four safe actions (run a cleanup with dry run by default, disable autoload, optimize a table, create a snapshot). Administrators only; option values are never returned.
+- New: `--format=json` (also csv and yaml) for `wp nhrotm cleanup list` and `wp nhrotm tables list`.
+- Compatibility: verified on PHP 7.4 through 8.5 and on PHP 8.6 release candidates.
+- Developer: every pull request now runs the PHPCompatibilityWP ruleset plus a syntax check, the unit tests and a runtime smoke test on each supported PHP version. The security probe also covers abilities.
 
 = 2.1.0 - 04/10/2026 =
 - New name: NHR Database Cleaner & Optimizer. The menu item is now Tools → Database Cleaner. Nothing else changes: same plugin and same settings.

@@ -19,10 +19,13 @@ git checkout dev
 - Ensure you are on the `dev` branch.
 - Ensure all tests pass.
 
+## Step 0.4: PHP Compatibility Gate
+The **PHP Compatibility** workflow (`.github/workflows/php.yml`) must be green on the release PR: PHPCS with PHPCompatibilityWP, and on every PHP version from 7.4 up a syntax check, the unit tests and the runtime smoke test. The newest, not yet released PHP version is allowed to fail, but read its log. To run the smoke test locally on one PHP version: `wp eval-file .github/ci/smoke.php` from the site root (read-only).
+
 ## Step 0.5: Security Gate (WP.org automated release review)
 WordPress.org scans every release after the SVN commit and **blocks high-risk releases** (make.wordpress.org/plugins/2026/09/09/automated-security-review-for-plugin-releases/). Do not tag until:
-1. The **Security Review** workflow (`.github/workflows/security.yml`) is green on the release PR: Semgrep PHP security rules, PHPStan, and the endpoint authorization probe.
-2. Run the probe locally against a throwaway site if any AJAX/REST endpoint changed:
+1. The **Security Review** workflow (`.github/workflows/security.yml`) is green on the release PR: Semgrep PHP security rules, PHPStan, and the endpoint authorization probe (AJAX, REST and abilities).
+2. Run the probe locally against a throwaway site if any AJAX/REST endpoint or ability changed:
    ```bash
    python3 .github/security/probe.py --wp "wp --path=/path/to/throwaway-site" \
      --script /path/to/throwaway-site/wp-content/plugins/nhrrob-options-table-manager/.github/security/endpoint-probe.php
