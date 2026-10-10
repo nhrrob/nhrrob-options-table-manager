@@ -60,6 +60,9 @@ class Bootstrap {
 	 * @return void
 	 */
 	public function init() {
+		// Abilities for AI agents and MCP clients (WordPress 6.9+; inert before).
+		( new Abilities() )->init();
+
 		// The module list is only needed by the admin screen and the REST API,
 		// so it is built there and a front-end request pays nothing for it.
 		add_action(

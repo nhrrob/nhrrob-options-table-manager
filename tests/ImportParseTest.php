@@ -28,7 +28,10 @@ class ImportParseTest extends TestCase {
 	private function parse( $json ) {
 		$service = ( new \ReflectionClass( ToolsService::class ) )->newInstanceWithoutConstructor();
 		$method  = new \ReflectionMethod( ToolsService::class, 'parse_import' );
-		$method->setAccessible( true );
+		// Needed before PHP 8.1; a no-op since, and deprecated from 8.5.
+		if ( PHP_VERSION_ID < 80100 ) {
+			$method->setAccessible( true );
+		}
 		return $method->invoke( $service, $json );
 	}
 
