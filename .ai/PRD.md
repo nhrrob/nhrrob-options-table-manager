@@ -107,7 +107,7 @@ After §4.1 ships, versus **Advanced Database Cleaner free**: everything it has,
 ### 4.2 Release gate — passed 2026-10-04 on the final code
 Results: PHPCS clean · lint clean · 23 unit tests · probe 80 checks / 0 failures (single site) + 76 / 0 (multisite) · Semgrep 0 findings · PHPStan clean · Plugin Check clean (only the two known `update_plugins` false positives) · PHP 7.4 compatible · upgrade from released 2.0.0 verified on otm-shots (snapshots 1,224 → 67 KB, history backfilled, settings kept, old daily-cleanup switch → daily expired-transients schedule) · multisite verified on otm-ms · zip 261 KB · 10 screenshots retaken. Checklist that was run: PHPCS + lint + PHPUnit (new unit tests for every cleanup query builder and the protected-table/hook lists) · build · security probe (every new route, anonymous + subscriber) · Semgrep `p/php` · PHPStan · Plugin Check on a production build · PHP 7.4 compatibility · upgrade test from the released 2.0.0 on otm-shots · multisite test on `~/Sites/otm-ms` (network activation, subsite crons, Network Admin, uninstall) · zip ≤ 287 KB (§1.1) · doc sync (readme, this PRD, DESIGN, CLAUDE.md) · screenshots. Then Robin reviews, commits and tags.
 
-### 4.3 Next release — 2.2.0: AI readiness + PHP matrix (built 2026-10-10, unreleased)
+### 4.3 Release 2.2.0: AI readiness + PHP matrix (built and released 2026-10-10)
 
 Reverses the 2026-09-28 "AI layer: not planned" decision for the part that costs almost nothing: no AI provider, no UI, one PHP class.
 
@@ -116,7 +116,7 @@ Reverses the 2026-09-28 "AI layer: not planned" decision for the part that costs
 - **Never exposed:** option/meta values, single-option edit/delete, table empty/drop, Search & Replace, import, cron delete, settings, network actions. `tests/AbilitiesTest.php` pins the exact list.
 - **WP-CLI:** `--format` on `cleanup list` and `tables list`.
 - **PHP:** supported and tested 7.4 → 8.5, plus 8.6 (non-blocking until its GA). `.github/workflows/php.yml` runs PHPCS with PHPCompatibilityWP, then per version a syntax check, PHPUnit and `.github/ci/smoke.php` inside a real WordPress.
-- **Zip cost:** one file, `includes/Core/Abilities.php` (about 4 KB compressed). Measure against the §1.1 budget at release.
+- **Zip cost:** one file, `includes/Core/Abilities.php`. Release zip 268 KB (2.1.0: 262 KB), so 6 KB over the previous release and under the 280 KB ceiling of §1.1.
 
 ## 5. Not planned (decided 2026-09-28 — would add weight without real demand)
 
