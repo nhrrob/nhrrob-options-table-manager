@@ -19,7 +19,7 @@ Last revised: 2026-09-28 (trimmed to Autopilot + Site Guard + Sandbox after an h
 | Decision | Choice |
 |---|---|
 | Delivery | **Separate PRO add-on plugin** extending core via the `nhrotm_modules` filter (PRD §3). Adds its own modules, REST controllers, dashboard cards and recommendations. |
-| Licensing/billing | **Freemius**, in the PRO add-on only, never in free |
+| Licensing/billing | **Our own store, store.nazmulrobin.com** (repo `nhrrob/nazmulrobin_store`; Paddle as merchant of record), in the PRO add-on only, never in free. Replaced Freemius on 2026-11-10. The licence gates updates and support only; Pro is GPL and keeps working when a licence ends. |
 | Monetization | Hybrid: annual subscription + lifetime tier (§5) |
 | Free-side discoverability | None — the free codebase never mentions PRO (PRD §1.2, decided 2026-10-04) |
 
@@ -118,14 +118,14 @@ Tables `nhrotmp_vault`, `nhrotmp_sites`, `nhrotmp_blueprints`, `nhrotmp_approval
 **Decided 2026-09-28: PRO 1.0 = Autopilot (+ Profiler as its proof), Site Guard, Option Sandbox.** All three are built and verified.
 
 1. **Free 2.1 first** (PRO needs its add-on API): History `record_type`, snapshot storage, Classic retirement with full parity, Activity restore. Done 2026-09-28, unreleased.
-2. **Launch trigger (decided 2026-09-28):** after the free 2.1.0 database-cleaner release, once the free plugin reaches **~1,000 active installs** (it had 100 on 2026-09-28; at typical 1–2% conversion, fewer installs can't cover Freemius, support and upkeep). The database-cleaner positioning (PRD §2) is what grows that base.
-3. **Before launch:** Freemius SDK + product keys, pricing page, re-confirm pricing (§5), and re-run the §0 market check (a competitor may have made one of the three features free).
+2. **Launch trigger (decided 2026-09-28):** after the free 2.1.0 database-cleaner release, once the free plugin reaches **~1,000 active installs** (it had 100 on 2026-09-28; at typical 1–2% conversion, fewer installs can't cover payment fees, support and upkeep). The database-cleaner positioning (PRD §2) is what grows that base.
+3. **Before launch:** the product, plans and first release on the store (`php artisan store:product|store:plan|store:release`), the pricing page, re-confirm pricing (§5), and re-run the §0 market check (a competitor may have made one of the three features free).
 4. **After launch:** only bring a parked feature back (§4a) on real customer demand.
 
 ## 7. Open questions
 
 - Lifetime-tier multiplier (3× vs 4× annual) and refund window.
-- Freemius trial: length, and with or without a card.
+- Trial: whether to offer one at all (the store has no trials today).
 - ~~Site Guard channels for 1.0~~ **Decided:** email + Slack + Discord + generic JSON webhook all ship in 1.0 (Slack/Discord are just webhook payload shapes).
 - ~~Fleet/Sync transport~~ (parked with Fleet, §4a) **Decided:** a per-connection key pair. The managed site issues a connection key (REST root + key id + 256-bit secret, secret encrypted at rest with the site's auth salt); the hub HMAC-signs every call (key, timestamp ±5 min, single-use nonce, method, route, body hash) and the call runs as the admin who issued the key. No application passwords.
 - ~~AI prompt budget per audit~~ (parked with AI Audit, §4a).
@@ -134,7 +134,7 @@ Tables `nhrotmp_vault`, `nhrotmp_sites`, `nhrotmp_blueprints`, `nhrotmp_approval
 
 - **No database tables (decided 2026-10-04).** PRO creates none. Read stats, per-URL cost, transient churn, the Autopilot log, Site Guard alerts and update change points are kept in capped, non-autoloaded options through `Core\Store` (caps and shapes: PRO `CLAUDE.md` → Storage). Consequences accepted with that decision: the figures are sampled estimates and a concurrent request can lose one increment; past days keep only the 15 busiest URLs and 25 busiest transients; 200 alerts and 20 change points are kept (was unlimited within 180 days, and 50); an alert whose value exceeds 256 KB cannot be rolled back; free snapshots include this data. Development installs keep their old `nhrotmp_*` tables until PRO is uninstalled.
 
-- **Freemius not wired yet.** `Core\License::is_active()` is the single gate; it honours `nhrotm_fs()` once the Freemius SDK + product keys exist, and returns true in development builds until then. Blocking for launch.
+- **Licensing (2026-11-10): our own store, not Freemius.** `Core\License::is_active()` stays true (filterable): the features always run. The store licence only gates updates: `includes/Licensing/` in PRO calls the store's licence API (activate, deactivate, check) and its update API through `pre_set_site_transient_update_plugins` and `plugins_api`. Licence screen under Tools › Database Cleaner, `wp nhrotm licence`. Details in the PRO repo's README.
 - **Option Sandbox cannot trial protected core options** (they load before any plugin can filter them) or autoload flags (no behavioural effect). Deletes and value changes only.
 - (Parked with Vault, §4a) **Vault ownership** comes from a static scan of the plugin's own PHP plus its own prefixes; names found in its code that carry another plugin's prefix are ignored, so removing an add-on never touches its parent plugin's data. Truncated captures (tables > 50k rows, meta > 20k rows) never drop tables/meta on cleanup.
 - **Prerequisites not done in free:** the free AI layer is still a free-roadmap item (the snapshot storage fix landed in free 2.1). PRO does not depend on them (Site Guard stores its own deltas; PRO calls the core AI Client directly). Ownership Detection is covered by the free `ScannerManager::guess_owner()` for labels plus PRO's own Footprint scanner for the Vault.
@@ -161,4 +161,4 @@ Tables `nhrotmp_vault`, `nhrotmp_sites`, `nhrotmp_blueprints`, `nhrotmp_approval
 - White-label reports (paid): https://wpmudev.com/reports/ , https://mantlewp.com/
 - InstaWP staging sync: https://instawp.com/wordpress-staging-to-production/
 - Competitor feature matrix (external sheet): https://docs.google.com/spreadsheets/d/1fv2LJJrSu4rA2Z7-wLd5sGecW4OxoKfMtVsTgQmZXoU/
-- Freemius: https://freemius.com/
+- Freemius: https://freemius.com/ (considered for licensing; replaced by our own store on 2026-11-10)
