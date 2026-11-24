@@ -3,7 +3,7 @@
 Status: Draft · Owner: Nazmul Hasan Robin (nhrrob) · Date: 2026-07-06
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
-> Companion to **[PRD.md](./PRD.md)** (free scope) and **[PRD-PRO.md](./PRD-PRO.md)** (monetization).
+> Companion to **[PRD.md](./PRD.md)**.
 
 ## 0. Design principles
 
@@ -250,13 +250,13 @@ The look is branded and vibrant, delivered entirely through a small set of CSS c
 - Errors show the REST message + a retry; never a blank screen.
 - Breakpoints (CSS-only, `style.scss` bottom): **>900px** full · **≤900px** nav auto-collapses to the icon rail · **≤600px** phone pass. `.nhrotm-app` is `overflow: hidden` (rounded corners), so anything wider than a phone viewport is *clipped*, not scrollable — the phone pass exists to keep every control inside the width: segmented switchers (Browse types, Optimize, Tools) swipe sideways, panel headers and pager controls wrap, form fields and Browse's toolbar drop their 200px minimums and go full-row, the app bar tightens, and fixed-layout grids get `min-width: 1000px` so the flexible Name/Value columns aren't squeezed to ~90px inside their horizontal scroller. Every `.nhrotm-grid` must sit inside a `.nhrotm-grid__scroll` (Tools → Backups was the one that didn't).
 
-## 12. PRO awareness — none (PRD §1.2)
+## 12. No upsell (PRD §1.2)
 
-The free build has no PRO surface: no `Pro` tag, no Upgrade nav item or screen, no `--nhrotm-pro*` tokens. They existed dormant until 2026-10-04 and were removed; do not design new ones. Where a paid add-on would add automation, the free UI simply omits it.
+No upsell surface: no tags, no upgrade nav item or screen, and no tokens for one. Do not design them.
 
 ## 13. Dark theme
 
-The mockup and the SPA both support dark. Because the whole system is token-driven, dark is a token remap under `@media (prefers-color-scheme: dark)` **and** a `[data-theme="dark"]` override on the app root (a small header toggle stamps it) — no per-component work.
+The SPA supports dark. Because the whole system is token-driven, dark is a token remap under `@media (prefers-color-scheme: dark)` **and** a `[data-theme="dark"]` override on the app root (a small header toggle stamps it) — no per-component work.
 
 ```css
 /* dark remap (surfaces/text/border invert; brand + status hues hold) */

@@ -4,7 +4,7 @@ Status: **2.0.0 released 2026-09-25** · **2.1.0 built, verified and release-rea
 Last revised: 2026-09-28 (repositioned as a full database cleaner; every database-cleaning feature is free, see §7)
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
-> PRO/monetization scope: **[PRD-PRO.md](./PRD-PRO.md)** · UI/visual spec: **[DESIGN.md](./DESIGN.md)**.
+> UI/visual spec: **[DESIGN.md](./DESIGN.md)**.
 > What already shipped is recorded in `readme.txt` (changelog + feature list), not here.
 
 ## 1. Principles (non-negotiable)
@@ -20,13 +20,11 @@ Last revised: 2026-09-28 (repositioned as a full database cleaner; every databas
 - Measure before adding a library. Run `check:pcp` + a zip-size diff before every release.
 - Baseline at 2.0.0: `admin/build/` ≈ 156 KB, legacy `assets/` ≈ 212 KB (removable, see §4).
 
-### 1.2 No PRO in the free codebase
+### 1.2 No upsell
 
-The free plugin carries **no PRO surface and no PRO wording**: no `Pro` tags, no Upgrade screen or nav item, no upgrade URL, no `hasPro`/`proAvailable` boot keys, and no "PRO" in code comments or UI strings. Removed 2026-10-04 (the dormant `ProTag.js`/`UpgradeScreen.js` UI and the `nhrotm_has_pro`, `nhrotm_pro_available` and `nhrotm_upgrade_url` filters); do not reintroduce them.
+The free plugin has no upsell surface and names no other edition: no tags, no upgrade screen, nav item or URL, in the code, the UI, the readme or these docs. It only exposes a neutral **add-on API** (§3). `ScannerManager` keeps a `nhrotmp_` prefix entry, labelled "Database Cleaner Add-on", so an add-on's own options are not reported as orphans.
 
-The free plugin only exposes a neutral **add-on API** (§3). Any discovery of a paid add-on happens outside this plugin (WP.org-independent site, the add-on itself). `ScannerManager` keeps a `nhrotmp_` prefix entry, labelled "Database Cleaner Add-on", so the add-on's own options are not reported as orphans.
-
-**Anything free in another plugin is free here.** The full rule is [PRD-PRO.md](./PRD-PRO.md) §0.
+**Anything free in another plugin is free here.**
 
 ## 2. Product (target IA for 2.1.0)
 
@@ -120,7 +118,7 @@ Reverses the 2026-09-28 "AI layer: not planned" decision for the part that costs
 
 ## 5. Not planned (decided 2026-09-28 — would add weight without real demand)
 
-Revisit only on real user requests. Anything here is still free if it ever ships (PRD-PRO §0).
+Revisit only on real user requests. Anything here is free if it ever ships.
 
 - **AI features inside the plugin** (explain option / score, plain-language query, a chat UI): needs the user's own AI provider; small audience. Being *usable by* AI agents is a different thing and is done, see §4.3.
 - **AI reading or writing option values** (an ability that returns a value, or edits/deletes one option): values hold API keys and everything an ability returns goes to the agent's AI provider. Only behind an off-by-default setting, and only on real demand.
@@ -135,11 +133,11 @@ Revisit only on real user requests. Anything here is still free if it ever ships
 
 ## 7. Decided (don't relitigate)
 
-- **Positioning (2026-09-28):** full database cleaner/optimizer (§2). **Every database-cleaning feature is free** — the market check (ADC, WP-Optimize) showed that everything either charges for is free in another plugin (§8). PRO stays the three features nobody offers (PRD-PRO §3) and launches after this release has grown the install base (PRD-PRO §6).
+- **Positioning (2026-09-28):** full database cleaner/optimizer (§2). **Every database-cleaning feature is free** — the market check (ADC, WP-Optimize) showed that everything either charges for is free in another plugin (§8).
 - **Classic UI:** removed in 2.1 with full feature parity; nothing it did may be lost.
 - **Name (2026-10-04):** display name **NHR Database Cleaner & Optimizer – Revisions, Transients, Autoload & Options Manager** (short form "NHR Database Cleaner & Optimizer"; the tail lists real features only — it both cleans and optimizes, via autoload tuning and table optimize/repair, and "Options Manager" keeps the editing side and the original identity in the title); in-app title and menu label **Database Cleaner** (Tools → Database Cleaner; Network Admin → Settings → Database Cleaner). The slug `nhrrob-options-table-manager`, text domain, `nhrotm` prefixes, and REST namespace never change. The CLI command is `wp nhrotm` from 2.1.0 (full plugin prefix); `wp nhr-options` stays registered as an alias. "Database cleaner" is the WordPress term for removing unused data (ADC uses it); the readme states it is not a malware scanner.
 
-- **Free vs PRO line:** anything free in another plugin, or listed in this PRD, is free. See PRD-PRO §0. (It settled "Download snapshot: free or PRO?" → free.)
+- **Everything in this PRD is free**, and so is anything free in another plugin (it settled "Download snapshot" → free).
 - **Data grid:** hand-rolled, no `@tanstack/react-table` (§1.1).
 - **Safe Redirect Manager in Integrations:** no. It stores redirects as a CPT + postmeta, and has no standalone table for `IntegrationsService` to point at.
 - **`nhrotm-options-table-manager/menu/capability` → `nhrotm_menu_capability`:** shipped in 2.0.0 as a hard break with no shim (changelogged).
