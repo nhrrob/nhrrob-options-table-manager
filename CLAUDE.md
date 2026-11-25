@@ -91,12 +91,16 @@ This is the condensed, load-bearing checklist distilled from a full UI/UX polish
 14. **`table-layout: fixed` (the `.nhrotm-grid` default) needs an explicit `<colgroup>` of `nhrotm-col-*` widths.** A table whose columns aren't known ahead of time — e.g. Integrations, whose columns come straight from a third-party plugin's own DB schema — has no `<colgroup>` to give it, so the browser squeezes an arbitrary number of columns into the container's fixed width and their `nowrap` header text overflows on top of the neighbouring column instead of wrapping or scrolling. Give that table the `.nhrotm-grid--fluid` modifier (`table-layout: auto`) instead, so it sizes to its content and `.nhrotm-grid__scroll`'s `overflow-x: auto` can actually scroll it. See DESIGN.md §14.12.
 15. **Under `table-layout: fixed`, add up the fixed `nhrotm-col-*` widths before reusing them in a new table — the flexible `nhrotm-col-name` column only gets what's left, and that can be 0.** The content panel is ~930px wide on a typical laptop. Optimize → Tables shipped with seven columns and 924px of fixed widths, so the table name wrapped one letter per line and Owner drew on top of it. Fix: the storage engine is shown as a muted line under the table name instead of in its own column (still searchable), and a per-table modifier passed through `DataTable`'s `tableClassName` prop (`.nhrotm-grid--tables`) sets the remaining five fixed columns to 706px with a 910px `min-width`. Size the Actions column for two buttons side by side (232px) and let more wrap. Also never leave an Actions cell blank — when no action applies, say so ("Nothing to do"). See DESIGN.md §14.13.
 
+## No upsell, anywhere
+
+This repo is public. Never add an upsell or a mention of another edition (code, UI, readme, `.ai/`, issues, PRs), and keep plans, prices and competitor research out of it (PRD §1.2).
+
 ## Documentation sync — required after every fix or feature change
 
 Per the global doc-sync rule (`~/.claude/CLAUDE.md`): in the same turn as any fix or feature change here, update every doc that describes the changed behavior — before reporting the task done. For this plugin that means checking:
 
 - `readme.txt` — the **Key Features / Description list**, not just the changelog entry.
-- `.ai/PRD.md`, `.ai/PRD-PRO.md`, `.ai/DESIGN.md` — feature specs, Browse type/tab lists, comparison tables, roadmap/backlog.
+- `.ai/PRD.md`, `.ai/DESIGN.md` — feature specs, Browse type/tab lists, comparison tables, roadmap/backlog.
 - This file (`CLAUDE.md`) — the REST route list, the ability list and Architecture section above.
 - `README.md` — currently a stub; skip unless it grows real content.
 
