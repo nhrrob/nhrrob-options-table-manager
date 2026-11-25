@@ -28,7 +28,7 @@ The free plugin has no upsell surface and names no other edition: no tags, no up
 
 ## 2. Product (target IA for 2.1.0)
 
-**Positioning (decided 2026-09-28):** a full **database cleaner and optimizer**, competing directly with Advanced Database Cleaner (100k+ installs) and WP-Optimize (1M+), while keeping the options/autoload depth neither has (usage tracker, per-option history and restore, snapshots before every risky action, import preview).
+**Scope (decided 2026-09-28):** a full **database cleaner and optimizer**, with the options/autoload depth database cleaners usually lack (usage tracker, per-option history and restore, snapshots before every risky action, import preview).
 
 **One home per action.** A new feature must slot into one section; no duplicate entry points. The nav grows from six to seven sections (Cleanup is new); Cron and Tables go inside existing sections rather than adding more nav.
 
@@ -87,8 +87,8 @@ History `record_type` + restore guard · compressed, transient-free snapshots (s
 9. ✅ **Search & Replace live match count:** "N options, M occurrences" as you type, debounced, via `preview_search()` over REST. Not an option-name autocomplete — it searches values.
 10. ✅ **Integrations: leftover tables** get a "plugin inactive" badge instead of being hidden (item 6's owner guess reused).
 11. ✅ **Dashboard + health score:** database size card; cleanup counts and table overhead feed the score and recommendations ("1,240 post revisions — Clean").
-12. ✅ **WP-CLI for cleanup** (WP-Optimize charges for CLI): `wp nhrotm cleanup list` (types + counts), `cleanup run <type> [--older-than=<days>] [--dry-run]`, `tables optimize [--all]`. Existing `list`/`delete` commands stay unchanged (stable contract, §3).
-13. ✅ **Positioning + WP.org listing:** readme rewrite (description, Key Features, FAQ for the cleaner features and their safety), tags, screenshots for the new screens (Cleanup, Tables, Cron, Network Admin), PRO Upgrade rows unchanged (still 3 features, still off).
+12. ✅ **WP-CLI for cleanup**: `wp nhrotm cleanup list` (types + counts), `cleanup run <type> [--older-than=<days>] [--dry-run]`, `tables optimize [--all]`. Existing `list`/`delete` commands stay unchanged (stable contract, §3).
+13. ✅ **WP.org listing:** readme rewrite (description, Key Features, FAQ for the cleaner features and their safety), tags, screenshots for the new screens (Cleanup, Tables, Cron, Network Admin).
 
 **Deviations from the plan above (deliberate):**
 - **Database size** went into the Dashboard's stats strip, not a fifth card (four cards is the grid).
@@ -97,10 +97,6 @@ History `record_type` + restore guard · compressed, transient-free snapshots (s
 - **Health score** gained one new penalty: up to 10 points for cleanable rows (`cleanable / 2000`). Table overhead is shown but not scored.
 - **Snapshots no longer contain or restore the `cron` option** (found by the upgrade test: restoring an old snapshot rewound every plugin's schedule). After a restore, `SettingsService::migrate()` and `CleanupService::sync_cron()` re-normalise our own settings and events.
 - Risky cleanup types (unregistered post types, duplicate meta) are **manual only**, and carry a plain-language caveat in the UI.
-
-### 4.1a Feature parity check (2026-10-04)
-
-After §4.1 ships, versus **Advanced Database Cleaner free**: everything it has, except its debug-log viewer (not a database feature; skipped). Versus **ADC Premium**: we give Action Scheduler cleanup, unlimited schedules, owner filter and per-site multisite free; we skip growth charts and the activation timeline (§5), and our owner detection is local prefix matching, not their cloud scan. Versus **WP-Optimize**: all of its *database* features incl. the premium ones (scheduling, preview, per-table optimize, multisite, WP-CLI). **Deliberately out of scope:** WP-Optimize's other two pillars (page caching, image compression, minify) and its WooCommerce query tweak / postmeta indexing — that is a caching plugin's job, and schema changes on other plugins' tables are too risky.
 
 ### 4.2 Release gate — passed 2026-10-04 on the final code
 Results: PHPCS clean · lint clean · 23 unit tests · probe 80 checks / 0 failures (single site) + 76 / 0 (multisite) · Semgrep 0 findings · PHPStan clean · Plugin Check clean (only the two known `update_plugins` false positives) · PHP 7.4 compatible · upgrade from released 2.0.0 verified on otm-shots (snapshots 1,224 → 67 KB, history backfilled, settings kept, old daily-cleanup switch → daily expired-transients schedule) · multisite verified on otm-ms · zip 261 KB · 10 screenshots retaken. Checklist that was run: PHPCS + lint + PHPUnit (new unit tests for every cleanup query builder and the protected-table/hook lists) · build · security probe (every new route, anonymous + subscriber) · Semgrep `p/php` · PHPStan · Plugin Check on a production build · PHP 7.4 compatibility · upgrade test from the released 2.0.0 on otm-shots · multisite test on `~/Sites/otm-ms` (network activation, subsite crons, Network Admin, uninstall) · zip ≤ 287 KB (§1.1) · doc sync (readme, this PRD, DESIGN, CLAUDE.md) · screenshots. Then Robin reviews, commits and tags.
@@ -133,20 +129,11 @@ Revisit only on real user requests. Anything here is free if it ever ships.
 
 ## 7. Decided (don't relitigate)
 
-- **Positioning (2026-09-28):** full database cleaner/optimizer (§2). **Every database-cleaning feature is free** — the market check (ADC, WP-Optimize) showed that everything either charges for is free in another plugin (§8).
+- **Scope (2026-09-28):** full database cleaner/optimizer (§2). **Every database-cleaning feature is free.**
 - **Classic UI:** removed in 2.1 with full feature parity; nothing it did may be lost.
-- **Name (2026-10-04):** display name **NHR Database Cleaner & Optimizer – Revisions, Transients, Autoload & Options Manager** (short form "NHR Database Cleaner & Optimizer"; the tail lists real features only — it both cleans and optimizes, via autoload tuning and table optimize/repair, and "Options Manager" keeps the editing side and the original identity in the title); in-app title and menu label **Database Cleaner** (Tools → Database Cleaner; Network Admin → Settings → Database Cleaner). The slug `nhrrob-options-table-manager`, text domain, `nhrotm` prefixes, and REST namespace never change. The CLI command is `wp nhrotm` from 2.1.0 (full plugin prefix); `wp nhr-options` stays registered as an alias. "Database cleaner" is the WordPress term for removing unused data (ADC uses it); the readme states it is not a malware scanner.
+- **Name (2026-10-04):** display name **NHR Database Cleaner & Optimizer – Revisions, Transients, Autoload & Options Manager** (short form "NHR Database Cleaner & Optimizer"; the tail lists real features only — it both cleans and optimizes, via autoload tuning and table optimize/repair, and "Options Manager" keeps the editing side and the original identity in the title); in-app title and menu label **Database Cleaner** (Tools → Database Cleaner; Network Admin → Settings → Database Cleaner). The slug `nhrrob-options-table-manager`, text domain, `nhrotm` prefixes, and REST namespace never change. The CLI command is `wp nhrotm` from 2.1.0 (full plugin prefix); `wp nhr-options` stays registered as an alias. "Database cleaner" is the WordPress term for removing unused data; the readme states it is not a malware scanner.
 
 - **Everything in this PRD is free**, and so is anything free in another plugin (it settled "Download snapshot" → free).
 - **Data grid:** hand-rolled, no `@tanstack/react-table` (§1.1).
 - **Safe Redirect Manager in Integrations:** no. It stores redirects as a CPT + postmeta, and has no standalone table for `IntegrationsService` to point at.
 - **`nhrotm-options-table-manager/menu/capability` → `nhrotm_menu_capability`:** shipped in 2.0.0 as a hard break with no shim (changelogged).
-
-## 8. Sources
-
-- Advanced Database Cleaner free vs premium (checked 2026-09-28): https://wordpress.org/plugins/advanced-database-cleaner/ — free: general cleanup, orphaned/duplicate meta, tables optimize/repair, cron, options, transients, 5 scheduled tasks, multisite; premium: cloud ownership scan, Action Scheduler cleanup, unlimited tasks, filters, growth charts, activation timeline, per-site multisite.
-- WP-Optimize free vs premium (checked 2026-09-28): https://wordpress.org/plugins/wp-optimize/ — premium: exact-time scheduling, multisite, per-table optimization, WP-CLI, preview before delete, WooCommerce query tweak, postmeta indexing.
-
-- AAA Option Optimizer: https://wordpress.org/plugins/aaa-option-optimizer/
-- Perfmatters (autoload/disable patterns): https://perfmatters.io/
-- Competitor gap analysis: [[project_otm_competitor_analysis]]
